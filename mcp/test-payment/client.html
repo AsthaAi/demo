@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MCP Payment Client</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0;
+        background-color: #f5f5f5;
+        position: relative;
+        padding-top: 60px; /* Add space for fixed status bar */
+      }
+      .container {
+        display: grid;
+        grid-template-columns: minmax(400px, 1fr) minmax(400px, 1fr);
+        gap: 30px;
+        margin-top: 20px;
+      }
+      .payment-form,
+      .events-panel {
+        padding: 25px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .form-group {
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+        box-sizing: border-box;
+        transition:
+          border-color 0.3s,
+          box-shadow 0.3s;
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #4caf50;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+      }
+      button {
+        width: 100%;
+        background-color: #4caf50;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+      }
+      button:hover {
+        background-color: #45a049;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      button:active {
+        transform: translateY(0);
+      }
+      .event {
+        margin-bottom: 12px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 6px;
+        background-color: white;
+        transition: transform 0.2s;
+      }
+      .event:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .event.payment-received {
+        border-left: 4px solid #4caf50;
+      }
+      .event.payment-error {
+        border-left: 4px solid #f44336;
+      }
+      .event.system {
+        border-left: 4px solid #2196f3;
+      }
+      .event-type {
+        font-weight: 600;
+        color: #2196f3;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+      .event-data {
+        font-family: "Courier New", monospace;
+        white-space: pre-wrap;
+        background-color: #f8f9fa;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      .transaction-info {
+        background-color: #e8f5e9;
+        border: 1px solid #c8e6c9;
+        border-radius: 6px;
+        padding: 15px;
+        margin-top: 15px;
+      }
+      .transaction-code {
+        font-family: "Courier New", monospace;
+        font-size: 16px;
+        color: #2e7d32;
+        font-weight: bold;
+        background-color: rgba(46, 125, 50, 0.1);
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+      .status {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        padding: 12px 15px;
+        font-size: 16px;
+        font-weight: 500;
+        text-align: center;
+        margin: 0;
+        transition: all 0.3s ease;
+      }
+      .status.connected {
+        background-color: #dff0d8;
+        color: #3c763d;
+        border-bottom: 1px solid #d6e9c6;
+      }
+      .status.disconnected {
+        background-color: #f2dede;
+        color: #a94442;
+        border-bottom: 1px solid #ebccd1;
+      }
+      .status.connecting {
+        background-color: #fcf8e3;
+        color: #8a6d3b;
+        border-bottom: 1px solid #faebcc;
+      }
+      #eventsList {
+        max-height: 600px;
+        overflow-y: auto;
+        padding-right: 10px;
+      }
+      .latest-transaction {
+        margin-top: 25px;
+        padding: 20px;
+        background-color: #e8f5e9;
+        border-radius: 6px;
+        border: 1px solid #c8e6c9;
+        display: none;
+      }
+      .latest-transaction.show {
+        display: block;
+      }
+      .latest-transaction h3 {
+        margin: 0 0 15px 0;
+        color: #2e7d32;
+        font-size: 18px;
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 28px;
+      }
+      h2 {
+        color: #444;
+        margin-bottom: 20px;
+        font-size: 22px;
+      }
+      .main-content {
+        padding: 20px;
+      }
+      /* Responsive adjustments */
+      @media (max-width: 900px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+        body {
+          padding: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="connectionStatus" class="status disconnected">
+      Connection Status: Disconnected
+    </div>
+    <div class="main-content">
+      <h1>MCP Payment Client</h1>
+      <div class="container">
+        <div class="payment-form">
+          <h2>Make Payment</h2>
+          <form id="paymentForm">
+            <div class="form-group">
+              <label for="amount">Amount:</label>
+              <input
+                type="number"
+                id="amount"
+                name="amount"
+                step="0.01"
+                required
+                placeholder="Enter amount"
+              />
+            </div>
+            <div class="form-group">
+              <label for="currency">Currency:</label>
+              <select id="currency" name="currency" required>
+                <option value="">Select currency</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="description">Description:</label>
+              <input
+                type="text"
+                id="description"
+                name="description"
+                required
+                placeholder="Payment description"
+              />
+            </div>
+            <button type="submit">Submit Payment</button>
+          </form>
+
+          <div id="latestTransaction" class="latest-transaction">
+            <h3>Latest Transaction</h3>
+            <div id="latestTransactionContent"></div>
+          </div>
+        </div>
+
+        <div class="events-panel">
+          <h2>Events</h2>
+          <div id="eventsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:5500";
+      const MCP_BASE = `${API_BASE}/mcp`;
+      let eventSource;
+
+      // Update connection status
+      function updateConnectionStatus(status) {
+        const statusElement = document.getElementById("connectionStatus");
+        statusElement.textContent = `Connection Status: ${status}`;
+        statusElement.className = `status ${status.toLowerCase()}`;
+      }
+
+      // Format timestamp
+      function formatTimestamp(timestamp) {
+        return new Date(timestamp).toLocaleString();
+      }
+
+      // Update latest transaction
+      function updateLatestTransaction(data) {
+        const latestTransaction = document.getElementById("latestTransaction");
+        const content = document.getElementById("latestTransactionContent");
+
+        content.innerHTML = `
+          <p><strong>Transaction Code:</strong> <span class="transaction-code">${data.transactionCode}</span></p>
+          <p><strong>Amount:</strong> ${data.amount} ${data.currency}</p>
+          <p><strong>Status:</strong> ${data.status}</p>
+          <p><strong>Time:</strong> ${formatTimestamp(data.timestamp)}</p>
+          ${data.description ? `<p><strong>Description:</strong> ${data.description}</p>` : ""}
+        `;
+
+        latestTransaction.classList.add("show");
+      }
+
+      // Add event to the events list
+      function addEventToList(type, data) {
+        const eventsList = document.getElementById("eventsList");
+        const eventDiv = document.createElement("div");
+        eventDiv.className = `event ${type.toLowerCase().replace("_", "-")}`;
+
+        const typeDiv = document.createElement("div");
+        typeDiv.className = "event-type";
+        typeDiv.textContent = `Event Type: ${type}`;
+
+        const dataDiv = document.createElement("div");
+        dataDiv.className = "event-data";
+
+        // Format the data based on event type
+        if (type === "PAYMENT_RECEIVED") {
+          dataDiv.innerHTML = `
+            Transaction Code: ${data.transactionCode}
+            Amount: ${data.amount} ${data.currency}
+            Status: ${data.status}
+            Time: ${formatTimestamp(data.timestamp)}
+            ${data.description ? `Description: ${data.description}` : ""}
+          `;
+        } else {
+          dataDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        eventDiv.appendChild(typeDiv);
+        eventDiv.appendChild(dataDiv);
+        eventsList.insertBefore(eventDiv, eventsList.firstChild);
+      }
+
+      // Connect to SSE stream
+      function connectSSE() {
+        updateConnectionStatus("Connecting");
+        eventSource = new EventSource(`${API_BASE}/stream`);
+
+        eventSource.onopen = () => {
+          updateConnectionStatus("Connected");
+          addEventToList("SYSTEM", { message: "Connected to server" });
+        };
+
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            addEventToList(data.method, data.params);
+
+            if (data.method === "PAYMENT_RECEIVED") {
+              updateLatestTransaction(data.params);
+            } else if (data.method === "PAYMENT_ERROR") {
+              alert(`Payment Error: ${data.params.error}`);
+            }
+          } catch (error) {
+            console.error("Error parsing event:", error);
+          }
+        };
+
+        eventSource.onerror = () => {
+          updateConnectionStatus("Disconnected");
+          eventSource.close();
+          setTimeout(connectSSE, 5000); // Try to reconnect after 5 seconds
+        };
+      }
+
+      // Handle form submission
+      document
+        .getElementById("paymentForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const formData = {
+            amount: parseFloat(document.getElementById("amount").value),
+            currency: document.getElementById("currency").value,
+            description: document.getElementById("description").value,
+          };
+
+          try {
+            const response = await fetch(`${MCP_BASE}/payment`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(formData),
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+              alert(`Payment Error: ${result.error}`);
+            }
+          } catch (error) {
+            alert(`Error: ${error.message}`);
+          }
+        });
+
+      // Connect on page load
+      connectSSE();
+
+      // Clean up on page unload
+      window.addEventListener("beforeunload", () => {
+        if (eventSource) {
+          eventSource.close();
+        }
+      });
+    </script>
+  </body>
+</html>

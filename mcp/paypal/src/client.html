@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MCP SSE Transport Client</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #ccc;
+      }
+      .status-indicator.connected {
+        background-color: #4caf50;
+      }
+      .status-indicator.disconnected {
+        background-color: #f44336;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+      .messages {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        background-color: #f9f9f9;
+      }
+      .message {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 4px;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .message .timestamp {
+        font-size: 12px;
+        color: #777;
+      }
+      .message .content {
+        margin-top: 5px;
+      }
+      .message.info {
+        border-left: 4px solid #2196f3;
+      }
+      .message.success {
+        border-left: 4px solid #4caf50;
+      }
+      .message.warning {
+        border-left: 4px solid #ffc107;
+      }
+      .message.error {
+        border-left: 4px solid #f44336;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>MCP SSE Transport Client</h1>
+
+      <div class="card">
+        <div class="status">
+          <div id="statusIndicator" class="status-indicator disconnected"></div>
+          <span id="statusText">Disconnected</span>
+        </div>
+        <button id="connectBtn">Connect</button>
+        <button id="disconnectBtn" disabled>Disconnect</button>
+      </div>
+
+      <div class="card">
+        <h2>Send Message</h2>
+        <div class="form-group">
+          <label for="messageType">Message Type:</label>
+          <select id="messageType">
+            <option value="INFO">Info</option>
+            <option value="SUCCESS">Success</option>
+            <option value="WARNING">Warning</option>
+            <option value="ERROR">Error</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="messageContent">Message Content:</label>
+          <textarea id="messageContent" rows="3"></textarea>
+        </div>
+        <button id="sendBtn" disabled>Send Message</button>
+      </div>
+
+      <div class="card">
+        <h2>Messages</h2>
+        <div id="messages" class="messages"></div>
+      </div>
+    </div>
+
+    <script>
+      // DOM Elements
+      const statusIndicator = document.getElementById("statusIndicator");
+      const statusText = document.getElementById("statusText");
+      const connectBtn = document.getElementById("connectBtn");
+      const disconnectBtn = document.getElementById("disconnectBtn");
+      const messageType = document.getElementById("messageType");
+      const messageContent = document.getElementById("messageContent");
+      const sendBtn = document.getElementById("sendBtn");
+      const messagesContainer = document.getElementById("messages");
+
+      // State
+      let eventSource = null;
+      let connectionId = null;
+
+      // Connect to SSE server
+      connectBtn.addEventListener("click", () => {
+        connectToServer();
+      });
+
+      // Disconnect from SSE server
+      disconnectBtn.addEventListener("click", () => {
+        disconnectFromServer();
+      });
+
+      // Send message
+      sendBtn.addEventListener("click", () => {
+        sendMessage();
+      });
+
+      // Connect to SSE server
+      function connectToServer() {
+        try {
+          // Close existing connection if any
+          if (eventSource) {
+            eventSource.close();
+          }
+
+          // Create new EventSource connection
+          eventSource = new EventSource("http://localhost:5500/stream");
+
+          // Connection opened
+          eventSource.onopen = () => {
+            updateConnectionStatus(true);
+            addMessage("Connected to server", "success");
+          };
+
+          // Listen for messages
+          eventSource.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              handleServerMessage(data);
+            } catch (error) {
+              console.error("Error parsing message:", error);
+              addMessage(`Error parsing message: ${error.message}`, "error");
+            }
+          };
+
+          // Connection error
+          eventSource.onerror = (error) => {
+            console.error("EventSource error:", error);
+            updateConnectionStatus(false);
+            addMessage("Connection error. Reconnecting...", "error");
+
+            // Close the connection
+            eventSource.close();
+            eventSource = null;
+
+            // Update UI
+            updateConnectionStatus(false);
+          };
+        } catch (error) {
+          console.error("Error connecting to server:", error);
+          addMessage(`Error connecting to server: ${error.message}`, "error");
+          updateConnectionStatus(false);
+        }
+      }
+
+      // Disconnect from SSE server
+      function disconnectFromServer() {
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+          updateConnectionStatus(false);
+          addMessage("Disconnected from server", "info");
+        }
+      }
+
+      // Send message to server
+      function sendMessage() {
+        const type = messageType.value;
+        const content = messageContent.value.trim();
+
+        if (!content) {
+          alert("Please enter a message");
+          return;
+        }
+
+        fetch("http://localhost:5500/mcp/send-message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: content,
+            type: type,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              addMessage(`Message sent: ${content}`, "success");
+              messageContent.value = "";
+            } else {
+              addMessage(`Error sending message: ${data.error}`, "error");
+            }
+          })
+          .catch((error) => {
+            console.error("Error sending message:", error);
+            addMessage(`Error sending message: ${error.message}`, "error");
+          });
+      }
+
+      // Handle server message
+      function handleServerMessage(data) {
+        console.log("Received message:", data);
+
+        if (data.method === "CONNECTION_STATUS") {
+          if (data.params && data.params.status === "connected") {
+            connectionId = data.params.connectionId;
+            addMessage(
+              `Connection established with ID: ${connectionId}`,
+              "success"
+            );
+          }
+        } else if (data.method === "MESSAGE_RECEIVED") {
+          if (data.params) {
+            addMessage(data.params.content, data.params.type.toLowerCase());
+          }
+        } else if (data.method === "MESSAGE_ERROR") {
+          if (data.params && data.params.error) {
+            addMessage(`Error: ${data.params.error}`, "error");
+          }
+        }
+      }
+
+      // Update connection status UI
+      function updateConnectionStatus(connected) {
+        if (connected) {
+          statusIndicator.classList.remove("disconnected");
+          statusIndicator.classList.add("connected");
+          statusText.textContent = "Connected";
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          sendBtn.disabled = false;
+        } else {
+          statusIndicator.classList.remove("connected");
+          statusIndicator.classList.add("disconnected");
+          statusText.textContent = "Disconnected";
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          sendBtn.disabled = true;
+        }
+      }
+
+      // Add message to UI
+      function addMessage(content, type = "info") {
+        const messageElement = document.createElement("div");
+        messageElement.classList.add("message", type);
+
+        const timestamp = document.createElement("div");
+        timestamp.classList.add("timestamp");
+        timestamp.textContent = new Date().toLocaleTimeString();
+
+        const messageContent = document.createElement("div");
+        messageContent.classList.add("content");
+        messageContent.textContent = content;
+
+        messageElement.appendChild(timestamp);
+        messageElement.appendChild(messageContent);
+
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+Shopping Agents App
+
+This App will help user to find best product they desire.
+
+This Agent App take user's request and execute following task as demand like, Research, Place Order and Payment. 
+
+Each Agent Researcher, Order and Payment will be follow certain task with needful tools.
+
+For an example Research Agent run some task using Google Serper Api Too.
+
+For Agent development we are going to use CrewAI
+
+CrewAI Package
+Url = https://pypi.org/project/crewai/
+Package = crewai 0.114.0
+Documentation = https://docs.crewai.com/introduction
+
+Each agent will have unique identity, where AZTP Clint come handy to create an Identity.
+
+AZTP-CLIENT Package
+Url = https://pypi.org/project/aztp-client/
+Package = aztp-client 1.0.23
+Documentation = https://pypi.org/project/aztp-client/

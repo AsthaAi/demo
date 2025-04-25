@@ -1,0 +1,3 @@
+"""
+ShopperAI tools package
+"""
