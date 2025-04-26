@@ -23,19 +23,21 @@ ShopperAI is an intelligent shopping assistant that helps users find and analyze
 
 3. **Task Management**
    - Uses CrewAI's Task system for orchestrating agent actions
-   - Tasks are defined in `main.py` for search and analysis operations
+   - Tasks are defined in `agents/tasks.py` for search and analysis operations
 
 ### File Structure
 
 ```
 shopping/
 ├── agents/
-│   └── research_agent.py    # Research agent implementation
+│   ├── research_agent.py    # Research agent implementation
+│   ├── tasks.py            # Task definitions
+│   └── tasks/              # Additional task implementations
 ├── tools/
-│   └── search_tools.py      # Search and analysis tools
-├── main.py                  # Main orchestration and CLI
-├── requirements.txt         # Project dependencies
-└── .env                     # Environment variables
+│   └── search_tools.py     # Search and analysis tools
+├── main.py                 # Main orchestration and CLI
+├── requirements.txt        # Project dependencies
+└── .env                    # Environment variables
 ```
 
 ## Implementation Details
@@ -86,20 +88,16 @@ class ProductAnalyzerTool:
 
 ### Task System
 
-Tasks are created in the main orchestration:
+Tasks are defined in `agents/tasks.py`:
 
 ```python
-search_task = Task(
-    description="Search for products matching criteria...",
-    agent=research_agent,
-    expected_output="A list of products matching the search criteria"
-)
-
-analyze_task = Task(
-    description="Analyze the search results...",
-    agent=research_agent,
-    expected_output="A detailed analysis of the products"
-)
+class ResearchTasks:
+    def create_search_task(self, agent, query, criteria):
+        return Task(
+            description=f"Search for products matching: {query}",
+            agent=agent,
+            expected_output="A list of products matching the search criteria"
+        )
 ```
 
 ## Setup and Configuration
@@ -119,6 +117,16 @@ Install required packages:
 ```bash
 pip install -r requirements.txt
 ```
+
+Current dependencies:
+
+- crewai>=0.11.0
+- python-dotenv>=0.19.0
+- requests>=2.26.0
+- google-search-results>=2.4.2
+- langchain>=0.1.0
+- aztp>=0.1.0
+- termcolor>=1.1.0
 
 ## Usage
 

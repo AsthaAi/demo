@@ -188,8 +188,8 @@ class ProductAnalyzerTool:
         print("Verified Tool:", self.is_valid)
 
         if self.is_valid:
-            self.identity = await self.aztpClient.get_identity(self.secured_connection)
-            print(f"Product Analyzer Tool Identity verified: {self.identity}")
+            # self.identity = await self.aztpClient.get_identity(self.secured_connection)
+            # print(f"Product Analyzer Tool Identity verified: {self.identity}")
             # Get the AZTP ID from the secured connection
             if self.secured_connection and hasattr(self.secured_connection, 'identity'):
                 self.aztp_id = self.secured_connection.identity.aztp_id
