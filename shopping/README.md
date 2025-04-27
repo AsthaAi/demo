@@ -25,9 +25,21 @@ The project uses CrewAI to orchestrate multiple AI agents:
    pip install -r requirements.txt
    ```
 3. Create a `.env` file with your API keys:
+
    ```
    SERPAPI_API_KEY=your_serpapi_key
+   AZTP_API_KEY=your_aztp_key
+   PAYPAL_CLIENT_ID=your_paypal_client_id
+   PAYPAL_SECRET=your_paypal_secret
+   PAYPAL_MERCHANT_EMAIL=your_merchant_email
    ```
+
+   Note: For PayPal integration, you'll need to:
+
+   1. Create a PayPal Developer account
+   2. Set up a sandbox application
+   3. Get your sandbox credentials
+   4. Use sandbox credentials for testing
 
 ## Usage
 
