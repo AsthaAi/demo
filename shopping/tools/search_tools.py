@@ -130,14 +130,29 @@ class ProductSearchTool:
         }
 
         try:
+            print(f"Searching for products with query: '{query}'")
             search = GoogleSearch(params)
             results = search.get_dict()
 
+            # Log the structure of the results for debugging
+            print(
+                f"Search results keys: {list(results.keys()) if isinstance(results, dict) else 'Not a dictionary'}")
+
             if "shopping_results" in results:
-                return results["shopping_results"]
-            return []
+                products = results["shopping_results"]
+                print(f"Found {len(products)} products")
+                return products
+            else:
+                print("No 'shopping_results' found in the API response")
+                # Check if there's an error message in the response
+                if "error" in results:
+                    print(f"API Error: {results['error']}")
+                return []
         except Exception as e:
-            print(f"Error searching for products: {e}")
+            print(f"Error searching for products: {str(e)}")
+            print(f"Error type: {type(e).__name__}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
             return []
 
 

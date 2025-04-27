@@ -130,95 +130,116 @@ class ResearchAgent(Agent):
         return f"{query}_{criteria_str}"
 
     def search_and_analyze(self, query: str, criteria: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Search for products and analyze them based on criteria
+        """Search for products and analyze them based on criteria"""
+        print(f"\n=== ResearchAgent.search_and_analyze ===")
+        print(f"Query: {query}")
+        print(f"Criteria: {criteria}")
 
-        Args:
-            query: Search query
-            criteria: Search criteria (max_price, min_rating)
+        # Check if we have cached results for this query
+        cache_key = f"{query}_{str(criteria)}"
+        if cache_key in self._search_memory:
+            print(f"Found cached results for query: {query}")
+            return self._search_memory[cache_key]
 
-        Returns:
-            Dictionary with search results and analysis
-        """
-        # Check memory first
-        memory_key = self._get_memory_key(query, criteria)
-        if memory_key in self._search_memory:
-            print("Using cached search results...")
-            return self._search_memory[memory_key]
+        print("No cached results found, performing new search")
 
         # Search for products
+        print("Running product search...")
         search_results = self._search_tool.run(query)
+        print(f"Search results type: {type(search_results)}")
+        print(f"Search results: {search_results}")
 
-        # If search_results is a string, use GPT-3.5-turbo to process it
+        # If search results is a string, process it with GPT-3.5-turbo
         if isinstance(search_results, str):
-            print("Processing text-based search results with GPT-3.5-turbo...")
-            search_results = self._process_text_results_with_gpt(
-                search_results, query)
+            print("Search results is a string, processing with GPT-3.5-turbo")
+            try:
+                # Process the search results with GPT-3.5-turbo
+                response = self._process_text_results_with_gpt(
+                    search_results, query)
+                print(f"GPT-3.5-turbo response type: {type(response)}")
+                print(f"GPT-3.5-turbo response: {response}")
 
-        # If search_results is empty or not a list, create sample data
-        if not search_results or not isinstance(search_results, list):
-            print("No search results found, creating sample data...")
-            search_results = self._create_sample_products(query)
+                # Try to parse the response as JSON
+                try:
+                    import json
+                    parsed_response = json.loads(response)
+                    print(
+                        f"Successfully parsed response as JSON: {parsed_response}")
+                    return parsed_response
+                except json.JSONDecodeError as e:
+                    print(f"Failed to parse response as JSON: {e}")
+                    print("Creating sample data as fallback")
+                    return self._create_sample_products(query)
+            except Exception as e:
+                print(f"Error processing search results: {e}")
+                print(f"Error type: {type(e).__name__}")
+                import traceback
+                print(f"Traceback: {traceback.format_exc()}")
+                print("Creating sample data as fallback")
+                return self._create_sample_products(query)
 
-        # Extract structured product data
-        products = []
-        for result in search_results:
-            # Extract price and convert to float
-            price_str = result.get("price", "0")
-            price = self._extract_price(price_str)
+        # If search results is a list, process it
+        if isinstance(search_results, list):
+            print(f"Search results is a list with {len(search_results)} items")
 
-            # Extract rating and convert to float
-            rating_str = result.get("rating", "0")
-            rating = self._extract_rating(rating_str)
+            # Extract structured product data
+            products = []
+            for item in search_results:
+                print(f"Processing item: {item}")
+                if isinstance(item, dict):
+                    product = {
+                        "name": item.get("title", ""),
+                        "price": item.get("price", ""),
+                        "rating": item.get("rating", ""),
+                        "brand": item.get("brand", ""),
+                        "description": item.get("description", ""),
+                        "link": item.get("link", ""),
+                        "image": item.get("thumbnail", "")
+                    }
+                    products.append(product)
+                    print(f"Added product: {product}")
 
-            # Create structured product object
-            product = {
-                "name": result.get("title", "Unknown Product"),
-                "brand": self._extract_brand(result.get("title", "")),
-                "price": price_str,
-                "price_value": price,
-                "rating": rating,
-                "rating_value": float(rating),
-                "description": result.get("description", ""),
-                "link": result.get("link", ""),
-                "color": self._extract_color(result)
+            print(f"Extracted {len(products)} products from search results")
+
+            # Filter products based on criteria
+            filtered_products = []
+            for product in products:
+                print(f"Checking product against criteria: {product}")
+                if self._meets_criteria(product, criteria):
+                    filtered_products.append(product)
+                    print(f"Product meets criteria: {product}")
+                else:
+                    print(f"Product does not meet criteria: {product}")
+
+            print(
+                f"Filtered to {len(filtered_products)} products that meet criteria")
+
+            # Sort products by rating
+            filtered_products.sort(key=lambda x: float(
+                x.get("rating", "0")), reverse=True)
+            print(f"Sorted products by rating")
+
+            # Get the best match
+            best_match = filtered_products[0] if filtered_products else None
+            print(f"Best match: {best_match}")
+
+            # Create the results dictionary
+            results = {
+                "raw_products": products,
+                "filtered_products": filtered_products,
+                "top_products": filtered_products[:5],
+                "best_match": best_match
             }
-            products.append(product)
 
-        # Filter products based on criteria
-        filtered_products = [
-            p for p in products
-            if p["price_value"] <= criteria.get("max_price", float("inf"))
-            and p["rating_value"] >= criteria.get("min_rating", 0)
-        ]
+            # Store the results in memory
+            self._search_memory[cache_key] = results
+            print(f"Stored results in memory with key: {cache_key}")
 
-        # Sort by rating (highest first)
-        filtered_products.sort(key=lambda x: x["rating_value"], reverse=True)
+            return results
 
-        # Get top products (limit to 5)
-        top_products = filtered_products[:5]
-
-        # Find best match (highest rating within budget)
-        best_match = None
-        if top_products:
-            best_match = top_products[0]
-
-        # Create structured response
-        result = {
-            "query": query,
-            "criteria": criteria,
-            "raw_products": products,
-            "filtered_products": filtered_products,
-            "top_products": top_products,
-            "best_match": best_match,
-            "total_found": len(products),
-            "total_matching_criteria": len(filtered_products)
-        }
-
-        # Store in memory
-        self._search_memory[memory_key] = result
-
-        return result
+        # If we get here, something went wrong
+        print("Unexpected search results format, creating sample data")
+        return self._create_sample_products(query)
 
     def get_best_match(self, query: str, criteria: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -460,3 +481,64 @@ class ResearchAgent(Agent):
                 "color": "Silver"
             }
         ]
+
+    def _meets_criteria(self, product: Dict[str, Any], criteria: Dict[str, Any]) -> bool:
+        """Check if a product meets the search criteria"""
+        print(f"Checking if product meets criteria: {product}")
+        print(f"Criteria: {criteria}")
+
+        # Check price criteria
+        if "max_price" in criteria:
+            try:
+                price_str = product.get("price", "0")
+                # Remove currency symbols and convert to float
+                price_str = ''.join(
+                    c for c in price_str if c.isdigit() or c == '.')
+                price = float(price_str) if price_str else 0
+
+                if price > criteria["max_price"]:
+                    print(
+                        f"Product price {price} exceeds max_price {criteria['max_price']}")
+                    return False
+                print(
+                    f"Product price {price} is within max_price {criteria['max_price']}")
+            except (ValueError, TypeError) as e:
+                print(f"Error parsing price: {e}")
+                # If we can't parse the price, assume it doesn't meet criteria
+                return False
+
+        # Check rating criteria
+        if "min_rating" in criteria:
+            try:
+                rating_str = product.get("rating", "0")
+                # Extract numeric rating (e.g., "4.5/5" -> 4.5)
+                rating_str = rating_str.split(
+                    '/')[0] if '/' in rating_str else rating_str
+                rating = float(rating_str) if rating_str else 0
+
+                if rating < criteria["min_rating"]:
+                    print(
+                        f"Product rating {rating} below min_rating {criteria['min_rating']}")
+                    return False
+                print(
+                    f"Product rating {rating} meets min_rating {criteria['min_rating']}")
+            except (ValueError, TypeError) as e:
+                print(f"Error parsing rating: {e}")
+                # If we can't parse the rating, assume it doesn't meet criteria
+                return False
+
+        # Check brand criteria
+        if "brand" in criteria and criteria["brand"]:
+            product_brand = product.get("brand", "").lower()
+            search_brand = criteria["brand"].lower()
+
+            if search_brand not in product_brand:
+                print(
+                    f"Product brand '{product_brand}' doesn't match search brand '{search_brand}'")
+                return False
+            print(
+                f"Product brand '{product_brand}' matches search brand '{search_brand}'")
+
+        # All criteria passed
+        print("Product meets all criteria")
+        return True
