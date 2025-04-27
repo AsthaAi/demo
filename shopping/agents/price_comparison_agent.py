@@ -30,6 +30,10 @@ class PriceComparisonAgent(Agent):
         default=None, exclude=True)
     aztp_id: str = Field(default="", exclude=True)
 
+    # Add memory storage
+    _comparison_memory: Dict[str, Dict[str, Any]] = {}
+    _best_deal_memory: Dict[str, Dict[str, Any]] = {}
+
     def __init__(self):
         """Initialize the price comparison agent with necessary tools"""
         super().__init__(
@@ -161,6 +165,16 @@ class PriceComparisonAgent(Agent):
 
         return "Not specified"
 
+    def _get_memory_key(self, products: List[Dict[str, Any]]) -> str:
+        """Generate a unique key for memory storage based on product details"""
+        # Create a unique key based on product titles and prices
+        key_parts = []
+        for product in products:
+            title = product.get('title', '')
+            price = product.get('price', '')
+            key_parts.append(f"{title}_{price}")
+        return "_".join(sorted(key_parts))
+
     def find_best_deal(self, products: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Find the single best deal from a list of products
@@ -173,6 +187,12 @@ class PriceComparisonAgent(Agent):
         """
         if not products:
             return {}
+
+        # Check memory first
+        memory_key = self._get_memory_key(products)
+        if memory_key in self._best_deal_memory:
+            print("Using cached best deal result...")
+            return self._best_deal_memory[memory_key]
 
         # Calculate total cost for each product
         products_with_total = []
@@ -198,6 +218,9 @@ class PriceComparisonAgent(Agent):
             "total_products_compared": len(products),
             "savings_vs_average": self._calculate_savings_vs_average(products_with_total)
         }
+
+        # Store in memory
+        self._best_deal_memory[memory_key] = best_deal
 
         return best_deal
 
@@ -236,6 +259,12 @@ class PriceComparisonAgent(Agent):
                 "recommendation": None
             }
 
+        # Check memory first
+        memory_key = self._get_memory_key(products)
+        if memory_key in self._comparison_memory:
+            print("Using cached price comparison result...")
+            return self._comparison_memory[memory_key]
+
         # Find the best deal
         best_deal = self.find_best_deal(products)
 
@@ -259,9 +288,13 @@ class PriceComparisonAgent(Agent):
                 "brand": brand,
                 "price": price,
                 "color": color,
-                "total_cost": total_cost
+                "total_cost": total_cost,
+                "rating": best_deal.get("rating", "N/A")
             },
             "summary": f"The best deal is {title} ({brand}) in {color} at {price} (total cost: {total_cost})."
         }
+
+        # Store in memory
+        self._comparison_memory[memory_key] = recommendation
 
         return recommendation
