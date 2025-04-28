@@ -24,23 +24,40 @@ toolkit = PayPalToolkit(
     configuration=paypal_config
 )
 
-# Create wrapper functions for PayPal tools
+# Get PayPal tools by name
+paypal_tools = {tool.name: tool for tool in toolkit.get_tools()}
 
 
 def create_order_wrapper(input_str: str) -> str:
     """Create a PayPal order with the given details"""
     try:
         # Parse the input string to extract order details
-        # For now, we'll use a simple format: "amount currency description"
+        # Format: "amount currency description"
         parts = input_str.split()
         if len(parts) >= 3:
             amount = float(parts[0])
-            currency = parts[1]
+            currency = parts[1].upper()  # Ensure currency is uppercase
             description = ' '.join(parts[2:])
-            result = toolkit.get_tools()[0].run({
-                "amount": amount,
-                "currency": currency,
-                "description": description
+
+            # Validate currency
+            # Add more supported currencies as needed
+            if currency not in ['USD', 'EUR', 'GBP']:
+                return "Invalid currency. Supported currencies: USD, EUR, GBP"
+
+            # Validate amount
+            if amount <= 0:
+                return "Amount must be greater than 0"
+
+            if 'create_order' not in paypal_tools:
+                return "Create order tool not available"
+
+            result = paypal_tools['create_order'].run({
+                "amount": {
+                    "currency_code": currency,
+                    "value": str(amount)
+                },
+                "description": description,
+                "intent": "CAPTURE"
             })
             return str(result)
         return "Invalid input format. Please provide: amount currency description"
@@ -51,7 +68,12 @@ def create_order_wrapper(input_str: str) -> str:
 def pay_order_wrapper(order_id: str) -> str:
     """Pay for a PayPal order"""
     try:
-        result = toolkit.get_tools()[1].run({"order_id": order_id})
+        if 'capture_order' not in paypal_tools:
+            return "Capture order tool not available"
+
+        result = paypal_tools['capture_order'].run({
+            "order_id": order_id
+        })
         return str(result)
     except Exception as e:
         return f"Error paying order: {str(e)}"
@@ -60,29 +82,34 @@ def pay_order_wrapper(order_id: str) -> str:
 def get_order_details_wrapper(order_id: str) -> str:
     """Get details of a PayPal order"""
     try:
-        result = toolkit.get_tools()[2].run({"order_id": order_id})
+        if 'get_order' not in paypal_tools:
+            return "Get order tool not available"
+
+        result = paypal_tools['get_order'].run({
+            "order_id": order_id
+        })
         return str(result)
     except Exception as e:
         return f"Error getting order details: {str(e)}"
 
 
-# Define tools
+# Define tools as LangChain Tool objects
 tools = [
-    {
-        "name": "create_order",
-        "description": "Create a new PayPal order. Input format: 'amount currency description'",
-        "function": create_order_wrapper
-    },
-    {
-        "name": "pay_order",
-        "description": "Pay for an existing PayPal order using its ID",
-        "function": pay_order_wrapper
-    },
-    {
-        "name": "get_order_details",
-        "description": "Get details of an existing PayPal order using its ID",
-        "function": get_order_details_wrapper
-    }
+    Tool(
+        name="create_order",
+        description="Create a new PayPal order. Input format: 'amount currency description' (e.g., '10.99 USD Product description')",
+        func=create_order_wrapper
+    ),
+    Tool(
+        name="pay_order",
+        description="Pay for an existing PayPal order using its ID",
+        func=pay_order_wrapper
+    ),
+    Tool(
+        name="get_order_details",
+        description="Get details of an existing PayPal order using its ID",
+        func=get_order_details_wrapper
+    )
 ]
 
 # Initialize the language model
