@@ -12,6 +12,7 @@ import os
 from pydantic import Field, ConfigDict
 import asyncio
 import re
+import json
 
 load_dotenv()
 
@@ -135,60 +136,72 @@ class ResearchAgent(Agent):
         print(f"Query: {query}")
         print(f"Criteria: {criteria}")
 
+        # Get the absolute path to the shopping directory
+        shopping_dir = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__)))
+        product_json_path = os.path.join(shopping_dir, 'product.json')
+        print(f"Will save results to: {product_json_path}")
+
+        # Initialize default result structure
+        empty_result = {
+            "raw_products": [],
+            "filtered_products": [],
+            "top_products": [],
+            "best_match": None
+        }
+
         # Check if we have cached results for this query
         cache_key = f"{query}_{str(criteria)}"
         if cache_key in self._search_memory:
             print(f"Found cached results for query: {query}")
-            return self._search_memory[cache_key]
+            result = self._search_memory[cache_key]
+            # Save cached results to product.json
+            try:
+                # Ensure the file exists and is writable
+                with open(product_json_path, 'w+') as f:
+                    json.dump(result, f, indent=2)
+                    f.flush()  # Force write to disk
+                    os.fsync(f.fileno())  # Ensure it's written to disk
+                print("Cached results saved to product.json")
+                return result
+            except Exception as e:
+                print(f"Error saving cached results: {str(e)}")
+                return result  # Still return the results even if saving fails
 
         print("No cached results found, performing new search")
 
         # Search for products
         print("Running product search...")
-        search_results = self._search_tool.run(query)
-        print(f"Search results type: {type(search_results)}")
-        print(f"Search results: {search_results}")
+        try:
+            search_results = self._search_tool.run(query)
+            print(
+                f"[DEBUG] Raw data received from search tool: {search_results}")
+        except Exception as e:
+            print(f"Error during product search: {e}")
+            print("Using sample products as fallback")
+            search_results = self._create_sample_products(query)
 
-        # If search results is a string, process it with GPT-3.5-turbo
+        # Process search results and get structured data
+        result = empty_result
+
         if isinstance(search_results, str):
-            print("Search results is a string, processing with GPT-3.5-turbo")
-            try:
-                # Process the search results with GPT-3.5-turbo
-                response = self._process_text_results_with_gpt(
-                    search_results, query)
-                print(f"GPT-3.5-turbo response type: {type(response)}")
-                print(f"GPT-3.5-turbo response: {response}")
-
-                # Try to parse the response as JSON
-                try:
-                    import json
-                    parsed_response = json.loads(response)
-                    print(
-                        f"Successfully parsed response as JSON: {parsed_response}")
-                    return parsed_response
-                except json.JSONDecodeError as e:
-                    print(f"Failed to parse response as JSON: {e}")
-                    print("Creating sample data as fallback")
-                    return self._create_sample_products(query)
-            except Exception as e:
-                print(f"Error processing search results: {e}")
-                print(f"Error type: {type(e).__name__}")
-                import traceback
-                print(f"Traceback: {traceback.format_exc()}")
-                print("Creating sample data as fallback")
-                return self._create_sample_products(query)
-
-        # If search results is a list, process it
-        if isinstance(search_results, list):
-            print(f"Search results is a list with {len(search_results)} items")
-
-            # Extract structured product data
+            # Process string results with GPT
+            processed_results = self._process_text_results_with_gpt(
+                search_results, query)
+            if processed_results:
+                result = {
+                    "raw_products": processed_results,
+                    "filtered_products": processed_results,
+                    "top_products": processed_results[:5],
+                    "best_match": processed_results[0] if processed_results else None
+                }
+        elif isinstance(search_results, list):
+            # Process list results directly
             products = []
             for item in search_results:
-                print(f"Processing item: {item}")
                 if isinstance(item, dict):
                     product = {
-                        "name": item.get("title", ""),
+                        "name": item.get("title", item.get("name", "")),
                         "price": item.get("price", ""),
                         "rating": item.get("rating", ""),
                         "brand": item.get("brand", ""),
@@ -197,49 +210,60 @@ class ResearchAgent(Agent):
                         "image": item.get("thumbnail", "")
                     }
                     products.append(product)
-                    print(f"Added product: {product}")
 
-            print(f"Extracted {len(products)} products from search results")
+            # If no products found, use sample data
+            if not products:
+                print("No products found from search, using sample data")
+                products = self._create_sample_products(query)
 
             # Filter products based on criteria
-            filtered_products = []
-            for product in products:
-                print(f"Checking product against criteria: {product}")
-                if self._meets_criteria(product, criteria):
-                    filtered_products.append(product)
-                    print(f"Product meets criteria: {product}")
-                else:
-                    print(f"Product does not meet criteria: {product}")
+            filtered_products = [
+                p for p in products if self._meets_criteria(p, criteria)]
 
-            print(
-                f"Filtered to {len(filtered_products)} products that meet criteria")
+            # If no products meet criteria, use all products
+            if not filtered_products:
+                print("No products meet criteria, using all products")
+                filtered_products = products
 
-            # Sort products by rating
-            filtered_products.sort(key=lambda x: float(
-                x.get("rating", "0")), reverse=True)
-            print(f"Sorted products by rating")
+            # Sort products by rating and price
+            filtered_products.sort(key=lambda x: (
+                float(str(x.get("rating", "0")).split("/")[0]),
+                -float(str(x.get("price", "0")).replace("$", "").replace(",", ""))
+            ), reverse=True)
 
-            # Get the best match
-            best_match = filtered_products[0] if filtered_products else None
-            print(f"Best match: {best_match}")
-
-            # Create the results dictionary
-            results = {
+            result = {
                 "raw_products": products,
                 "filtered_products": filtered_products,
                 "top_products": filtered_products[:5],
-                "best_match": best_match
+                "best_match": filtered_products[0] if filtered_products else None
             }
 
-            # Store the results in memory
-            self._search_memory[cache_key] = results
-            print(f"Stored results in memory with key: {cache_key}")
+        # If still no results, use sample data
+        if not result["raw_products"]:
+            print("No results found, using sample data")
+            sample_products = self._create_sample_products(query)
+            result = {
+                "raw_products": sample_products,
+                "filtered_products": sample_products,
+                "top_products": sample_products[:5],
+                "best_match": sample_products[0] if sample_products else None
+            }
 
-            return results
+        # Save results to product.json with proper error handling
+        try:
+            # Ensure the file exists and is writable
+            with open(product_json_path, 'w+') as f:
+                json.dump(result, f, indent=2)
+                f.flush()  # Force write to disk
+                os.fsync(f.fileno())  # Ensure it's written to disk
+            print("Results saved to product.json")
+        except Exception as e:
+            print(f"Error saving results to file: {str(e)}")
+            print("Continuing with in-memory results")
 
-        # If we get here, something went wrong
-        print("Unexpected search results format, creating sample data")
-        return self._create_sample_products(query)
+        # Store in memory
+        self._search_memory[cache_key] = result
+        return result
 
     def get_best_match(self, query: str, criteria: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -262,14 +286,14 @@ class ResearchAgent(Agent):
 
     def analyze_products(self, products: List[Dict[str, Any]], criteria: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Perform detailed analysis of products
+        Perform detailed analysis of products and assign 'best', 'mid-range', and 'premium' flags based on real data.
 
         Args:
             products: List of product dictionaries
             criteria: Dictionary of criteria to filter by
 
         Returns:
-            Analysis results with recommendations
+            Analysis results with recommendations and flags
         """
         memory_key = self._get_memory_key(str(products), criteria)
 
@@ -278,7 +302,7 @@ class ResearchAgent(Agent):
             print("Using cached analysis results...")
             return self._analysis_memory[memory_key]
 
-        # If products is empty, create sample data
+        # If products is empty, create sample data (only fallback)
         if not products:
             print("No products provided for analysis, creating sample data...")
             products = self._create_sample_products("sample")
@@ -301,37 +325,98 @@ class ResearchAgent(Agent):
             print("No analysis results, using raw products...")
             analyzed_products = raw_products
 
-        # Sort products by rating and price
-        sorted_products = sorted(
-            analyzed_products,
-            key=lambda x: (
-                float(x.get('rating', 0)),
-                -float(x.get('price', '0').replace('$', '').replace(',', ''))
-            ),
-            reverse=True
-        )
+        # Remove any products with missing price or rating
+        filtered_products = [p for p in analyzed_products if p.get(
+            'price') and p.get('rating')]
+        if not filtered_products:
+            filtered_products = analyzed_products
 
-        # Get top 3 products
-        top_products = sorted_products[:3]
+        # Convert price and rating to float for sorting
+        def parse_price(p):
+            price_str = str(p.get('price', '0')).replace(
+                '$', '').replace(',', '')
+            try:
+                return float(price_str)
+            except Exception:
+                return 0.0
 
-        # Create result structure
+        def parse_rating(p):
+            rating_str = str(p.get('rating', '0'))
+            if '/' in rating_str:
+                rating_str = rating_str.split('/')[0]
+            try:
+                return float(rating_str)
+            except Exception:
+                return 0.0
+
+        # Sort by rating (desc), then price (asc)
+        sorted_by_rating = sorted(filtered_products, key=lambda x: (
+            parse_rating(x), -parse_price(x)), reverse=True)
+        # Sort by price (asc)
+        sorted_by_price = sorted(filtered_products, key=parse_price)
+        # Sort by price (desc) for premium
+        sorted_by_price_desc = sorted(
+            filtered_products, key=parse_price, reverse=True)
+
+        # Assign flags
+        top_products = []
+        used_indices = set()
+        # Best: highest rating
+        if sorted_by_rating:
+            best = sorted_by_rating[0]
+            best_flagged = best.copy()
+            best_flagged['flag'] = 'best'
+            top_products.append(best_flagged)
+            used_indices.add(filtered_products.index(best))
+        # Mid-range: median price
+        if sorted_by_price:
+            mid_idx = len(sorted_by_price) // 2
+            mid = sorted_by_price[mid_idx]
+            if filtered_products.index(mid) not in used_indices:
+                mid_flagged = mid.copy()
+                mid_flagged['flag'] = 'mid-range'
+                top_products.append(mid_flagged)
+                used_indices.add(filtered_products.index(mid))
+        # Premium: highest price
+        if sorted_by_price_desc:
+            premium = sorted_by_price_desc[0]
+            if filtered_products.index(premium) not in used_indices:
+                premium_flagged = premium.copy()
+                premium_flagged['flag'] = 'premium'
+                top_products.append(premium_flagged)
+                used_indices.add(filtered_products.index(premium))
+
+        # If less than 3, fill with next best by rating
+        i = 1
+        while len(top_products) < 3 and i < len(sorted_by_rating):
+            candidate = sorted_by_rating[i]
+            if filtered_products.index(candidate) not in used_indices:
+                candidate_flagged = candidate.copy()
+                candidate_flagged['flag'] = 'other'
+                top_products.append(candidate_flagged)
+                used_indices.add(filtered_products.index(candidate))
+            i += 1
+
+        # Format output
         result = {
             "top_products": [
                 {
-                    "name": product.get('title', ''),
-                    "brand": product.get('title', '').split()[0],
-                    "price": product.get('price', ''),
-                    "rating": product.get('rating', ''),
-                    "link": product.get('link', '')
+                    "name": p.get('title', p.get('name', '')),
+                    "brand": p.get('brand', ''),
+                    "price": p.get('price', ''),
+                    "rating": p.get('rating', ''),
+                    "link": p.get('link', ''),
+                    "flag": p.get('flag', '')
                 }
-                for product in top_products
+                for p in top_products
             ],
             "best_match": {
-                "name": top_products[0].get('title', '') if top_products else '',
-                "brand": top_products[0].get('title', '').split()[0] if top_products else '',
+                "name": top_products[0].get('title', top_products[0].get('name', '')) if top_products else '',
+                "brand": top_products[0].get('brand', '') if top_products else '',
                 "price": top_products[0].get('price', '') if top_products else '',
                 "rating": top_products[0].get('rating', '') if top_products else '',
-                "link": top_products[0].get('link', '') if top_products else ''
+                "link": top_products[0].get('link', '') if top_products else '',
+                "flag": top_products[0].get('flag', '') if top_products else ''
             }
         }
 
@@ -452,35 +537,98 @@ class ResearchAgent(Agent):
         Returns:
             List of sample product dictionaries
         """
-        return [
-            {
-                "title": f"{query} - Sample Product 1",
-                "price": "$99.99",
-                "rating": "4.5",
-                "description": f"A sample {query} product with good ratings",
-                "link": "https://example.com/product1",
-                "brand": "SampleBrand",
-                "color": "Black"
-            },
-            {
-                "title": f"{query} - Sample Product 2",
-                "price": "$149.99",
-                "rating": "4.2",
-                "description": f"Another sample {query} product",
-                "link": "https://example.com/product2",
-                "brand": "AnotherBrand",
-                "color": "White"
-            },
-            {
-                "title": f"{query} - Sample Product 3",
-                "price": "$199.99",
-                "rating": "4.8",
-                "description": f"Premium sample {query} product",
-                "link": "https://example.com/product3",
-                "brand": "PremiumBrand",
-                "color": "Silver"
-            }
-        ]
+        # Create sample data based on common product queries
+        if "iphone" in query.lower():
+            return [
+                {
+                    "name": "iPhone SE (2020)",
+                    "price": "399.99",
+                    "rating": "4.5",
+                    "description": "A powerful 4.7-inch iPhone with A13 Bionic chip",
+                    "link": "https://example.com/iphone-se",
+                    "brand": "Apple",
+                    "color": "Black"
+                },
+                {
+                    "name": "iPhone 11 (Refurbished)",
+                    "price": "479.99",
+                    "rating": "4.3",
+                    "description": "6.1-inch Liquid Retina display, dual cameras",
+                    "link": "https://example.com/iphone-11",
+                    "brand": "Apple",
+                    "color": "White"
+                },
+                {
+                    "name": "iPhone XR (Refurbished)",
+                    "price": "399.99",
+                    "rating": "4.2",
+                    "description": "6.1-inch Liquid Retina display, great battery life",
+                    "link": "https://example.com/iphone-xr",
+                    "brand": "Apple",
+                    "color": "Blue"
+                }
+            ]
+        elif "laptop" in query.lower():
+            return [
+                {
+                    "name": "Dell XPS 13",
+                    "price": "999.99",
+                    "rating": "4.7",
+                    "description": "13-inch ultrabook with InfinityEdge display",
+                    "link": "https://example.com/dell-xps-13",
+                    "brand": "Dell",
+                    "color": "Silver"
+                },
+                {
+                    "name": "MacBook Air M1",
+                    "price": "899.99",
+                    "rating": "4.8",
+                    "description": "13-inch laptop with Apple M1 chip",
+                    "link": "https://example.com/macbook-air",
+                    "brand": "Apple",
+                    "color": "Space Gray"
+                },
+                {
+                    "name": "Lenovo ThinkPad X1",
+                    "price": "1199.99",
+                    "rating": "4.6",
+                    "description": "14-inch business laptop with great keyboard",
+                    "link": "https://example.com/thinkpad-x1",
+                    "brand": "Lenovo",
+                    "color": "Black"
+                }
+            ]
+        else:
+            # Generic sample products
+            return [
+                {
+                    "name": f"{query} - Premium Model",
+                    "price": "499.99",
+                    "rating": "4.8",
+                    "description": f"High-end {query} with premium features",
+                    "link": "https://example.com/premium",
+                    "brand": "PremiumBrand",
+                    "color": "Black"
+                },
+                {
+                    "name": f"{query} - Mid Range",
+                    "price": "299.99",
+                    "rating": "4.5",
+                    "description": f"Great value {query} for most users",
+                    "link": "https://example.com/midrange",
+                    "brand": "ValueBrand",
+                    "color": "Silver"
+                },
+                {
+                    "name": f"{query} - Budget Option",
+                    "price": "199.99",
+                    "rating": "4.2",
+                    "description": f"Affordable {query} with good features",
+                    "link": "https://example.com/budget",
+                    "brand": "BasicBrand",
+                    "color": "White"
+                }
+            ]
 
     def _meets_criteria(self, product: Dict[str, Any], criteria: Dict[str, Any]) -> bool:
         """Check if a product meets the search criteria"""

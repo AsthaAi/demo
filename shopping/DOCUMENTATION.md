@@ -312,6 +312,29 @@ Rating: [Rating]
 Summary: [Detailed recommendation]
 ```
 
+#### Enhanced File Management
+
+The system now includes improved file handling and data persistence:
+
+1. **Absolute Path Handling**
+
+   - All file paths are resolved to absolute paths
+   - Consistent path handling across different operating systems
+   - Proper directory creation if not exists
+
+2. **Data Persistence**
+
+   - Products are saved in a structured JSON format
+   - Data can be loaded and reused between sessions
+   - Automatic file creation if not exists
+   - Backup mechanisms for data integrity
+
+3. **Error Handling**
+   - Comprehensive error catching and logging
+   - User-friendly error messages
+   - Graceful fallbacks for missing files
+   - Debug information for troubleshooting
+
 ### Search Tools
 
 #### ProductSearchTool
@@ -531,3 +554,106 @@ except Exception as e:
 ## License
 
 This project is licensed under the MIT License.
+
+### Environment Setup and Script Execution
+
+The system now includes improved environment setup and script execution:
+
+1. **Virtual Environment Management**
+
+   - Uses `.venv` directory for virtual environment
+   - Automatic environment activation
+   - Dependency management through `requirements.txt`
+   - Environment variable handling
+
+2. **Script Execution**
+
+   ```bash
+   # Activate virtual environment and run script
+   source .venv/bin/activate && python main.py
+   ```
+
+3. **Environment Variables**
+   - Secure handling of API keys
+   - Configuration through `.env` file
+   - Environment-specific settings
+   - Sensitive data protection
+
+### Recent Updates
+
+#### Script Execution Improvements
+
+The system now includes enhanced script execution capabilities:
+
+1. **Virtual Environment**
+
+   - Consistent virtual environment location
+   - Automatic activation and deactivation
+   - Isolated dependency management
+   - Cross-platform compatibility
+
+2. **Error Handling**
+
+   - Graceful handling of environment activation failures
+   - Clear error messages for missing dependencies
+   - Fallback mechanisms for environment issues
+   - Debug information for troubleshooting
+
+3. **Configuration Management**
+   - Centralized configuration through environment variables
+   - Secure handling of sensitive data
+   - Environment-specific settings
+   - Easy configuration updates
+
+### Product Search and Analysis
+
+The system now includes enhanced product search and analysis capabilities:
+
+1. **Search Functionality**
+
+   - Advanced product filtering
+   - Price range constraints
+   - Rating-based filtering
+   - Multiple retailer support
+
+2. **Product Analysis**
+
+   ```python
+   def analyze_products(products, max_price, min_rating):
+       """Analyze products based on criteria"""
+       filtered_products = [
+           p for p in products
+           if p['price'] <= max_price and p['rating'] >= min_rating
+       ]
+       return sorted(filtered_products, key=lambda x: x['rating'], reverse=True)
+   ```
+
+3. **Result Processing**
+   - Structured JSON output
+   - Caching of search results
+   - Efficient data retrieval
+   - Result validation
+
+#### Search and Analysis Improvements
+
+The system now includes enhanced product search and analysis features:
+
+1. **Search Optimization**
+
+   - Improved search algorithms
+   - Better price comparison
+   - Enhanced rating system
+   - Faster result retrieval
+
+2. **Data Processing**
+
+   - Efficient data filtering
+   - Smart sorting algorithms
+   - Result caching
+   - Memory optimization
+
+3. **User Experience**
+   - Clear search results
+   - Detailed product information
+   - Easy price comparison
+   - Rating visualization

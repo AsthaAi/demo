@@ -9,10 +9,12 @@ __pycache__/
 *$py.class
 .Python
 .venv/
+.venv-pp/
 venv/
 ENV/
 env/
 .env
+.venv-pp
 .venv
 pip-log.txt
 pip-delete-this-directory.txt

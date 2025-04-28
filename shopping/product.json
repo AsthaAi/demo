@@ -1,0 +1,58 @@
+{
+  "raw_products": [
+    {
+      "name": "iPhone SE (2nd Generation)",
+      "price": 399.99,
+      "rating": 5.0
+    },
+    {
+      "name": "iPhone 11",
+      "price": 499.99,
+      "rating": 5.0
+    },
+    {
+      "name": "iPhone 12 Mini",
+      "price": 699.99,
+      "rating": 5.0
+    },
+    {
+      "name": "iPhone XR",
+      "price": 450.0,
+      "rating": 5.0
+    }
+  ],
+  "filtered_products": [
+    {
+      "name": "iPhone SE (2nd Generation)",
+      "price": 399.99,
+      "rating": 5.0
+    },
+    {
+      "name": "iPhone 11",
+      "price": 499.99,
+      "rating": 5.0
+    },
+    {
+      "name": "iPhone XR",
+      "price": 450.0,
+      "rating": 5.0
+    }
+  ],
+  "top_products": [
+    {
+      "name": "iPhone SE (2nd Generation)",
+      "price": 399.99,
+      "rating": 5.0
+    },
+    {
+      "name": "iPhone 11",
+      "price": 499.99,
+      "rating": 5.0
+    }
+  ],
+  "best_match": {
+    "name": "iPhone 11",
+    "price": 499.99,
+    "rating": 5.0
+  }
+}

@@ -1,37 +1,50 @@
+from paypal_agent_toolkit.shared.configuration import Configuration, Context
+from paypal_agent_toolkit.crewai.toolkit import PayPalToolkit
+from crewai import Agent, Crew, Task
+import sys
 import os
-from dotenv import load_dotenv
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# Load environment variables from .env file
-load_dotenv()
 
-# Check for required API keys
-required_keys = [
-    "SERPAPI_API_KEY",
-    "AZTP_API_KEY",
-    "OPENAI_API_KEY"
-]
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "../../")))
 
-print("=== Environment Variables Check ===")
-for key in required_keys:
-    value = os.getenv(key)
-    if value:
-        # Mask the key for security
-        masked_value = value[:4] + "*" * \
-            (len(value) - 8) + value[-4:] if len(value) > 8 else "****"
-        print(f"{key}: {masked_value} (Set)")
-    else:
-        print(f"{key}: Not set")
 
-print("\n=== Additional Information ===")
-print(f"Python version: {os.sys.version}")
-print(f"Current working directory: {os.getcwd()}")
-print(f".env file exists: {os.path.exists('.env')}")
+# uncomment after setting the env file
+# load_dotenv()
+PAYPAL_CLIENT_ID = os.getenv(
+    "PAYPAL_CLIENT_ID", "AVxwVjUvb_zesmFu4QDJiOYrgtg3bFZO98te3ibE8rhUycF6GCHvn0KwbCYVRmp629sJFtEXAnRhcq7E")
+PAYPAL_SECRET = os.getenv(
+    "PAYPAL_CLIENT_SECRET", "EKEm90z_hpDb1oSE-YSjhbCQeq3omeInYGYxGOspbWb64CFWcMi259ezhrbU03OEvDWiNXd5euiGgEV_")
+OPENAI_API_VERSION = "2024-02-15-preview"
 
-# Try to import the GoogleSearch class to check if it's available
-try:
-    from serpapi import GoogleSearch
-    print("serpapi package is installed and GoogleSearch class is available")
-except ImportError:
-    print("serpapi package is not installed or GoogleSearch class is not available")
-except Exception as e:
-    print(f"Error importing GoogleSearch: {str(e)}")
+
+toolkit = PayPalToolkit(
+    client_id=PAYPAL_CLIENT_ID,
+    secret=PAYPAL_SECRET,
+    configuration=Configuration(
+        actions={"orders": {"create": True, "get": True, "capture": True}},
+        context=Context(sandbox=True)
+    )
+)
+
+agent = Agent(
+    role="PayPal Assistant",
+    goal="Help users create and manage PayPal transactions",
+    backstory="You are a finance assistant skilled in PayPal operations.",
+    tools=toolkit.get_tools(),
+    allow_delegation=False
+)
+
+task = Task(
+    description="Create an PayPal order for $50 for Premium News service.",
+    expected_output="A PayPal order ID",
+    agent=agent
+)
+
+crew = Crew(agents=[agent], tasks=[task], verbose=True,
+            planning=True,)
+
+result = crew.kickoff()
+print(result)

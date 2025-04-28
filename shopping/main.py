@@ -12,6 +12,7 @@ from agents.tasks import ResearchTasks
 from dotenv import load_dotenv
 from crewai import Crew, Task
 from textwrap import dedent
+import json
 
 load_dotenv()
 
@@ -51,172 +52,59 @@ class ShopperAI:
         """Process a CrewOutput object and extract product information"""
         print("Processing CrewOutput object...")
 
-        # Convert the CrewOutput to a string
-        output_str = str(crew_output)
-        print(f"CrewOutput content preview: {output_str[:200]}...")
+        # Get the absolute path to the shopping directory
+        shopping_dir = os.path.dirname(os.path.abspath(__file__))
+        product_json_path = os.path.join(shopping_dir, 'product.json')
+        print(f"Will save results to: {product_json_path}")
 
-        # Extract products using OpenAI
-        products = []
-        best_match = None
-
-        try:
-            # Use OpenAI to extract product information
-            import openai
-            import json
-            import os
-            from dotenv import load_dotenv
-
-            # Load environment variables
-            load_dotenv()
-
-            # Get OpenAI API key
-            api_key = os.getenv("OPENAI_API_KEY")
-            if not api_key:
-                print(
-                    "OPENAI_API_KEY not found in environment variables. Using regex fallback.")
-                return self._extract_products_with_regex(output_str)
-
-            # Initialize OpenAI client
-            client = openai.OpenAI(api_key=api_key)
-
-            # Create a prompt for OpenAI
-            prompt = f"""
-            Extract product information from the following text. 
-            Return a JSON array of products, where each product has the following fields:
-            - name: The product name
-            - price: The price with dollar sign
-            - rating: The rating
-            - brand: The brand name (extract from the product name if possible)
-            - description: The product description
-            - material: The material (if available)
-            - capacity: The capacity (if available)
-            
-            Text to extract from:
-            {output_str}
-            
-            Return ONLY the JSON array, nothing else.
-            """
-
-            # Call OpenAI API
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that extracts structured product data from text."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.2,
-                max_tokens=2000
-            )
-
-            # Extract the JSON from the response
-            json_text = response.choices[0].message.content.strip()
-
-            # Parse the JSON
-            try:
-                products = json.loads(json_text)
-                print(
-                    f"Successfully extracted {len(products)} products using OpenAI")
-
-                # Set the first product as the best match
-                if products:
-                    best_match = products[0]
-
-                return {
-                    "raw_products": products,
-                    "filtered_products": products,
-                    "top_products": products[:5],
-                    "best_match": best_match
-                }
-            except json.JSONDecodeError as e:
-                print(f"Failed to parse JSON from OpenAI response: {e}")
-                print("Falling back to regex extraction")
-                return self._extract_products_with_regex(output_str)
-
-        except Exception as e:
-            print(f"Error using OpenAI for extraction: {e}")
-            print(f"Error type: {type(e).__name__}")
-            import traceback
-            print(f"Traceback: {traceback.format_exc()}")
-            print("Falling back to regex extraction")
-            return self._extract_products_with_regex(output_str)
-
-    def _extract_products_with_regex(self, output_str):
-        """Extract products using regex as a fallback method"""
-        print("Extracting products using regex...")
-        products = []
-        best_match = None
+        # Initialize default result
+        result = {
+            "raw_products": [],
+            "filtered_products": [],
+            "top_products": [],
+            "best_match": None
+        }
 
         try:
+            # Convert the CrewOutput to a string
+            output_str = str(crew_output)
+            print(f"CrewOutput content preview: {output_str[:200]}...")
+
+            # Try to find JSON in the output
             import re
+            json_pattern = r'\{[\s\S]*\}'
+            matches = re.findall(json_pattern, output_str)
 
-            # Look for product listings in the text with the exact format from the logs
-            product_pattern = r'\d+\.\s+\*\*(.*?)\*\*\s*\n\s*-\s*\*\*Price:\*\*\s*\$?([\d,.]+)\s*\n\s*-\s*\*\*Rating:\*\*\s*([\d.]+)'
-            product_matches = re.findall(
-                product_pattern, output_str, re.DOTALL)
+            if matches:
+                for match in matches:
+                    try:
+                        parsed_data = json.loads(match)
+                        if isinstance(parsed_data, dict):
+                            # Check if it has the expected structure
+                            if all(key in parsed_data for key in ["raw_products", "filtered_products", "top_products", "best_match"]):
+                                result = parsed_data
+                                print("Successfully parsed crew output as JSON")
+                                break
+                    except json.JSONDecodeError:
+                        continue
 
-            if product_matches:
-                for match in product_matches:
-                    name, price, rating = match
-                    # Try to extract description
-                    desc_pattern = r'-\s*\*\*Description:\*\*\s*(.*?)(?=\n\n|\Z)'
-                    desc_match = re.search(
-                        desc_pattern, output_str[output_str.find(match[0]):], re.DOTALL)
-                    description = desc_match.group(1) if desc_match else ""
+            # Save results to product.json
+            try:
+                with open(product_json_path, 'w') as f:
+                    json.dump(result, f, indent=2)
+                    f.flush()  # Force write to disk
+                    os.fsync(f.fileno())  # Ensure it's written to disk
+                print("Results saved to product.json")
+            except Exception as e:
+                print(f"Error saving results to file: {e}")
+                print("Continuing with in-memory results")
 
-                    # Try to extract material
-                    material_pattern = r'-\s*\*\*Material:\*\*\s*(.*?)(?=\n|$)'
-                    material_match = re.search(
-                        material_pattern, output_str[output_str.find(match[0]):], re.DOTALL)
-                    material = material_match.group(
-                        1) if material_match else ""
+            return result
 
-                    # Try to extract capacity
-                    capacity_pattern = r'-\s*\*\*Capacity:\*\*\s*(.*?)(?=\n|$)'
-                    capacity_match = re.search(
-                        capacity_pattern, output_str[output_str.find(match[0]):], re.DOTALL)
-                    capacity = capacity_match.group(
-                        1) if capacity_match else ""
-
-                    # Try to extract brand from name
-                    brand = "Unknown"
-                    if " " in name:
-                        potential_brand = name.split()[0]
-                        if potential_brand not in ["The", "A", "An"]:
-                            brand = potential_brand
-
-                    product = {
-                        "name": name.strip(),
-                        "price": f"${price.strip()}",
-                        "rating": rating.strip(),
-                        "brand": brand,
-                        "description": description.strip(),
-                        "material": material.strip(),
-                        "capacity": capacity.strip()
-                    }
-                    products.append(product)
-
-                # Set the first product as the best match
-                if products:
-                    best_match = products[0]
-
-                print(
-                    f"Successfully extracted {len(products)} products using regex")
-                return {
-                    "raw_products": products,
-                    "filtered_products": products,
-                    "top_products": products[:5],
-                    "best_match": best_match
-                }
-            else:
-                print(
-                    "Could not extract products using regex. Using sample products.")
-                return self._create_sample_products()
         except Exception as e:
-            print(f"Error extracting products with regex: {e}")
-            print(f"Error type: {type(e).__name__}")
-            import traceback
-            print(f"Traceback: {traceback.format_exc()}")
-            return self._create_sample_products()
+            print(f"Error in _process_crew_output: {e}")
+            print("Using default result structure")
+            return result
 
     def run_research(self):
         """Run the research phase"""
@@ -237,18 +125,33 @@ class ShopperAI:
         print("\n=== Creating Research Tasks ===")
         search_task = Task(
             description=f"""Search for products matching: {self.query} with criteria: {self.criteria}
-            Use the search_and_analyze method to find and analyze products.
-            Return a list of products that match the criteria.""",
+Use the search_and_analyze method to find and analyze products.
+Return ONLY a valid JSON object with the following structure (no explanation, no markdown, no summary):
+{{
+  \"raw_products\": [...],
+  \"filtered_products\": [...],
+  \"top_products\": [...],
+  \"best_match\": ...
+}}
+Do not return any explanation or summary, only the JSON object.""",
             agent=research_agent,
-            expected_output="A list of products matching the search criteria"
+            expected_output="A JSON object with keys: raw_products, filtered_products, top_products, best_match. No explanation, only JSON."
         )
         print("Search task created")
 
         analyze_task = Task(
             description=f"""Analyze the search results and find the best match based on criteria: {self.criteria}
-            Use the analyze_products method to analyze the products and return recommendations.""",
+Use the analyze_products method to analyze the products and return recommendations.
+Return ONLY a valid JSON object with the following structure (no explanation, no markdown, no summary):
+{{
+  \"raw_products\": [...],
+  \"filtered_products\": [...],
+  \"top_products\": [...],
+  \"best_match\": ...
+}}
+Do not return any explanation or summary, only the JSON object.""",
             agent=research_agent,
-            expected_output="A detailed analysis of the products with recommendations"
+            expected_output="A JSON object with keys: raw_products, filtered_products, top_products, best_match. No explanation, only JSON."
         )
         print("Analyze task created")
 
@@ -268,10 +171,28 @@ class ShopperAI:
 
         try:
             print("Kicking off the research crew...")
-            results = crew.kickoff()
-            print("\n=== Research Results ===")
-            print(f"Results type: {type(results)}")
-            print(f"Results: {results}")
+            crew_output = crew.kickoff()
+
+            # Process crew output
+            result = self._process_crew_output(crew_output)
+
+            # Verify the result structure
+            if not isinstance(result, dict):
+                print("Invalid result structure, using default")
+                result = {
+                    "raw_products": [],
+                    "filtered_products": [],
+                    "top_products": [],
+                    "best_match": None
+                }
+
+            # Ensure all required keys exist
+            for key in ["raw_products", "filtered_products", "top_products", "best_match"]:
+                if key not in result:
+                    result[key] = [] if key != "best_match" else None
+
+            return result
+
         except Exception as e:
             print(f"\nError during research: {str(e)}")
             print(f"Error type: {type(e).__name__}")
@@ -279,152 +200,6 @@ class ShopperAI:
             print(f"Traceback: {traceback.format_exc()}")
             print("\nFalling back to OpenAI search due to research error")
             return self._search_with_openai()
-
-        # Extract products from CrewAI output
-        products = []
-        best_match = None
-
-        # If results is a string (text output), try to parse it into structured data
-        if isinstance(results, str):
-            try:
-                # Use OpenAI to extract product information
-                import openai
-                import json
-                import os
-                from dotenv import load_dotenv
-
-                # Load environment variables
-                load_dotenv()
-
-                # Get OpenAI API key
-                api_key = os.getenv("OPENAI_API_KEY")
-                if not api_key:
-                    print(
-                        "OPENAI_API_KEY not found in environment variables. Using regex fallback.")
-                    return self._extract_products_with_regex(results)
-
-                # Initialize OpenAI client
-                client = openai.OpenAI(api_key=api_key)
-
-                # Create a prompt for OpenAI
-                prompt = f"""
-                Extract product information from the following text. 
-                Return a JSON array of products, where each product has the following fields:
-                - name: The product name
-                - price: The price with dollar sign
-                - rating: The rating
-                - brand: The brand name (extract from the product name if possible)
-                - description: The product description
-                - material: The material (if available)
-                - capacity: The capacity (if available)
-                
-                Text to extract from:
-                {results}
-                
-                Return ONLY the JSON array, nothing else.
-                """
-
-                # Call OpenAI API
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that extracts structured product data from text."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.2,
-                    max_tokens=2000
-                )
-
-                # Extract the JSON from the response
-                json_text = response.choices[0].message.content.strip()
-
-                # Parse the JSON
-                try:
-                    products = json.loads(json_text)
-                    print(
-                        f"Successfully extracted {len(products)} products using OpenAI")
-
-                    # Set the first product as the best match
-                    if products:
-                        best_match = products[0]
-
-                    return {
-                        "raw_products": products,
-                        "filtered_products": products,
-                        "top_products": products[:5],
-                        "best_match": best_match
-                    }
-                except json.JSONDecodeError as e:
-                    print(f"Failed to parse JSON from OpenAI response: {e}")
-                    print("Falling back to regex extraction")
-                    return self._extract_products_with_regex(results)
-
-            except Exception as e:
-                print(f"Error using OpenAI for extraction: {e}")
-                print(f"Error type: {type(e).__name__}")
-                import traceback
-                print(f"Traceback: {traceback.format_exc()}")
-                print("Falling back to regex extraction")
-                return self._extract_products_with_regex(results)
-
-        # If results is a CrewOutput object, process it directly
-        elif hasattr(results, 'raw_output'):
-            print("Results is a CrewOutput object, processing directly")
-            return self._process_crew_output(results)
-
-        # If results is already a dictionary, check if it has the expected structure
-        elif isinstance(results, dict):
-            # Check if the dictionary has the expected keys
-            expected_keys = ["raw_products",
-                             "filtered_products", "top_products", "best_match"]
-            has_expected_keys = all(key in results for key in expected_keys)
-            print(f"Has expected keys: {has_expected_keys}")
-            print(
-                f"Missing keys: {[key for key in expected_keys if key not in results]}")
-
-            # If it has the expected keys but no products, add sample products
-            if has_expected_keys and (not results.get("top_products") or len(results.get("top_products", [])) == 0):
-                print("Adding sample products to empty results...")
-                results["raw_products"] = [
-                    {
-                        "name": f"{self.query} - Sample Product 1",
-                        "price": "$999.00",
-                        "rating": "4.8",
-                        "brand": "SampleBrand",
-                        "description": f"A sample {self.query} product with good ratings"
-                    }
-                ]
-                results["filtered_products"] = results["raw_products"]
-                results["top_products"] = results["raw_products"]
-                results["best_match"] = results["raw_products"][0]
-
-            return results
-
-        # If results is a list, convert it to the expected structure
-        elif isinstance(results, list):
-            # If the list is empty, add sample products
-            if not results:
-                print("Adding sample products to empty list results...")
-                results = [
-                    {
-                        "name": f"{self.query} - Sample Product 1",
-                        "price": "$999.00",
-                        "rating": "4.8",
-                        "brand": "SampleBrand",
-                        "description": f"A sample {self.query} product with good ratings"
-                    }
-                ]
-
-            return {
-                "raw_products": results,
-                "filtered_products": results,
-                "top_products": results[:5] if len(results) > 5 else results,
-                "best_match": results[0] if results else None
-            }
-
-        # Default case - return sample products
-        print("Using default sample products...")
-        return self._create_sample_products()
 
     def _search_with_openai(self):
         """Search for products using OpenAI as a fallback when SERPAPI is not available"""
@@ -555,10 +330,40 @@ class ShopperAI:
             "best_match": sample_products[0]
         }
 
-    def run_price_comparison(self, products: List[Dict[str, Any]]):
+    def load_research_results(self):
+        """Load research results from products.json file"""
+        try:
+            shopping_dir = os.path.dirname(os.path.abspath(__file__))
+            product_json_path = os.path.join(shopping_dir, 'product.json')
+            with open(product_json_path, 'r') as f:
+                data = json.load(f)
+            print("[DEBUG] Loaded research results from product.json:")
+            print(json.dumps(data, indent=2))
+            return data
+        except Exception as e:
+            print(f"[DEBUG] Failed to load products.json: {e}")
+            return {
+                "raw_products": [],
+                "filtered_products": [],
+                "top_products": [],
+                "best_match": None
+            }
+
+    def run_price_comparison(self, products: List[Dict[str, Any]] = None):
         """Run the price comparison phase"""
         # Initialize price comparison agent
         price_agent = self.agents.price_comparison_agent()
+
+        # If no products provided, try to load from file
+        if products is None or not products:
+            print(
+                "[DEBUG] No products provided to price comparison, loading from products.json...")
+            data = self.load_research_results()
+            # Try to get best_match first, then fall back to top_products
+            if data.get("best_match"):
+                products = [data["best_match"]]
+            else:
+                products = data.get("top_products", [])
 
         # Ensure products is a list
         if not isinstance(products, list):
@@ -569,24 +374,24 @@ class ShopperAI:
         valid_products = []
         for product in products:
             if isinstance(product, dict):
-                # Ensure product has name and price
-                if "name" in product or "title" in product:
-                    name = product.get("name", product.get("title", "Unknown"))
-                    price = product.get("price", "N/A")
-                    brand = product.get("brand", "Unknown")
-                    rating = product.get("rating", "N/A")
+                # Handle both product_name and name/title fields
+                name = product.get("product_name", product.get(
+                    "name", product.get("title", "Unknown")))
+                price = product.get("price", "N/A")
+                brand = product.get("brand", "Unknown")
+                rating = product.get("rating", "N/A")
 
-                    # Create a standardized product object
-                    valid_product = {
-                        "name": name,
-                        "price": price,
-                        "brand": brand,
-                        "rating": rating,
-                        "description": product.get("description", ""),
-                        "link": product.get("link", ""),
-                        "color": product.get("color", "Unknown")
-                    }
-                    valid_products.append(valid_product)
+                # Create a standardized product object
+                valid_product = {
+                    "name": name,
+                    "price": price,
+                    "brand": brand,
+                    "rating": rating,
+                    "description": product.get("description", ""),
+                    "link": product.get("link", ""),
+                    "color": product.get("color", "Unknown")
+                }
+                valid_products.append(valid_product)
 
         if not valid_products:
             print("No valid products found for price comparison")
@@ -755,32 +560,29 @@ def main():
 
     # Extract and display products
     products = []
+    best = None
     if isinstance(research_results, dict):
-        # Debug the structure of research_results
-        print("\nResearch results structure:")
-        for key, value in research_results.items():
-            if isinstance(value, list):
-                print(f"  - {key}: {len(value)} items")
-            else:
-                print(f"  - {key}: {type(value)}")
-
-        # First try to get top_products
-        if "top_products" in research_results and research_results["top_products"]:
+        # Always use best_match if it exists and is not None
+        if research_results.get("best_match") and research_results["best_match"]:
+            best = research_results["best_match"]
+            products = [best]
+        elif research_results.get("top_products") and research_results["top_products"]:
             products = research_results["top_products"]
-        # Then try filtered_products
-        elif "filtered_products" in research_results and research_results["filtered_products"]:
+        elif research_results.get("filtered_products") and research_results["filtered_products"]:
             products = research_results["filtered_products"]
-        # Then try raw_products
-        elif "raw_products" in research_results and research_results["raw_products"]:
+        elif research_results.get("raw_products") and research_results["raw_products"]:
             products = research_results["raw_products"]
-        # Finally try products
-        elif "products" in research_results and research_results["products"]:
-            products = research_results["products"]
 
     # Debug information
     print(f"\nNumber of products found: {len(products)}")
 
-    if products:
+    if best:
+        print("\nBest Match:")
+        print(f"Name: {best.get('name', best.get('title', ''))}")
+        print(f"Brand: {best.get('brand', '')}")
+        print(f"Price: {best.get('price', '')}")
+        print(f"Rating: {best.get('rating', '')}")
+    elif products:
         print("\nFound the following products:")
         print("\n{:<40} {:<10} {:<10} {:<20}".format(
             "Product", "Price", "Rating", "Brand"))
@@ -798,15 +600,6 @@ def main():
                 rating,
                 brand
             ))
-
-        # Display best match if available
-        if "best_match" in research_results and research_results["best_match"]:
-            best = research_results["best_match"]
-            print("\nBest Match:")
-            print(f"Name: {best.get('name', best.get('title', ''))}")
-            print(f"Brand: {best.get('brand', '')}")
-            print(f"Price: {best.get('price', '')}")
-            print(f"Rating: {best.get('rating', '')}")
     else:
         print("\nNo products found matching your criteria.")
 
@@ -816,7 +609,21 @@ def main():
             "\nWould you like to compare prices for these products? (y/n): ").lower()
         if compare_prices == 'y':
             print("\nComparing prices...")
-            price_results = shopper.run_price_comparison(products)
+            # Extract products from research results
+            if isinstance(research_results, dict):
+                if research_results.get("best_match"):
+                    products_to_compare = [research_results["best_match"]]
+                elif research_results.get("top_products"):
+                    products_to_compare = research_results["top_products"]
+                elif research_results.get("filtered_products"):
+                    products_to_compare = research_results["filtered_products"]
+                else:
+                    products_to_compare = research_results.get(
+                        "raw_products", [])
+            else:
+                products_to_compare = products
+
+            price_results = shopper.run_price_comparison(products_to_compare)
 
             if price_results:
                 print("\nPrice Comparison Results:")
