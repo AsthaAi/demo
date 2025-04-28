@@ -1,58 +1,53 @@
 {
   "raw_products": [
     {
-      "name": "iPhone SE (2nd Generation)",
+      "product_name": "iPhone SE (2020)",
       "price": 399.99,
       "rating": 5.0
     },
     {
-      "name": "iPhone 11",
+      "product_name": "iPhone 11 (Refurbished)",
       "price": 499.99,
       "rating": 5.0
     },
     {
-      "name": "iPhone 12 Mini",
-      "price": 699.99,
-      "rating": 5.0
+      "product_name": "iPhone XR (Refurbished)",
+      "price": 449.99,
+      "rating": 4.8
     },
     {
-      "name": "iPhone XR",
-      "price": 450.0,
-      "rating": 5.0
+      "product_name": "iPhone 8",
+      "price": 300.0,
+      "rating": 4.5
     }
   ],
   "filtered_products": [
     {
-      "name": "iPhone SE (2nd Generation)",
+      "product_name": "iPhone SE (2020)",
       "price": 399.99,
       "rating": 5.0
     },
     {
-      "name": "iPhone 11",
+      "product_name": "iPhone 11 (Refurbished)",
       "price": 499.99,
-      "rating": 5.0
-    },
-    {
-      "name": "iPhone XR",
-      "price": 450.0,
       "rating": 5.0
     }
   ],
   "top_products": [
     {
-      "name": "iPhone SE (2nd Generation)",
+      "product_name": "iPhone SE (2020)",
       "price": 399.99,
       "rating": 5.0
     },
     {
-      "name": "iPhone 11",
+      "product_name": "iPhone 11 (Refurbished)",
       "price": 499.99,
       "rating": 5.0
     }
   ],
   "best_match": {
-    "name": "iPhone 11",
-    "price": 499.99,
+    "product_name": "iPhone SE (2020)",
+    "price": 399.99,
     "rating": 5.0
   }
 }

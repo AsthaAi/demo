@@ -13,6 +13,10 @@ import asyncio
 import uuid
 import datetime
 import logging
+import requests
+from base64 import b64encode
+from tools.payment_tool import PayPalPaymentTool
+import json
 
 # Import PayPal toolkit
 try:
@@ -48,6 +52,8 @@ class PayPalAgent(Agent):
         default=None, exclude=True)
     aztp_id: str = Field(default="", exclude=True)
     paypal_toolkit: Optional[Any] = Field(default=None, exclude=True)
+    payment_tool: PayPalPaymentTool = Field(
+        default_factory=PayPalPaymentTool, exclude=True)
 
     def __init__(self):
         """Initialize the PayPal agent with necessary tools"""
@@ -66,8 +72,10 @@ class PayPalAgent(Agent):
         if PAYPAL_AVAILABLE:
             try:
                 self.paypal_toolkit = PayPalToolkit(
-                    client_id=os.getenv("PAYPAL_CLIENT_ID"),
-                    secret=os.getenv("PAYPAL_SECRET"),
+                    client_id=os.getenv(
+                        "PAYPAL_CLIENT_ID", "AfS3ByWWWrF4ZQlGYHQxXQ9nVzXZu5Js5wOs0qXBb_Cta6iVVyTDkqH2D2f970dubOUOofFrGC6DR0R4"),
+                    secret=os.getenv(
+                        "PAYPAL_SECRET", "EKuCuoppyKuLbTq25joW6T5Mn8IAU_kJ46PEQc85sR351Z2S_xFwAoJIlZx22O1gx91n8CysiszzzgZU"),
                     configuration=Configuration(
                         actions={
                             "orders": {
@@ -114,6 +122,9 @@ class PayPalAgent(Agent):
         # Run the async initialization
         asyncio.run(self._initialize_identity())
 
+        if not hasattr(self, 'payment_tool') or self.payment_tool is None:
+            self.payment_tool = PayPalPaymentTool()
+
     async def _initialize_identity(self):
         """Initialize the agent's identity asynchronously"""
         print(f"1. Issuing identity for agent: PayPal Agent")
@@ -140,105 +151,121 @@ class PayPalAgent(Agent):
             raise ValueError(
                 "Failed to verify identity for agent: PayPal Agent")
 
-    def _generate_transaction_id(self) -> str:
-        """
-        Generate a unique transaction ID
+    def _log_payment_detail(self, data):
+        # Always use the project root (shopping) for paymentdetail.json
+        project_root = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__)))
+        payment_json_path = os.path.join(project_root, 'paymentdetail.json')
+        # Read existing data
+        if os.path.exists(payment_json_path):
+            try:
+                with open(payment_json_path, 'r') as f:
+                    content = f.read().strip()
+                    existing = json.loads(content) if content else []
+            except Exception:
+                existing = []
+        else:
+            existing = []
+        # Append new data
+        existing.append(data)
+        # Write back
+        with open(payment_json_path, 'w') as f:
+            json.dump(existing, f, indent=2)
 
-        Returns:
-            A unique transaction ID string
-        """
-        # Generate a UUID and take the first 8 characters
-        transaction_id = str(uuid.uuid4())[:8].upper()
-        # Add a timestamp component for additional uniqueness
-        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M")
-        return f"PAY-{transaction_id}-{timestamp}"
+    def create_payment_order(self, amount, currency="USD", description="", payee_email=None):
+        access_token = self.payment_tool.get_access_token()
+        order_response = self.payment_tool.create_order(
+            access_token, amount, currency, description, payee_email)
+        approval_url = None
+        for link in order_response.get('links', []):
+            if link.get('rel') == 'approve':
+                approval_url = link.get('href')
+                break
+        result = {
+            'paypal_order_id': order_response.get('id'),
+            'approval_url': approval_url,
+            'raw_response': order_response
+        }
+        self._log_payment_detail({'action': 'create_order', **result})
+        return result
 
-    def create_payment_order(self, amount: str, currency: str = "USD", description: str = "") -> Dict[str, Any]:
+    def capture_payment(self, order_id):
+        access_token = self.payment_tool.get_access_token()
+        capture_response = self.payment_tool.capture_payment(
+            access_token, order_id)
+        result = {
+            'capture_result': capture_response,
+            'paypal_order_id': order_id
+        }
+        self._log_payment_detail({'action': 'capture_payment', **result})
+        return result
+
+    def display_payment_success(self, capture_result: Dict[str, Any], order_details: Dict[str, Any]) -> None:
         """
-        Create a new PayPal order
+        Display a formatted payment success message
 
         Args:
-            amount: The amount to charge
-            currency: The currency code (default: USD)
-            description: Description of the order
-
-        Returns:
-            Order details including ID and status
+            capture_result: The result of the payment capture
+            order_details: The details of the order
         """
-        if not self.paypal_toolkit:
-            logger.error("PayPal toolkit not available")
-            return {
-                "error": "PayPal toolkit not available",
-                "transaction_id": self._generate_transaction_id(),
-                "status": "Failed"
-            }
+        if not capture_result or not order_details:
+            logger.warning(
+                "Cannot display payment success: Missing capture result or order details")
+            return
 
-        try:
-            # Extract numeric amount from string (e.g., "$99.99" -> "99.99")
-            numeric_amount = amount.replace("$", "").strip()
+        # Extract relevant information
+        order_id = capture_result.get('id', 'Unknown')
+        status = capture_result.get('status', 'Unknown')
 
-            # Create order using PayPal toolkit
-            result = self.paypal_toolkit.create_order(
-                amount=numeric_amount,
-                currency=currency,
-                description=description
-            )
+        # Get purchase unit details
+        purchase_units = capture_result.get('purchase_units', [])
+        if not purchase_units:
+            logger.warning(
+                "Cannot display payment success: No purchase units found")
+            return
 
-            logger.info(f"Created PayPal order: {result}")
-            return {
-                "transaction_id": self._generate_transaction_id(),
-                "paypal_order_id": result.get("id", ""),
-                "status": "Created",
-                "amount": amount,
-                "currency": currency,
-                "description": description
-            }
-        except Exception as e:
-            logger.error(f"Error creating PayPal order: {str(e)}")
-            return {
-                "error": str(e),
-                "transaction_id": self._generate_transaction_id(),
-                "status": "Failed"
-            }
+        purchase_unit = purchase_units[0]
+        amount = purchase_unit.get('amount', {})
+        currency = amount.get('currency_code', 'USD')
+        value = amount.get('value', '0.00')
 
-    def capture_payment(self, order_id: str) -> Dict[str, Any]:
-        """
-        Capture payment for an authorized order
+        # Get payment source details
+        payment_source = capture_result.get('payment_source', {})
+        card_details = payment_source.get('card', {})
+        last_digits = card_details.get('last_digits', '****')
 
-        Args:
-            order_id: The PayPal order ID
+        # Get current date
+        current_date = datetime.datetime.now().strftime("%B %d, %Y")
 
-        Returns:
-            Payment capture details
-        """
-        if not self.paypal_toolkit:
-            logger.error("PayPal toolkit not available")
-            return {
-                "error": "PayPal toolkit not available",
-                "transaction_id": self._generate_transaction_id(),
-                "status": "Failed"
-            }
+        # Get product details from order details
+        product_name = "Unknown Product"
+        if purchase_unit.get('description'):
+            product_name = purchase_unit.get('description')
 
-        try:
-            # Capture payment using PayPal toolkit
-            result = self.paypal_toolkit.capture_order(order_id)
+        # Display formatted message
+        success_message = f"""
+==================================================
+Payment processed successfully!
+==================================================
+Order details: **Payment Capture Confirmation**
 
-            logger.info(f"Captured PayPal payment: {result}")
-            return {
-                "transaction_id": self._generate_transaction_id(),
-                "paypal_order_id": order_id,
-                "status": "Completed",
-                "capture_id": result.get("id", ""),
-                "amount": result.get("amount", {}).get("value", ""),
-                "currency": result.get("amount", {}).get("currency_code", "")
-            }
-        except Exception as e:
-            logger.error(f"Error capturing PayPal payment: {str(e)}")
-            return {
-                "error": str(e),
-                "transaction_id": self._generate_transaction_id(),
-                "status": "Failed"
-            }
+We are pleased to inform you that your payment has been successfully captured. Below are the transaction details:
+
+- **Order ID:** {order_id}
+- **Product Name:** {product_name}
+- **Price:** ${value} {currency}
+- **Quantity:** 1
+- **Total Amount:** ${value} {currency}
+
+**Transaction Details:**
+- **Transaction ID:** {order_id}
+- **Order Status:** {status}
+- **Payment Method:** Credit Card (ending in {last_digits})
+- **Transaction Date:** {current_date}
+==================================================
+"""
+        logger.info(success_message)
+        return success_message
 
     def get_order_details(self, order_id: str) -> Dict[str, Any]:
         """
@@ -254,7 +281,6 @@ class PayPalAgent(Agent):
             logger.error("PayPal toolkit not available")
             return {
                 "error": "PayPal toolkit not available",
-                "transaction_id": self._generate_transaction_id(),
                 "status": "Failed"
             }
 
@@ -264,8 +290,8 @@ class PayPalAgent(Agent):
 
             logger.info(f"Retrieved PayPal order details: {result}")
             return {
-                "transaction_id": self._generate_transaction_id(),
                 "paypal_order_id": order_id,
+                "transaction_id": result.get("id", order_id),
                 "status": result.get("status", ""),
                 "amount": result.get("amount", {}).get("value", ""),
                 "currency": result.get("amount", {}).get("currency_code", ""),
@@ -276,7 +302,6 @@ class PayPalAgent(Agent):
             logger.error(f"Error getting PayPal order details: {str(e)}")
             return {
                 "error": str(e),
-                "transaction_id": self._generate_transaction_id(),
                 "status": "Failed"
             }
 
@@ -296,7 +321,6 @@ class PayPalAgent(Agent):
             logger.error("PayPal toolkit not available")
             return {
                 "error": "PayPal toolkit not available",
-                "transaction_id": self._generate_transaction_id(),
                 "status": "Failed"
             }
 
@@ -313,7 +337,6 @@ class PayPalAgent(Agent):
 
             logger.info(f"Created PayPal invoice: {result}")
             return {
-                "transaction_id": self._generate_transaction_id(),
                 "invoice_id": result.get("id", ""),
                 "status": "Created",
                 "customer_email": customer_email,
@@ -324,6 +347,110 @@ class PayPalAgent(Agent):
             logger.error(f"Error creating PayPal invoice: {str(e)}")
             return {
                 "error": str(e),
-                "transaction_id": self._generate_transaction_id(),
                 "status": "Failed"
             }
+
+    def get_access_token_direct(self):
+        client_id = os.getenv("PAYPAL_CLIENT_ID")
+        client_secret = os.getenv("PAYPAL_SECRET")
+        auth = b64encode(f"{client_id}:{client_secret}".encode(
+            'utf-8')).decode('utf-8')
+        url = "https://api-m.sandbox.paypal.com/v1/oauth2/token"
+        headers = {
+            "Authorization": f"Basic {auth}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {"grant_type": "client_credentials"}
+        response = requests.post(url, headers=headers, data=data)
+        if response.status_code == 200:
+            return response.json()["access_token"]
+        else:
+            raise Exception(f"Failed to get access token: {response.text}")
+
+    def create_order_direct(self, access_token, amount, currency="USD", description="Test Product", payee_email=None):
+        url = "https://api-m.sandbox.paypal.com/v2/checkout/orders"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        purchase_unit = {
+            "amount": {
+                "currency_code": currency,
+                "value": amount
+            },
+            "description": description
+        }
+        if payee_email:
+            purchase_unit["payee"] = {"email_address": payee_email}
+        order_data = {
+            "intent": "CAPTURE",
+            "purchase_units": [purchase_unit],
+            "application_context": {
+                "return_url": "https://example.com/success",
+                "cancel_url": "https://example.com/cancel",
+                "shipping_preference": "NO_SHIPPING"
+            }
+        }
+        response = requests.post(url, headers=headers, json=order_data)
+        if response.status_code == 201:
+            return response.json()
+        else:
+            raise Exception(f"Failed to create order: {response.text}")
+
+    def get_order_details_direct(self, access_token, order_id):
+        url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f"Failed to get order details: {response.text}")
+
+    def capture_payment_direct(self, access_token, order_id):
+        url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}/capture"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        response = requests.post(url, headers=headers)
+        if response.status_code == 201:
+            return response.json()
+        else:
+            raise Exception(f"Failed to capture payment: {response.text}")
+
+    def display_payment_success_direct(self, capture_result, order_details):
+        if not capture_result or not order_details:
+            return
+        order_id = capture_result.get('id', 'Unknown')
+        status = capture_result.get('status', 'Unknown')
+        purchase_units = capture_result.get('purchase_units', [])
+        if not purchase_units:
+            return
+        purchase_unit = purchase_units[0]
+        amount = purchase_unit.get('amount', {})
+        currency = amount.get('currency_code', 'USD')
+        value = amount.get('value', '0.00')
+        payment_source = capture_result.get('payment_source', {})
+        card_details = payment_source.get('card', {})
+        last_digits = card_details.get('last_digits', '****')
+        current_date = datetime.datetime.now().strftime("%B %d, %Y")
+        product_name = purchase_unit.get('description', 'Test Product')
+        print("\n" + "="*50)
+        print("Payment processed successfully!")
+        print("="*50)
+        print("Order details: **Payment Capture Confirmation**\n")
+        print("We are pleased to inform you that your payment has been successfully captured. Below are the transaction details:\n")
+        print(f"- **Order ID:** {order_id}")
+        print(f"- **Product Name:** {product_name}")
+        print(f"- **Price:** ${value} {currency}")
+        print(f"- **Quantity:** 1")
+        print(f"- **Total Amount:** ${value} {currency}\n")
+        print("**Transaction Details:**")
+        print(f"- **Transaction ID:** {order_id}")
+        print(f"- **Order Status:** {status}")
+        print(f"- **Payment Method:** Credit Card (ending in {last_digits})")
+        print(f"- **Transaction Date:** {current_date}")
+        print("="*50)

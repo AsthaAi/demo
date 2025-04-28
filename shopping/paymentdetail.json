@@ -1,0 +1,33 @@
+[
+  {
+    "action": "create_order",
+    "paypal_order_id": "5CY82854G93512726",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=5CY82854G93512726",
+    "raw_response": {
+      "id": "5CY82854G93512726",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5CY82854G93512726",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=5CY82854G93512726",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5CY82854G93512726",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5CY82854G93512726/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ]
+    }
+  }
+]

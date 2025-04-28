@@ -490,11 +490,14 @@ Do not return any explanation or summary, only the JSON object.""",
             - Amount: {product_details.get('price')}
             - Customer Email: {customer_email}
             - Description: Order for {product_details.get('name')}
+            - Checkout URL Template: https://www.sandbox.paypal.com/checkoutnow?token={{orderId}}
             
             Use the create_payment_order method to create a PayPal order.
+            The order should be processed using the sandbox environment for testing.
+            Replace {{orderId}} in the checkout URL with the actual order ID returned from PayPal.
             """,
             agent=paypal_agent,
-            expected_output="PayPal order details with order ID"
+            expected_output="PayPal order details with order ID and checkout URL"
         )
 
         # Capture payment task
@@ -502,6 +505,7 @@ Do not return any explanation or summary, only the JSON object.""",
             description=f"""
             Capture the payment for the created PayPal order.
             Use the capture_payment method to finalize the payment.
+            The capture_payment method will automatically display a formatted payment success message.
             Provide the payment confirmation details.
             """,
             agent=paypal_agent,
@@ -516,7 +520,80 @@ Do not return any explanation or summary, only the JSON object.""",
         )
 
         result = crew.kickoff()
+
+        # Directly call PayPalAgent methods to ensure paymentdetail.json is updated
+        order_data = paypal_agent.create_payment_order(
+            amount=product_details['price'],
+            currency="USD",
+            description=product_details.get('description', ''),
+            payee_email=customer_email
+        )
+        print("\n[Direct PayPalAgent.create_payment_order]")
+        print(json.dumps(order_data, indent=2))
+        if order_data.get('paypal_order_id'):
+            capture_data = paypal_agent.capture_payment(
+                order_data['paypal_order_id'])
+            print("\n[Direct PayPalAgent.capture_payment]")
+            print(json.dumps(capture_data, indent=2))
+
+        # Only show real PayPal order ID and approval URL
+        if isinstance(result, dict):
+            paypal_order_id = result.get("paypal_order_id")
+            approval_url = result.get("approval_url")
+            capture_result = result.get("capture_result")
+            if paypal_order_id:
+                print(f"Order ID: {paypal_order_id}")
+            if approval_url:
+                print(
+                    f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
+                print("\nInstructions:")
+                print(
+                    "1. Open the above URL in your browser.")
+                print(
+                    "2. Log in with your PayPal sandbox buyer account.")
+                print(
+                    "3. Approve the payment to complete your order.")
+            if capture_result:
+                if 'status' in capture_result and capture_result['status'] == 'COMPLETED':
+                    print(
+                        "\nPayment captured successfully!")
+                    print(
+                        f"Transaction ID: {capture_result.get('id')}")
+                    print(
+                        f"Status: {capture_result.get('status')}")
+                    print(
+                        f"Amount: {capture_result.get('purchase_units', [{}])[0].get('amount', {}).get('value', '')} {capture_result.get('purchase_units', [{}])[0].get('amount', {}).get('currency_code', '')}")
+                else:
+                    print(
+                        "\nPayment failed or not completed.")
+                    print(capture_result)
+        else:
+            print(f"Order details: {result}")
+
         return result
+
+
+def read_latest_payment_detail():
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    payment_json_path = os.path.join(project_root, 'paymentdetail.json')
+    if not os.path.exists(payment_json_path):
+        print("No payment details recorded yet.")
+        return
+    try:
+        with open(payment_json_path, 'r') as f:
+            content = f.read().strip()
+            if not content:
+                print("No payment details recorded yet.")
+                return
+            data = json.loads(content)
+            if not data:
+                print("No payment details recorded yet.")
+                return
+            latest = data[-1]
+            print("\n[Latest PayPal Payment Detail]")
+            print(json.dumps(latest, indent=2))
+    except Exception as e:
+        print(f"Error reading paymentdetail.json: {e}")
 
 
 def main():
@@ -661,8 +738,42 @@ def main():
                                 payment_result = shopper.process_order_with_payment(
                                     product_details, customer_email)
 
-                                print("\nPayment processed successfully!")
-                                print(f"Order details: {payment_result}")
+                                # Only show real PayPal order ID and approval URL
+                                if isinstance(payment_result, dict):
+                                    paypal_order_id = payment_result.get(
+                                        "paypal_order_id")
+                                    approval_url = payment_result.get(
+                                        "approval_url")
+                                    capture_result = payment_result.get(
+                                        "capture_result")
+                                    if paypal_order_id:
+                                        print(f"Order ID: {paypal_order_id}")
+                                    if approval_url:
+                                        print(
+                                            f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
+                                        print("\nInstructions:")
+                                        print(
+                                            "1. Open the above URL in your browser.")
+                                        print(
+                                            "2. Log in with your PayPal sandbox buyer account.")
+                                        print(
+                                            "3. Approve the payment to complete your order.")
+                                    if capture_result:
+                                        if 'status' in capture_result and capture_result['status'] == 'COMPLETED':
+                                            print(
+                                                "\nPayment captured successfully!")
+                                            print(
+                                                f"Transaction ID: {capture_result.get('id')}")
+                                            print(
+                                                f"Status: {capture_result.get('status')}")
+                                            print(
+                                                f"Amount: {capture_result.get('purchase_units', [{}])[0].get('amount', {}).get('value', '')} {capture_result.get('purchase_units', [{}])[0].get('amount', {}).get('currency_code', '')}")
+                                        else:
+                                            print(
+                                                "\nPayment failed or not completed.")
+                                            print(capture_result)
+                                else:
+                                    print(f"Order details: {payment_result}")
                             except Exception as e:
                                 print(f"\nError processing payment: {str(e)}")
                     else:
@@ -671,6 +782,9 @@ def main():
                     print("Price comparison results are in an unexpected format.")
             else:
                 print("\nUnable to compare prices at this time.")
+
+    # After payment processing
+    read_latest_payment_detail()
 
     print("\nThank you for using ShopperAI!")
 

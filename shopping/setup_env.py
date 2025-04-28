@@ -16,6 +16,11 @@ def setup_env():
     # Get the SERPAPI API key from the user
     serpapi_api_key = input("Enter your SERPAPI API key: ")
 
+    # Get the PayPal credentials from the user
+    print("\nPayPal Sandbox Credentials (Get these from https://developer.paypal.com/dashboard/)")
+    paypal_client_id = input("Enter your PayPal Client ID: ")
+    paypal_secret = input("Enter your PayPal Secret: ")
+
     # Create .env file
     env_path = Path(__file__).parent / ".env"
 
@@ -25,6 +30,10 @@ def setup_env():
         f.write(f"\n")
         f.write(f"# SERPAPI API Key\n")
         f.write(f"SERPAPI_API_KEY={serpapi_api_key}\n")
+        f.write(f"\n")
+        f.write(f"# PayPal Credentials\n")
+        f.write(f"PAYPAL_CLIENT_ID={paypal_client_id}\n")
+        f.write(f"PAYPAL_SECRET={paypal_secret}\n")
         f.write(f"\n")
         f.write(f"# Other environment variables\n")
         f.write(f"# Add any other environment variables your application needs here\n")
