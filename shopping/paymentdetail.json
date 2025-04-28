@@ -29,5 +29,36 @@
         }
       ]
     }
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "6DD448875K823240D",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=6DD448875K823240D",
+    "raw_response": {
+      "id": "6DD448875K823240D",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6DD448875K823240D",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=6DD448875K823240D",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6DD448875K823240D",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6DD448875K823240D/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ]
+    }
   }
 ]
