@@ -44,6 +44,8 @@ ShopperAI is an intelligent shopping assistant that helps users find and analyze
      - Comprehensive error handling
      - Transaction logging
      - Secure credential management
+     - Order status verification before capture
+     - Improved user guidance for payment approval
 
 4. **Search Tools**
 
@@ -67,6 +69,7 @@ shopping/
 │   └── tasks/                    # Additional task implementations
 ├── tools/
 │   ├── search_tools.py          # Search and analysis tools
+│   ├── payment_tool.py          # PayPal payment tool implementation
 │   └── price_tools.py           # Price analysis tools
 ├── examples/
 │   └── paypal_integration_example.py # Example of PayPal integration
@@ -184,10 +187,41 @@ class PayPalAgent(Agent):
 
 Key methods:
 
-- `create_payment_order(amount, currency, description)`: Creates a new PayPal order
-- `capture_payment(order_id)`: Captures payment for an authorized order
+- `create_payment_order(amount, currency, description, payee_email)`: Creates a new PayPal order with payee email
+- `capture_payment(order_id)`: Captures payment for an authorized order with status verification
 - `get_order_details(order_id)`: Retrieves order information
 - `create_invoice(customer_email, amount, items)`: Generates PayPal invoices
+- `_log_payment_detail(data)`: Logs payment details to a JSON file for tracking
+
+### PayPalPaymentTool
+
+The PayPalPaymentTool class provides low-level access to PayPal's API:
+
+```python
+class PayPalPaymentTool:
+    def get_access_token(self):
+        # Get OAuth access token from PayPal
+        # ...
+
+    def create_order(self, access_token, amount, currency="USD", description="Test Product", payee_email=None):
+        # Create a PayPal order with optional payee email
+        # ...
+
+    def get_order_status(self, access_token, order_id):
+        # Get the current status of a PayPal order
+        # ...
+
+    def capture_payment(self, access_token, order_id):
+        # Capture payment for an approved order with status verification
+        # ...
+```
+
+Key features:
+
+- Proper handling of payee email in order creation
+- Order status verification before capture attempts
+- Comprehensive error handling for payment capture
+- Detailed logging of payment operations
 
 ### Payment Processing Flow
 
@@ -198,19 +232,26 @@ The payment processing flow has been enhanced to include a complete order lifecy
    - User selects a product
    - Order details are captured
    - Order ID is generated
+   - Payee email is included in the order
 
-2. **Payment Processing**
+2. **Payment Approval**
 
-   - PayPal order is created
-   - Payment is captured
+   - User is presented with PayPal approval URL
+   - User approves the payment in PayPal interface
+   - Order status changes to "APPROVED"
+
+3. **Payment Processing**
+
+   - System verifies order status before capture
+   - Payment is captured only if order is approved
    - Transaction ID is generated
-   - Order status is updated
+   - Order status is updated to "COMPLETED"
 
-3. **Confirmation**
+4. **Confirmation**
    - Payment status is verified
    - Order status is confirmed
-   - Confirmation email is sent
    - Transaction details are provided
+   - Payment details are logged
 
 Example payment confirmation:
 
@@ -233,7 +274,7 @@ Transaction Details:
 
 #### Enhanced Payment Processing
 
-The system now includes a complete payment processing flow:
+The system now includes a complete payment processing flow with improved error handling:
 
 ```python
 def process_order_with_payment(product_details: dict, customer_email: str):
@@ -270,6 +311,122 @@ def process_order_with_payment(product_details: dict, customer_email: str):
     )
 
     result = crew.kickoff()
+
+    # Directly call PayPalAgent methods to ensure paymentdetail.json is updated
+    order_data = paypal_agent.create_payment_order(
+        amount=product_details['price'],
+        currency="USD",
+        description=product_details.get('description', ''),
+        payee_email=customer_email
+    )
+
+    # Get the approval URL
+    approval_url = order_data.get('approval_url')
+    if approval_url:
+        print(f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
+        print("\nInstructions:")
+        print("1. Open the above URL in your browser.")
+        print("2. Log in with your PayPal sandbox buyer account.")
+        print("3. Approve the payment to complete your order.")
+        print("\nAfter approval, the payment will be captured automatically.")
+
+        # Ask if user wants to proceed with capture now or later
+        capture_now = input("\nDo you want to capture the payment now? (y/n): ").lower()
+        if capture_now == 'y':
+            if order_data.get('paypal_order_id'):
+                capture_data = paypal_agent.capture_payment(
+                    order_data['paypal_order_id'])
+
+                # Check if there was an error with the capture
+                if isinstance(capture_data, dict) and "error" in capture_data:
+                    print("\nPayment capture failed. The order may need to be approved first.")
+                    print(f"Error: {capture_data.get('error')}")
+                    print(f"Status: {capture_data.get('status')}")
+                else:
+                    print("\nPayment captured successfully!")
+        else:
+            print("\nPayment will need to be captured after approval.")
+    else:
+        print("\nNo approval URL found. Cannot proceed with payment.")
+
+    return result
+```
+
+#### Order Status Verification
+
+The system now includes order status verification before attempting to capture payments:
+
+```python
+def capture_payment(self, access_token, order_id):
+    # First check the order status
+    order_details = self.get_order_status(access_token, order_id)
+    status = order_details.get('status')
+
+    if status != 'APPROVED':
+        print(f"[PayPalPaymentTool] Cannot capture payment: Order status is {status}, not APPROVED")
+        print(f"[PayPalPaymentTool] Please approve the order first using the approval URL")
+        return {"error": f"Order status is {status}, not APPROVED", "status": status}
+
+    # Proceed with capture if order is approved
+    url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}/capture"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, headers=headers)
+    response.raise_for_status()
+    capture_response = response.json()
+    print(f"[PayPalPaymentTool] Capture payment response: {capture_response}")
+    return capture_response
+```
+
+#### Improved Error Handling
+
+The PayPalAgent now includes enhanced error handling for payment capture:
+
+```python
+def capture_payment(self, order_id):
+    access_token = self.payment_tool.get_access_token()
+    capture_response = self.payment_tool.capture_payment(
+        access_token, order_id)
+
+    # Check if there was an error with the capture
+    if isinstance(capture_response, dict) and "error" in capture_response:
+        error_message = capture_response.get("error", "Unknown error")
+        status = capture_response.get("status", "Unknown")
+
+        # Get the approval URL from paymentdetail.json
+        approval_url = None
+        try:
+            with open('shopping/paymentdetail.json', 'r') as f:
+                payment_details = json.load(f)
+                for detail in payment_details:
+                    if detail.get('paypal_order_id') == order_id:
+                        approval_url = detail.get('approval_url')
+                        break
+        except Exception as e:
+            print(f"Error reading payment details: {str(e)}")
+
+        result = {
+            'error': error_message,
+            'status': status,
+            'paypal_order_id': order_id
+        }
+
+        if approval_url:
+            result['approval_url'] = approval_url
+            print(f"\nOrder needs to be approved first. Please use this URL to approve the payment:")
+            print(f"{approval_url}")
+            print("\nAfter approval, try capturing the payment again.")
+
+        self._log_payment_detail({'action': 'capture_payment_error', **result})
+        return result
+
+    result = {
+        'capture_result': capture_response,
+        'paypal_order_id': order_id
+    }
+    self._log_payment_detail({'action': 'capture_payment', **result})
     return result
 ```
 
@@ -297,6 +454,8 @@ The price comparison results now follow a standardized structure:
 - Better handling of missing or invalid fields
 - Clear error messages for various scenarios
 - Fallback to sample data when needed
+- Order status verification before payment capture
+- User-friendly guidance for payment approval
 
 #### Display Improvements
 
@@ -325,6 +484,7 @@ The system now includes improved file handling and data persistence:
 2. **Data Persistence**
 
    - Products are saved in a structured JSON format
+   - Payment details are logged to paymentdetail.json
    - Data can be loaded and reused between sessions
    - Automatic file creation if not exists
    - Backup mechanisms for data integrity
@@ -465,6 +625,19 @@ y
 
 Please enter your email for payment:
 customer@example.com
+
+Please complete your payment at the following PayPal URL:
+https://www.sandbox.paypal.com/checkoutnow?token=XXXXX
+
+Instructions:
+1. Open the above URL in your browser.
+2. Log in with your PayPal sandbox buyer account.
+3. Approve the payment to complete your order.
+
+After approval, the payment will be captured automatically.
+
+Do you want to capture the payment now? (y/n):
+y
 ```
 
 ### PayPal Integration Example
@@ -507,6 +680,8 @@ except Exception as e:
    - Subscription management
    - Refund processing
    - Dispute handling
+   - Automatic payment capture after approval
+   - Webhook integration for payment status updates
 
 ## Troubleshooting
 
@@ -534,6 +709,8 @@ except Exception as e:
    - API rate limits: Implement retry logic
    - Payment capture issues: Verify order status before capture
    - Transaction verification: Check PayPal sandbox dashboard
+   - 422 Unprocessable Entity error: Ensure order is approved before capture
+   - Missing payee email: Verify payee email is included in order creation
 
 ### Error Messages
 
@@ -543,6 +720,8 @@ except Exception as e:
 - "PayPal API error": Check credentials and API status
 - "Payment capture failed": Verify order status and amount
 - "Transaction verification failed": Check PayPal sandbox logs
+- "Order status is CREATED, not APPROVED": Order needs to be approved before capture
+- "422 Client Error: Unprocessable Entity": Order is not in the correct state for capture
 
 ## Contributing
 

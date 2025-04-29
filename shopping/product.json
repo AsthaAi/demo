@@ -1,86 +1,53 @@
 {
   "raw_products": [
     {
-      "id": 1,
-      "model": "iPhone 11",
-      "price": 599.99,
-      "rating": 4.5
-    },
-    {
-      "id": 2,
-      "model": "iPhone SE (2nd Gen)",
+      "name": "iPhone SE (2020)",
       "price": 399.99,
-      "rating": 4.6
+      "rating": 5.0
     },
     {
-      "id": 3,
-      "model": "iPhone 12 Mini",
-      "price": 599.0,
-      "rating": 4.4
+      "name": "iPhone 11 (Refurbished)",
+      "price": 599.99,
+      "rating": 5.0
     },
     {
-      "id": 4,
-      "model": "iPhone 13",
-      "price": 699.99,
-      "rating": 4.7
+      "name": "iPhone 12 Mini",
+      "price": 649.99,
+      "rating": 4.8
     },
     {
-      "id": 5,
-      "model": "iPhone XR",
+      "name": "iPhone XR (Refurbished)",
       "price": 499.99,
-      "rating": 4.3
+      "rating": 4.9
     }
   ],
   "filtered_products": [
     {
-      "id": 1,
-      "model": "iPhone 11",
-      "price": 599.99,
-      "rating": 4.5
-    },
-    {
-      "id": 2,
-      "model": "iPhone SE (2nd Gen)",
+      "name": "iPhone SE (2020)",
       "price": 399.99,
-      "rating": 4.6
+      "rating": 5.0
     },
     {
-      "id": 3,
-      "model": "iPhone 12 Mini",
-      "price": 599.0,
-      "rating": 4.4
-    },
-    {
-      "id": 5,
-      "model": "iPhone XR",
-      "price": 499.99,
-      "rating": 4.3
+      "name": "iPhone 11 (Refurbished)",
+      "price": 599.99,
+      "rating": 5.0
     }
   ],
   "top_products": [
     {
-      "id": 1,
-      "model": "iPhone 11",
-      "price": 599.99,
-      "rating": 4.5
-    },
-    {
-      "id": 2,
-      "model": "iPhone SE (2nd Gen)",
+      "name": "iPhone SE (2020)",
       "price": 399.99,
-      "rating": 4.6
+      "rating": 5.0
     },
     {
-      "id": 3,
-      "model": "iPhone 12 Mini",
-      "price": 599.0,
-      "rating": 4.4
+      "name": "iPhone 11 (Refurbished)",
+      "price": 599.99,
+      "rating": 5.0
     }
   ],
   "best_match": {
-    "id": 2,
-    "model": "iPhone SE (2nd Gen)",
+    "name": "iPhone SE (2020)",
     "price": 399.99,
-    "rating": 4.6
+    "rating": 5.0
   }
 }

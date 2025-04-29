@@ -52,7 +52,32 @@ class PayPalPaymentTool:
                 print(f"[PayPalPaymentTool] Approval URL: {link.get('href')}")
         return order_response
 
+    def get_order_status(self, access_token, order_id):
+        """Get the current status of a PayPal order"""
+        url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        order_details = response.json()
+        print(
+            f"[PayPalPaymentTool] Order status: {order_details.get('status')}")
+        return order_details
+
     def capture_payment(self, access_token, order_id):
+        # First check the order status
+        order_details = self.get_order_status(access_token, order_id)
+        status = order_details.get('status')
+
+        if status != 'APPROVED':
+            print(
+                f"[PayPalPaymentTool] Cannot capture payment: Order status is {status}, not APPROVED")
+            print(
+                f"[PayPalPaymentTool] Please approve the order first using the approval URL")
+            return {"error": f"Order status is {status}, not APPROVED", "status": status}
+
         url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}/capture"
         headers = {
             "Authorization": f"Bearer {access_token}",

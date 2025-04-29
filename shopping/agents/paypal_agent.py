@@ -193,6 +193,41 @@ class PayPalAgent(Agent):
         access_token = self.payment_tool.get_access_token()
         capture_response = self.payment_tool.capture_payment(
             access_token, order_id)
+
+        # Check if there was an error with the capture
+        if isinstance(capture_response, dict) and "error" in capture_response:
+            error_message = capture_response.get("error", "Unknown error")
+            status = capture_response.get("status", "Unknown")
+
+            # Get the approval URL from paymentdetail.json
+            approval_url = None
+            try:
+                with open('shopping/paymentdetail.json', 'r') as f:
+                    payment_details = json.load(f)
+                    for detail in payment_details:
+                        if detail.get('paypal_order_id') == order_id:
+                            approval_url = detail.get('approval_url')
+                            break
+            except Exception as e:
+                print(f"Error reading payment details: {str(e)}")
+
+            result = {
+                'error': error_message,
+                'status': status,
+                'paypal_order_id': order_id
+            }
+
+            if approval_url:
+                result['approval_url'] = approval_url
+                print(
+                    f"\nOrder needs to be approved first. Please use this URL to approve the payment:")
+                print(f"{approval_url}")
+                print("\nAfter approval, try capturing the payment again.")
+
+            self._log_payment_detail(
+                {'action': 'capture_payment_error', **result})
+            return result
+
         result = {
             'capture_result': capture_response,
             'paypal_order_id': order_id

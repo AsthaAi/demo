@@ -60,5 +60,67 @@
         }
       ]
     }
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "6BN6623552410223E",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=6BN6623552410223E",
+    "raw_response": {
+      "id": "6BN6623552410223E",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6BN6623552410223E",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=6BN6623552410223E",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6BN6623552410223E",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6BN6623552410223E/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ]
+    }
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "3XH61350DK174532J",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=3XH61350DK174532J",
+    "raw_response": {
+      "id": "3XH61350DK174532J",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3XH61350DK174532J",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=3XH61350DK174532J",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3XH61350DK174532J",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3XH61350DK174532J/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ]
+    }
   }
 ]

@@ -530,45 +530,40 @@ Do not return any explanation or summary, only the JSON object.""",
         )
         print("\n[Direct PayPalAgent.create_payment_order]")
         print(json.dumps(order_data, indent=2))
-        if order_data.get('paypal_order_id'):
-            capture_data = paypal_agent.capture_payment(
-                order_data['paypal_order_id'])
-            print("\n[Direct PayPalAgent.capture_payment]")
-            print(json.dumps(capture_data, indent=2))
 
-        # Only show real PayPal order ID and approval URL
-        if isinstance(result, dict):
-            paypal_order_id = result.get("paypal_order_id")
-            approval_url = result.get("approval_url")
-            capture_result = result.get("capture_result")
-            if paypal_order_id:
-                print(f"Order ID: {paypal_order_id}")
-            if approval_url:
-                print(
-                    f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
-                print("\nInstructions:")
-                print(
-                    "1. Open the above URL in your browser.")
-                print(
-                    "2. Log in with your PayPal sandbox buyer account.")
-                print(
-                    "3. Approve the payment to complete your order.")
-            if capture_result:
-                if 'status' in capture_result and capture_result['status'] == 'COMPLETED':
-                    print(
-                        "\nPayment captured successfully!")
-                    print(
-                        f"Transaction ID: {capture_result.get('id')}")
-                    print(
-                        f"Status: {capture_result.get('status')}")
-                    print(
-                        f"Amount: {capture_result.get('purchase_units', [{}])[0].get('amount', {}).get('value', '')} {capture_result.get('purchase_units', [{}])[0].get('amount', {}).get('currency_code', '')}")
-                else:
-                    print(
-                        "\nPayment failed or not completed.")
-                    print(capture_result)
+        # Get the approval URL
+        approval_url = order_data.get('approval_url')
+        if approval_url:
+            print(
+                f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
+            print("\nInstructions:")
+            print("1. Open the above URL in your browser.")
+            print("2. Log in with your PayPal sandbox buyer account.")
+            print("3. Approve the payment to complete your order.")
+            print("\nAfter approval, the payment will be captured automatically.")
+
+            # Ask if user wants to proceed with capture now or later
+            capture_now = input(
+                "\nDo you want to capture the payment now? (y/n): ").lower()
+            if capture_now == 'y':
+                if order_data.get('paypal_order_id'):
+                    capture_data = paypal_agent.capture_payment(
+                        order_data['paypal_order_id'])
+                    print("\n[Direct PayPalAgent.capture_payment]")
+                    print(json.dumps(capture_data, indent=2))
+
+                    # Check if there was an error with the capture
+                    if isinstance(capture_data, dict) and "error" in capture_data:
+                        print(
+                            "\nPayment capture failed. The order may need to be approved first.")
+                        print(f"Error: {capture_data.get('error')}")
+                        print(f"Status: {capture_data.get('status')}")
+                    else:
+                        print("\nPayment captured successfully!")
+            else:
+                print("\nPayment will need to be captured after approval.")
         else:
-            print(f"Order details: {result}")
+            print("\nNo approval URL found. Cannot proceed with payment.")
 
         return result
 
