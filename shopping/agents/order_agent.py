@@ -24,7 +24,8 @@ class OrderAgent(Agent):
 
     # Define the fields using Pydantic's Field
     aztpClient: Aztp = Field(default=None, exclude=True)
-    secured_connection: SecureConnection = Field(default=None, exclude=True)
+    orderAgent: SecureConnection = Field(
+        default=None, exclude=True, alias="secured_connection")
     is_valid: bool = Field(default=False, exclude=True)
     identity: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     identity_access_policy: Optional[Dict[str, Any]] = Field(
@@ -56,24 +57,24 @@ class OrderAgent(Agent):
     async def _initialize_identity(self):
         """Initialize the agent's identity asynchronously"""
         print(f"1. Issuing identity for agent: Order Agent")
-        self.secured_connection = await self.aztpClient.secure_connect(
+        self.orderAgent = await self.aztpClient.secure_connect(
             self,
             "order-agent",
             {
                 "isGlobalIdentity": False
             }
         )
-        print("AZTP ID:", self.secured_connection.identity.aztp_id)
+        print("AZTP ID:", self.orderAgent.identity.aztp_id)
 
         print(f"\n2. Verifying identity for agent: Order Agent")
         self.is_valid = await self.aztpClient.verify_identity(
-            self.secured_connection
+            self.orderAgent
         )
         print("Verified Agent:", self.is_valid)
 
         if self.is_valid:
-            if self.secured_connection and hasattr(self.secured_connection, 'identity'):
-                self.aztp_id = self.secured_connection.identity.aztp_id
+            if self.orderAgent and hasattr(self.orderAgent, 'identity'):
+                self.aztp_id = self.orderAgent.identity.aztp_id
                 print(f"✅ Extracted AZTP ID: {self.aztp_id}")
         else:
             raise ValueError(

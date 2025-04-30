@@ -21,7 +21,8 @@ class ProductSearchTool:
 
     # Define the fields using Pydantic's Field
     aztpClient: Aztp = Field(default=None, exclude=True)
-    secured_connection: SecureConnection = Field(default=None, exclude=True)
+    productSearchTool: SecureConnection = Field(
+        default=None, exclude=True, alias="secured_connection")
     is_valid: bool = Field(default=False, exclude=True)
     identity: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     identity_access_policy: Optional[Dict[str, Any]] = Field(
@@ -48,27 +49,27 @@ class ProductSearchTool:
     async def _initialize_identity(self):
         """Initialize the tool's identity asynchronously"""
         print(f"1. Issuing identity for tool: Product Search Tool")
-        self.secured_connection = await self.aztpClient.secure_connect(
+        self.productSearchTool = await self.aztpClient.secure_connect(
             self,
             "product-search-tool",
             {
                 "isGlobalIdentity": False
             }
         )
-        print("AZTP ID:", self.secured_connection.identity.aztp_id)
+        print("AZTP ID:", self.productSearchTool.identity.aztp_id)
 
         print(f"\n2. Verifying identity for tool: Product Search Tool")
         self.is_valid = await self.aztpClient.verify_identity(
-            self.secured_connection
+            self.productSearchTool
         )
         print("Verified Tool:", self.is_valid)
 
         if self.is_valid:
-            # self.identity = await self.aztpClient.get_identity(self.secured_connection)
+            # self.identity = await self.aztpClient.get_identity(self.productSearchTool)
             # print(f"Product Search Tool Identity verified: {self.identity}")
             # Get the AZTP ID from the secured connection
-            if self.secured_connection and hasattr(self.secured_connection, 'identity'):
-                self.aztp_id = self.secured_connection.identity.aztp_id
+            if self.productSearchTool and hasattr(self.productSearchTool, 'identity'):
+                self.aztp_id = self.productSearchTool.identity.aztp_id
                 print(f"✅ Extracted AZTP ID: {self.aztp_id}")
         else:
             raise ValueError(
@@ -76,10 +77,10 @@ class ProductSearchTool:
 
         print(
             f"\n3. Getting policy information for tool: Product Search Tool {self.aztp_id}")
-        if self.secured_connection and hasattr(self.secured_connection, 'identity'):
+        if self.productSearchTool and hasattr(self.productSearchTool, 'identity'):
             try:
                 self.identity_access_policy = await self.aztpClient.get_policy(
-                    self.secured_connection.identity.aztp_id
+                    self.productSearchTool.identity.aztp_id
                 )
                 print("Identity Access Policy:", self.identity_access_policy)
 
@@ -164,7 +165,8 @@ class ProductAnalyzerTool:
 
     # Define the fields using Pydantic's Field
     aztpClient: Aztp = Field(default=None, exclude=True)
-    secured_connection: SecureConnection = Field(default=None, exclude=True)
+    productAnalyzerTool: SecureConnection = Field(
+        default=None, exclude=True, alias="secured_connection")
     is_valid: bool = Field(default=False, exclude=True)
     identity: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     identity_access_policy: Optional[Dict[str, Any]] = Field(
@@ -187,27 +189,27 @@ class ProductAnalyzerTool:
     async def _initialize_identity(self):
         """Initialize the tool's identity asynchronously"""
         print(f"1. Issuing identity for tool: Product Analyzer Tool")
-        self.secured_connection = await self.aztpClient.secure_connect(
+        self.productAnalyzerTool = await self.aztpClient.secure_connect(
             self,
             "product-analyzer-tool",
             {
                 "isGlobalIdentity": False
             }
         )
-        print("AZTP ID:", self.secured_connection.identity.aztp_id)
+        print("AZTP ID:", self.productAnalyzerTool.identity.aztp_id)
 
         print(f"\n2. Verifying identity for tool: Product Analyzer Tool")
         self.is_valid = await self.aztpClient.verify_identity(
-            self.secured_connection
+            self.productAnalyzerTool
         )
         print("Verified Tool:", self.is_valid)
 
         if self.is_valid:
-            # self.identity = await self.aztpClient.get_identity(self.secured_connection)
+            # self.identity = await self.aztpClient.get_identity(self.productAnalyzerTool)
             # print(f"Product Analyzer Tool Identity verified: {self.identity}")
             # Get the AZTP ID from the secured connection
-            if self.secured_connection and hasattr(self.secured_connection, 'identity'):
-                self.aztp_id = self.secured_connection.identity.aztp_id
+            if self.productAnalyzerTool and hasattr(self.productAnalyzerTool, 'identity'):
+                self.aztp_id = self.productAnalyzerTool.identity.aztp_id
                 print(f"✅ Extracted AZTP ID: {self.aztp_id}")
         else:
             raise ValueError(
@@ -215,10 +217,10 @@ class ProductAnalyzerTool:
 
         print(
             f"\n3. Getting policy information for tool: Product Analyzer Tool {self.aztp_id}")
-        if self.secured_connection and hasattr(self.secured_connection, 'identity'):
+        if self.productAnalyzerTool and hasattr(self.productAnalyzerTool, 'identity'):
             try:
                 self.identity_access_policy = await self.aztpClient.get_policy(
-                    self.secured_connection.identity.aztp_id
+                    self.productAnalyzerTool.identity.aztp_id
                 )
                 print("Identity Access Policy:", self.identity_access_policy)
 

@@ -14,6 +14,11 @@ ShopperAI is an intelligent shopping assistant that helps users find and analyze
    - Inherits from CrewAI's Agent class
    - Uses specialized tools for product search and analysis
    - Located in `agents/research_agent.py`
+   - Key capabilities:
+     - Product search and filtering
+     - Detailed product analysis
+     - Rating-based recommendations
+     - Price range filtering
 
 2. **PriceComparisonAgent**
 
@@ -27,8 +32,19 @@ ShopperAI is an intelligent shopping assistant that helps users find and analyze
      - Brand and color extraction
      - Savings calculation
      - Memory caching for faster comparisons
+     - Enhanced price comparison results structure
 
-3. **PayPalAgent**
+3. **OrderAgent**
+
+   - New agent for managing order processing
+   - Located in `agents/order_agent.py`
+   - Key capabilities:
+     - Order creation and management
+     - Order status tracking
+     - Integration with payment processing
+     - Order validation and verification
+
+4. **PayPalAgent**
 
    - Specialized agent for handling PayPal transactions
    - Inherits from CrewAI's Agent class
@@ -47,15 +63,21 @@ ShopperAI is an intelligent shopping assistant that helps users find and analyze
      - Order status verification before capture
      - Improved user guidance for payment approval
 
-4. **Search Tools**
+5. **Search Tools**
 
    - `ProductSearchTool`: Interfaces with Google Serper API for product search
    - `ProductAnalyzerTool`: Analyzes and filters products based on criteria
    - Located in `tools/search_tools.py`
 
-5. **Task Management**
-   - Uses CrewAI's Task system for orchestrating agent actions
-   - Tasks are defined in `agents/tasks.py` for search and analysis operations
+6. **Payment Tools**
+
+   - `PaymentTool`: Handles payment processing and verification
+   - Located in `tools/payment_tool.py`
+   - Features:
+     - Payment order creation
+     - Payment capture
+     - Order status verification
+     - Transaction logging
 
 ### File Structure
 
@@ -65,16 +87,21 @@ shopping/
 │   ├── research_agent.py         # Research agent implementation
 │   ├── price_comparison_agent.py # Price comparison agent implementation
 │   ├── paypal_agent.py           # PayPal payment agent implementation
+│   ├── order_agent.py            # Order processing agent implementation
 │   ├── tasks.py                  # Task definitions
 │   └── tasks/                    # Additional task implementations
 ├── tools/
 │   ├── search_tools.py          # Search and analysis tools
-│   ├── payment_tool.py          # PayPal payment tool implementation
-│   └── price_tools.py           # Price analysis tools
+│   ├── payment_tool.py          # Payment processing tool implementation
+│   └── __init__.py              # Tools package initialization
 ├── examples/
 │   └── paypal_integration_example.py # Example of PayPal integration
+├── docs/
+│   └── DOCUMENTATION.md         # Project documentation
 ├── main.py                      # Main orchestration and CLI
 ├── requirements.txt             # Project dependencies
+├── product.json                 # Product data storage
+├── paymentdetail.json           # Payment details storage
 └── .env                         # Environment variables
 ```
 
@@ -136,11 +163,27 @@ Key methods:
 - `_extract_price(price_str)`: Normalizes price strings to float values
 - `_calculate_savings_vs_average(products)`: Computes savings compared to average
 
-Memory Management:
+### OrderAgent
 
-- `_comparison_memory`: Caches complete recommendations
-- `_best_deal_memory`: Stores best deal calculations
-- `_get_memory_key(products)`: Generates unique keys for memory storage
+The OrderAgent class manages order processing:
+
+```python
+class OrderAgent(Agent):
+    def __init__(self):
+        super().__init__(
+            role='Order Processing Agent',
+            goal='Manage and process customer orders',
+            backstory="""You are an expert order processing agent...""",
+            verbose=True
+        )
+```
+
+Key methods:
+
+- `create_order(product_details, customer_info)`: Creates a new order
+- `validate_order(order_details)`: Validates order information
+- `track_order(order_id)`: Tracks order status
+- `update_order_status(order_id, status)`: Updates order status
 
 ### PayPalAgent
 
@@ -192,36 +235,6 @@ Key methods:
 - `get_order_details(order_id)`: Retrieves order information
 - `create_invoice(customer_email, amount, items)`: Generates PayPal invoices
 - `_log_payment_detail(data)`: Logs payment details to a JSON file for tracking
-
-### PayPalPaymentTool
-
-The PayPalPaymentTool class provides low-level access to PayPal's API:
-
-```python
-class PayPalPaymentTool:
-    def get_access_token(self):
-        # Get OAuth access token from PayPal
-        # ...
-
-    def create_order(self, access_token, amount, currency="USD", description="Test Product", payee_email=None):
-        # Create a PayPal order with optional payee email
-        # ...
-
-    def get_order_status(self, access_token, order_id):
-        # Get the current status of a PayPal order
-        # ...
-
-    def capture_payment(self, access_token, order_id):
-        # Capture payment for an approved order with status verification
-        # ...
-```
-
-Key features:
-
-- Proper handling of payee email in order creation
-- Order status verification before capture attempts
-- Comprehensive error handling for payment capture
-- Detailed logging of payment operations
 
 ### Payment Processing Flow
 

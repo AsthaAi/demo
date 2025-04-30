@@ -1,53 +1,128 @@
 {
   "raw_products": [
     {
-      "name": "iPhone SE (2020)",
-      "price": 399.99,
-      "rating": 5.0
+      "name": "Bus Model A",
+      "price": 1200.0,
+      "rating": 3.5,
+      "features": [
+        "Eco-friendly",
+        "24 seats",
+        "Wheelchair accessible"
+      ]
     },
     {
-      "name": "iPhone 11 (Refurbished)",
-      "price": 599.99,
-      "rating": 5.0
+      "name": "Bus Model B",
+      "price": 1350.0,
+      "rating": 4.0,
+      "features": [
+        "Luxury interior",
+        "30 seats",
+        "Wi-Fi enabled"
+      ]
     },
     {
-      "name": "iPhone 12 Mini",
-      "price": 649.99,
-      "rating": 4.8
+      "name": "Bus Model C",
+      "price": 900.0,
+      "rating": 2.5,
+      "features": [
+        "Standard seating",
+        "20 seats",
+        "AC equipped"
+      ]
     },
     {
-      "name": "iPhone XR (Refurbished)",
-      "price": 499.99,
-      "rating": 4.9
+      "name": "Bus Model D",
+      "price": 1500.0,
+      "rating": 5.0,
+      "features": [
+        "Double-decker",
+        "50 seats",
+        "Stunning views"
+      ]
+    },
+    {
+      "name": "Bus Model E",
+      "price": 800.0,
+      "rating": 1.8,
+      "features": [
+        "Basic model",
+        "15 seats",
+        "No AC"
+      ]
     }
   ],
   "filtered_products": [
     {
-      "name": "iPhone SE (2020)",
-      "price": 399.99,
-      "rating": 5.0
+      "name": "Bus Model A",
+      "price": 1200.0,
+      "rating": 3.5,
+      "features": [
+        "Eco-friendly",
+        "24 seats",
+        "Wheelchair accessible"
+      ]
     },
     {
-      "name": "iPhone 11 (Refurbished)",
-      "price": 599.99,
-      "rating": 5.0
+      "name": "Bus Model B",
+      "price": 1350.0,
+      "rating": 4.0,
+      "features": [
+        "Luxury interior",
+        "30 seats",
+        "Wi-Fi enabled"
+      ]
+    },
+    {
+      "name": "Bus Model C",
+      "price": 900.0,
+      "rating": 2.5,
+      "features": [
+        "Standard seating",
+        "20 seats",
+        "AC equipped"
+      ]
+    },
+    {
+      "name": "Bus Model D",
+      "price": 1500.0,
+      "rating": 5.0,
+      "features": [
+        "Double-decker",
+        "50 seats",
+        "Stunning views"
+      ]
     }
   ],
   "top_products": [
     {
-      "name": "iPhone SE (2020)",
-      "price": 399.99,
-      "rating": 5.0
+      "name": "Bus Model B",
+      "price": 1350.0,
+      "rating": 4.0,
+      "features": [
+        "Luxury interior",
+        "30 seats",
+        "Wi-Fi enabled"
+      ]
     },
     {
-      "name": "iPhone 11 (Refurbished)",
-      "price": 599.99,
-      "rating": 5.0
+      "name": "Bus Model D",
+      "price": 1500.0,
+      "rating": 5.0,
+      "features": [
+        "Double-decker",
+        "50 seats",
+        "Stunning views"
+      ]
     }
   ],
   "best_match": {
-    "name": "iPhone SE (2020)",
-    "price": 399.99,
-    "rating": 5.0
+    "name": "Bus Model D",
+    "price": 1500.0,
+    "rating": 5.0,
+    "features": [
+      "Double-decker",
+      "50 seats",
+      "Stunning views"
+    ]
   }
 }

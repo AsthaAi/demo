@@ -25,7 +25,8 @@ class ResearchAgent(Agent):
 
     # Define the fields using Pydantic's Field
     aztpClient: Aztp = Field(default=None, exclude=True)
-    secured_connection: SecureConnection = Field(default=None, exclude=True)
+    researchAgent: SecureConnection = Field(
+        default=None, exclude=True, alias="secured_connection")
     is_valid: bool = Field(default=False, exclude=True)
     identity: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     identity_access_policy: Optional[Dict[str, Any]] = Field(
@@ -64,27 +65,27 @@ class ResearchAgent(Agent):
     async def _initialize_identity(self):
         """Initialize the agent's identity asynchronously"""
         print(f"1. Issuing identity for agent: Research Agent")
-        self.secured_connection = await self.aztpClient.secure_connect(
+        self.researchAgent = await self.aztpClient.secure_connect(
             self,
             "research-agent",
             {
                 "isGlobalIdentity": False
             }
         )
-        print("AZTP ID:", self.secured_connection.identity.aztp_id)
+        print("AZTP ID:", self.researchAgent.identity.aztp_id)
 
         print(f"\n2. Verifying identity for agent: Research Agent")
         self.is_valid = await self.aztpClient.verify_identity(
-            self.secured_connection
+            self.researchAgent
         )
         print("Verified Agent:", self.is_valid)
 
         if self.is_valid:
-            # self.identity = await self.aztpClient.get_identity(self.secured_connection)
+            # self.identity = await self.aztpClient.get_identity(self.researchAgent)
             # print(f"Research Agent Identity verified: {self.identity}")
             # Get the AZTP ID from the secured connection
-            if self.secured_connection and hasattr(self.secured_connection, 'identity'):
-                self.aztp_id = self.secured_connection.identity.aztp_id
+            if self.researchAgent and hasattr(self.researchAgent, 'identity'):
+                self.aztp_id = self.researchAgent.identity.aztp_id
                 print(f"✅ Extracted AZTP ID: {self.aztp_id}")
         else:
             raise ValueError(
@@ -92,10 +93,10 @@ class ResearchAgent(Agent):
 
         print(
             f"\n3. Getting policy information for agent: Research Agent {self.aztp_id}")
-        if self.secured_connection and hasattr(self.secured_connection, 'identity'):
+        if self.researchAgent and hasattr(self.researchAgent, 'identity'):
             try:
                 self.identity_access_policy = await self.aztpClient.get_policy(
-                    self.secured_connection.identity.aztp_id
+                    self.researchAgent.identity.aztp_id
                 )
                 # print("Identity Access Policy:", self.identity_access_policy)
 
