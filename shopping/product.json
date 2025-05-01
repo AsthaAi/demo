@@ -1,128 +1,99 @@
 {
   "raw_products": [
     {
-      "name": "Bus Model A",
-      "price": 1200.0,
-      "rating": 3.5,
-      "features": [
-        "Eco-friendly",
-        "24 seats",
-        "Wheelchair accessible"
-      ]
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2005,
+      "price": 3500.0,
+      "rating": 4.0
     },
     {
-      "name": "Bus Model B",
-      "price": 1350.0,
-      "rating": 4.0,
-      "features": [
-        "Luxury interior",
-        "30 seats",
-        "Wi-Fi enabled"
-      ]
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2006,
+      "price": 3900.0,
+      "rating": 4.5
     },
     {
-      "name": "Bus Model C",
-      "price": 900.0,
-      "rating": 2.5,
-      "features": [
-        "Standard seating",
-        "20 seats",
-        "AC equipped"
-      ]
+      "make": "Ford",
+      "model": "Focus",
+      "year": 2004,
+      "price": 2800.0,
+      "rating": 3.5
     },
     {
-      "name": "Bus Model D",
-      "price": 1500.0,
-      "rating": 5.0,
-      "features": [
-        "Double-decker",
-        "50 seats",
-        "Stunning views"
-      ]
+      "make": "Chevrolet",
+      "model": "Malibu",
+      "year": 2003,
+      "price": 2500.0,
+      "rating": 2.5
     },
     {
-      "name": "Bus Model E",
-      "price": 800.0,
-      "rating": 1.8,
-      "features": [
-        "Basic model",
-        "15 seats",
-        "No AC"
-      ]
+      "make": "Nissan",
+      "model": "Sentra",
+      "year": 2005,
+      "price": 3700.0,
+      "rating": 3.0
     }
   ],
   "filtered_products": [
     {
-      "name": "Bus Model A",
-      "price": 1200.0,
-      "rating": 3.5,
-      "features": [
-        "Eco-friendly",
-        "24 seats",
-        "Wheelchair accessible"
-      ]
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2005,
+      "price": 3500.0,
+      "rating": 4.0
     },
     {
-      "name": "Bus Model B",
-      "price": 1350.0,
-      "rating": 4.0,
-      "features": [
-        "Luxury interior",
-        "30 seats",
-        "Wi-Fi enabled"
-      ]
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2006,
+      "price": 3900.0,
+      "rating": 4.5
     },
     {
-      "name": "Bus Model C",
-      "price": 900.0,
-      "rating": 2.5,
-      "features": [
-        "Standard seating",
-        "20 seats",
-        "AC equipped"
-      ]
+      "make": "Ford",
+      "model": "Focus",
+      "year": 2004,
+      "price": 2800.0,
+      "rating": 3.5
     },
     {
-      "name": "Bus Model D",
-      "price": 1500.0,
-      "rating": 5.0,
-      "features": [
-        "Double-decker",
-        "50 seats",
-        "Stunning views"
-      ]
+      "make": "Nissan",
+      "model": "Sentra",
+      "year": 2005,
+      "price": 3700.0,
+      "rating": 3.0
     }
   ],
   "top_products": [
     {
-      "name": "Bus Model B",
-      "price": 1350.0,
-      "rating": 4.0,
-      "features": [
-        "Luxury interior",
-        "30 seats",
-        "Wi-Fi enabled"
-      ]
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2006,
+      "price": 3900.0,
+      "rating": 4.5
     },
     {
-      "name": "Bus Model D",
-      "price": 1500.0,
-      "rating": 5.0,
-      "features": [
-        "Double-decker",
-        "50 seats",
-        "Stunning views"
-      ]
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2005,
+      "price": 3500.0,
+      "rating": 4.0
+    },
+    {
+      "make": "Ford",
+      "model": "Focus",
+      "year": 2004,
+      "price": 2800.0,
+      "rating": 3.5
     }
   ],
   "best_match": {
-    "name": "Bus Model D",
-    "price": 1500.0,
-    "rating": 5.0,
-    "features": [
-      "Double-decker",
-      "50 seats",
-      "Stunning views"
-    ]
+    "make": "Honda",
+    "model": "Civic",
+    "year": 2006,
+    "price": 3900.0,
+    "rating": 4.5
   }
 }

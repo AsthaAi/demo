@@ -55,6 +55,7 @@ class PayPalAgent(Agent):
     paypal_toolkit: Optional[Any] = Field(default=None, exclude=True)
     payment_tool: PayPalPaymentTool = Field(
         default_factory=PayPalPaymentTool, exclude=True)
+    payment_tool_aztp_id: str = Field(default="", exclude=True)
 
     def __init__(self):
         """Initialize the PayPal agent with necessary tools"""
@@ -120,20 +121,32 @@ class PayPalAgent(Agent):
         self.aztpClient = Aztp(api_key=api_key)
         self.aztp_id = ""  # Initialize as empty string
 
-        # Run the async initialization
-        asyncio.run(self._initialize_identity())
-
+        # Initialize payment tool and store its AZTP ID
         if not hasattr(self, 'payment_tool') or self.payment_tool is None:
             self.payment_tool = PayPalPaymentTool()
+
+        # Store payment tool's AZTP ID if available
+        if hasattr(self.payment_tool, 'aztp_id'):
+            self.payment_tool_aztp_id = self.payment_tool.aztp_id
+
+        # Run the async initialization
+        asyncio.run(self._initialize_identity())
 
     async def _initialize_identity(self):
         """Initialize the agent's identity asynchronously"""
         print(f"1. Issuing identity for agent: PayPal Agent")
+
+        # Create array of tool IDs to link
+        tool_ids = []
+        if self.payment_tool_aztp_id:
+            tool_ids.append(self.payment_tool_aztp_id)
+
         self.paymentAgent = await self.aztpClient.secure_connect(
             self,
             "paypal-agent",
             {
-                "isGlobalIdentity": False
+                "isGlobalIdentity": False,
+                "linkTo": tool_ids
             }
         )
         print("AZTP ID:", self.paymentAgent.identity.aztp_id)
@@ -148,6 +161,9 @@ class PayPalAgent(Agent):
             if self.paymentAgent and hasattr(self.paymentAgent, 'identity'):
                 self.aztp_id = self.paymentAgent.identity.aztp_id
                 print(f"✅ Extracted AZTP ID: {self.aztp_id}")
+                if self.payment_tool_aztp_id:
+                    print(
+                        f"✅ Linked to Payment Tool with AZTP ID: {self.payment_tool_aztp_id}")
         else:
             raise ValueError(
                 "Failed to verify identity for agent: PayPal Agent")

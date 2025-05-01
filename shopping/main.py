@@ -646,31 +646,31 @@ def main():
             products = research_results["raw_products"]
 
     # Debug information
-    print(f"\nNumber of products found: {len(products)}")
+    # print(f"\nNumber of products found: {len(products)}")
 
     if best:
         print("\nBest Match:")
         print(f"Name: {best.get('name', best.get('title', ''))}")
-        print(f"Brand: {best.get('brand', '')}")
+        # print(f"Brand: {best.get('brand', '')}")
         print(f"Price: {best.get('price', '')}")
         print(f"Rating: {best.get('rating', '')}")
     elif products:
         print("\nFound the following products:")
         print("\n{:<40} {:<10} {:<10} {:<20}".format(
-            "Product", "Price", "Rating", "Brand"))
+            "Product", "Price", "Rating"))
         print("-" * 80)
         for product in products:
             # Handle different product structures
             name = product.get("name", product.get("title", "Unknown"))
             price = product.get("price", "N/A")
             rating = product.get("rating", "N/A")
-            brand = product.get("brand", "Unknown")
+            # brand = product.get("brand", "Unknown")
 
             print("{:<40} {:<10} {:<10} {:<20}".format(
                 name[:37] + "..." if len(name) > 37 else name,
                 price,
                 rating,
-                brand
+                # brand
             ))
     else:
         print("\nNo products found matching your criteria.")
@@ -705,7 +705,7 @@ def main():
                         print("\nBest Deal:")
                         print(f"Product: {product.get('name', 'Unknown')}")
                         print(f"Price: {product.get('price', 'N/A')}")
-                        print(f"Brand: {product.get('brand', 'Unknown')}")
+                        # print(f"Brand: {product.get('brand', 'Unknown')}")
                         print(f"Rating: {product.get('rating', 'N/A')}")
                         if "summary" in price_results:
                             print(f"\nSummary: {price_results['summary']}")

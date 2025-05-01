@@ -33,9 +33,13 @@ class ResearchAgent(Agent):
         default=None, exclude=True)
     aztp_id: str = Field(default="", exclude=True)
 
+    # Add fields for tool AZTP IDs (without leading underscores)
+    search_tool_aztp_id: str = Field(default="", exclude=True)
+    analyzer_tool_aztp_id: str = Field(default="", exclude=True)
+
     # Add memory storage
-    _search_memory: Dict[str, Dict[str, Any]] = {}
-    _analysis_memory: Dict[str, Dict[str, Any]] = {}
+    search_memory: Dict[str, Dict[str, Any]] = {}
+    analysis_memory: Dict[str, Dict[str, Any]] = {}
 
     def __init__(self):
         """Initialize the research agent with necessary tools"""
@@ -51,6 +55,10 @@ class ResearchAgent(Agent):
         self._search_tool = ProductSearchTool()
         self._analyzer_tool = ProductAnalyzerTool()
 
+        # Store tool AZTP IDs after initialization
+        self.search_tool_aztp_id = self._search_tool.aztp_id
+        self.analyzer_tool_aztp_id = self._analyzer_tool.aztp_id
+
         # Initialize the client with API key from environment
         api_key = os.getenv("AZTP_API_KEY")
         if not api_key:
@@ -62,14 +70,37 @@ class ResearchAgent(Agent):
         # Run the async initialization
         asyncio.run(self._initialize_identity())
 
+    def get_all_aztp_ids(self) -> Dict[str, str]:
+        """Get all AZTP IDs associated with this agent and its tools"""
+        return {
+            "research_agent": self.aztp_id,
+            "search_tool": self.search_tool_aztp_id,
+            "analyzer_tool": self.analyzer_tool_aztp_id
+        }
+
     async def _initialize_identity(self):
         """Initialize the agent's identity asynchronously"""
         print(f"1. Issuing identity for agent: Research Agent")
+
+        # Store tool IDs before creating research agent's identity
+        self.search_tool_aztp_id = self._search_tool.aztp_id if hasattr(
+            self._search_tool, 'aztp_id') else ""
+        self.analyzer_tool_aztp_id = self._analyzer_tool.aztp_id if hasattr(
+            self._analyzer_tool, 'aztp_id') else ""
+
+        # Create array of tool IDs to link
+        tool_ids = []
+        if self.search_tool_aztp_id:
+            tool_ids.append(self.search_tool_aztp_id)
+        if self.analyzer_tool_aztp_id:
+            tool_ids.append(self.analyzer_tool_aztp_id)
+
         self.researchAgent = await self.aztpClient.secure_connect(
             self,
             "research-agent",
             {
-                "isGlobalIdentity": False
+                "isGlobalIdentity": False,
+                "linkTo": tool_ids,
             }
         )
         print("AZTP ID:", self.researchAgent.identity.aztp_id)
@@ -153,9 +184,9 @@ class ResearchAgent(Agent):
 
         # Check if we have cached results for this query
         cache_key = f"{query}_{str(criteria)}"
-        if cache_key in self._search_memory:
+        if cache_key in self.search_memory:
             print(f"Found cached results for query: {query}")
-            result = self._search_memory[cache_key]
+            result = self.search_memory[cache_key]
             # Save cached results to product.json
             try:
                 # Ensure the file exists and is writable
@@ -263,7 +294,7 @@ class ResearchAgent(Agent):
             print("Continuing with in-memory results")
 
         # Store in memory
-        self._search_memory[cache_key] = result
+        self.search_memory[cache_key] = result
         return result
 
     def get_best_match(self, query: str, criteria: Dict[str, Any]) -> Dict[str, Any]:
@@ -299,9 +330,9 @@ class ResearchAgent(Agent):
         memory_key = self._get_memory_key(str(products), criteria)
 
         # Check if we have cached analysis
-        if memory_key in self._analysis_memory:
+        if memory_key in self.analysis_memory:
             print("Using cached analysis results...")
-            return self._analysis_memory[memory_key]
+            return self.analysis_memory[memory_key]
 
         # If products is empty, create sample data (only fallback)
         if not products:
@@ -422,7 +453,7 @@ class ResearchAgent(Agent):
         }
 
         # Store in memory
-        self._analysis_memory[memory_key] = result
+        self.analysis_memory[memory_key] = result
 
         return result
 

@@ -382,5 +382,79 @@
       ]
     },
     "paypal_order_id": "4YC86982L2442773X"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "3N994068WU523890L",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=3N994068WU523890L",
+    "raw_response": {
+      "id": "3N994068WU523890L",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3N994068WU523890L",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=3N994068WU523890L",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3N994068WU523890L",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3N994068WU523890L/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ]
+    }
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is CREATED, not APPROVED",
+    "status": "CREATED",
+    "paypal_order_id": "3N994068WU523890L"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "598827615C385161G",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=598827615C385161G",
+    "raw_response": {
+      "id": "598827615C385161G",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/598827615C385161G",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=598827615C385161G",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/598827615C385161G",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/598827615C385161G/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ]
+    }
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is CREATED, not APPROVED",
+    "status": "CREATED",
+    "paypal_order_id": "598827615C385161G"
   }
 ]
