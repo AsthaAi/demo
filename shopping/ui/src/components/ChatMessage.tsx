@@ -7,16 +7,25 @@ interface Product {
   rating: string;
   brand?: string;
   description?: string;
+  material?: string;
+  capacity?: string;
+  original_price?: string;
+  applied_promotion?: {
+    name: string;
+    discount_percentage: number;
+    minimum_purchase: number;
+    valid_until: string;
+  };
 }
 
 interface ChatMessageProps {
   type: 'user' | 'assistant';
   content: string;
   product?: Product;
-  onProceedToPayment?: (product: Product) => void;
+  onBuyNow?: (product: Product) => void;
 }
 
-export default function ChatMessage({ type, content, product, onProceedToPayment }: ChatMessageProps) {
+export default function ChatMessage({ type, content, product, onBuyNow }: ChatMessageProps) {
   return (
     <div className={`flex ${type === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
       <div
@@ -59,7 +68,7 @@ export default function ChatMessage({ type, content, product, onProceedToPayment
               <p className="text-xl font-bold text-gray-800">{product.price}</p>
               <Button
                 size="sm"
-                onClick={() => onProceedToPayment?.(product)}
+                onClick={() => onBuyNow?.(product)}
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
               >
                 <ShoppingCartIcon className="w-4 h-4 mr-2" />

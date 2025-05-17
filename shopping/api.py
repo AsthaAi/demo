@@ -27,6 +27,13 @@ class OrderRequest(BaseModel):
     product_details: Dict[str, Any]
     customer_email: str
 
+class PromotionRequest(BaseModel):
+    product_details: Dict[str, Any]
+    customer_email: str
+
+class CapturePaymentRequest(BaseModel):
+    order_id: str
+
 @app.post("/api/search")
 async def search_products(request: SearchRequest):
     try:
@@ -144,6 +151,54 @@ async def process_order(request: OrderRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Error processing order: {str(e)}"
+        )
+
+@app.post("/api/get-promotions")
+async def get_promotions(request: PromotionRequest):
+    try:
+        # Initialize ShopperAI with minimal criteria
+        shopper = ShopperAI(
+            query=request.product_details.get("name", ""),
+            criteria={"max_price": 1000, "min_rating": 0}
+        )
+
+        # Get promotions
+        promotions = await shopper.get_available_promotions(
+            product_details=request.product_details,
+            customer_email=request.customer_email
+        )
+
+        return {
+            "success": True,
+            "promotions": promotions
+        }
+
+    except Exception as e:
+        print(f"Error getting promotions: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting promotions: {str(e)}"
+        )
+
+@app.post("/api/capture-payment")
+async def capture_payment(request: CapturePaymentRequest):
+    try:
+        # Initialize ShopperAI with minimal criteria
+        shopper = ShopperAI("", {"max_price": 1000, "min_rating": 0})
+
+        # Capture the payment
+        result = await shopper.capture_payment(request.order_id)
+
+        return {
+            "success": True,
+            "result": result
+        }
+
+    except Exception as e:
+        print(f"Error capturing payment: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error capturing payment: {str(e)}"
         )
 
 if __name__ == "__main__":
