@@ -3,78 +3,84 @@
     {
       "make": "Honda",
       "model": "Civic",
-      "price": 3000.0,
-      "rating": 4.0
+      "price": 1500.0,
+      "rating": 4.5
     },
     {
       "make": "Ford",
       "model": "Focus",
-      "price": 2500.0,
-      "rating": 3.5
+      "price": 1800.0,
+      "rating": 4.2
     },
     {
       "make": "Toyota",
       "model": "Corolla",
-      "price": 3200.0,
-      "rating": 5.0
-    },
-    {
-      "make": "Nissan",
-      "model": "Sentra",
-      "price": 4000.0,
-      "rating": 3.2
+      "price": 1750.0,
+      "rating": 4.1
     },
     {
       "make": "Chevrolet",
       "model": "Malibu",
-      "price": 1500.0,
-      "rating": 2.8
+      "price": 1600.0,
+      "rating": 3.9
+    },
+    {
+      "make": "Nissan",
+      "model": "Sentra",
+      "price": 1990.0,
+      "rating": 4.7
     }
   ],
   "filtered_products": [
     {
       "make": "Honda",
       "model": "Civic",
-      "price": 3000.0,
-      "rating": 4.0
+      "price": 1500.0,
+      "rating": 4.5
     },
     {
       "make": "Ford",
       "model": "Focus",
-      "price": 2500.0,
-      "rating": 3.5
+      "price": 1800.0,
+      "rating": 4.2
     },
     {
       "make": "Toyota",
       "model": "Corolla",
-      "price": 3200.0,
-      "rating": 5.0
+      "price": 1750.0,
+      "rating": 4.1
+    },
+    {
+      "make": "Nissan",
+      "model": "Sentra",
+      "price": 1990.0,
+      "rating": 4.7
     }
   ],
   "top_products": [
     {
-      "make": "Toyota",
-      "model": "Corolla",
-      "price": 3200.0,
-      "rating": 5.0
+      "make": "Nissan",
+      "model": "Sentra",
+      "price": 1990.0,
+      "rating": 4.7
     },
     {
       "make": "Honda",
       "model": "Civic",
-      "price": 3000.0,
-      "rating": 4.0
+      "price": 1500.0,
+      "rating": 4.5
     },
     {
       "make": "Ford",
       "model": "Focus",
-      "price": 2500.0,
-      "rating": 3.5
+      "price": 1800.0,
+      "rating": 4.2
     }
   ],
   "best_match": {
-    "make": "Toyota",
-    "model": "Corolla",
-    "price": 3200.0,
-    "rating": 5.0
+    "make": "Nissan",
+    "model": "Sentra",
+    "price": 1990.0,
+    "rating": 4.7
   }
 }
