@@ -155,51 +155,33 @@ async def process_order(request: OrderRequest):
 
 @app.post("/api/get-promotions")
 async def get_promotions(request: PromotionRequest):
-    try:
-        # Initialize ShopperAI with minimal criteria
-        shopper = ShopperAI(
-            query=request.product_details.get("name", ""),
-            criteria={"max_price": 1000, "min_rating": 0}
-        )
-
-        # Get promotions
-        promotions = await shopper.get_available_promotions(
-            product_details=request.product_details,
-            customer_email=request.customer_email
-        )
-
-        return {
-            "success": True,
-            "promotions": promotions
-        }
-
-    except Exception as e:
-        print(f"Error getting promotions: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error getting promotions: {str(e)}"
-        )
+    # Skipping promotions for now
+    # try:
+    #     shopper = ShopperAI(
+    #         query=request.product_details.get("name", ""),
+    #         criteria={"max_price": 1000, "min_rating": 0}
+    #     )
+    #     promotions = await shopper.get_available_promotions(
+    #         product_details=request.product_details,
+    #         customer_email=request.customer_email
+    #     )
+    #     return {"success": True, "promotions": promotions}
+    # except Exception as e:
+    #     print(f"Error getting promotions: {str(e)}")
+    #     raise HTTPException(status_code=500, detail=f"Error getting promotions: {str(e)}")
+    return {"success": True, "promotions": []}
 
 @app.post("/api/capture-payment")
 async def capture_payment(request: CapturePaymentRequest):
-    try:
-        # Initialize ShopperAI with minimal criteria
-        shopper = ShopperAI("", {"max_price": 1000, "min_rating": 0})
-
-        # Capture the payment
-        result = await shopper.capture_payment(request.order_id)
-
-        return {
-            "success": True,
-            "result": result
-        }
-
-    except Exception as e:
-        print(f"Error capturing payment: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error capturing payment: {str(e)}"
-        )
+    # Skipping real capture for now
+    # try:
+    #     shopper = ShopperAI("", {"max_price": 1000, "min_rating": 0})
+    #     result = await shopper.capture_payment(request.order_id)
+    #     return {"success": True, "result": result}
+    # except Exception as e:
+    #     print(f"Error capturing payment: {str(e)}")
+    #     raise HTTPException(status_code=500, detail=f"Error capturing payment: {str(e)}")
+    return {"success": True, "result": {"approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=DUMMY"}}
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,73 +1,56 @@
 {
   "raw_products": [
     {
-      "name": "iPhone 14 - 128GB",
+      "name": "iPhone 15 - 128GB",
       "price": 799.0,
-      "rating": 4.7
+      "rating": 4.8,
+      "link": "https://example.com/iphone15-128gb"
     },
     {
-      "name": "iPhone 14 - 256GB",
+      "name": "iPhone 15 - 256GB",
       "price": 899.0,
-      "rating": 4.6
+      "rating": 4.7,
+      "link": "https://example.com/iphone15-256gb"
     },
     {
-      "name": "iPhone 14 - 512GB",
+      "name": "iPhone 15 - 512GB",
       "price": 1099.0,
-      "rating": 4.5
-    },
-    {
-      "name": "iPhone 14 - 128GB (Unlocked)",
-      "price": 799.0,
-      "rating": 4.8
-    },
-    {
-      "name": "iPhone 14 - 256GB (Unlocked)",
-      "price": 899.0,
-      "rating": 4.9
+      "rating": 4.9,
+      "link": "https://example.com/iphone15-512gb"
     }
   ],
   "filtered_products": [
     {
-      "name": "iPhone 14 - 128GB",
+      "name": "iPhone 15 - 128GB",
       "price": 799.0,
-      "rating": 4.7
+      "rating": 4.8,
+      "link": "https://example.com/iphone15-128gb"
     },
     {
-      "name": "iPhone 14 - 256GB",
+      "name": "iPhone 15 - 256GB",
       "price": 899.0,
-      "rating": 4.6
-    },
-    {
-      "name": "iPhone 14 - 128GB (Unlocked)",
-      "price": 799.0,
-      "rating": 4.8
-    },
-    {
-      "name": "iPhone 14 - 256GB (Unlocked)",
-      "price": 899.0,
-      "rating": 4.9
+      "rating": 4.7,
+      "link": "https://example.com/iphone15-256gb"
     }
   ],
   "top_products": [
     {
-      "name": "iPhone 14 - 256GB (Unlocked)",
+      "name": "iPhone 15 - 128GB",
+      "price": 799.0,
+      "rating": 4.8,
+      "link": "https://example.com/iphone15-128gb"
+    },
+    {
+      "name": "iPhone 15 - 256GB",
       "price": 899.0,
-      "rating": 4.9
-    },
-    {
-      "name": "iPhone 14 - 128GB (Unlocked)",
-      "price": 799.0,
-      "rating": 4.8
-    },
-    {
-      "name": "iPhone 14 - 128GB",
-      "price": 799.0,
-      "rating": 4.7
+      "rating": 4.7,
+      "link": "https://example.com/iphone15-256gb"
     }
   ],
   "best_match": {
-    "name": "iPhone 14 - 256GB (Unlocked)",
-    "price": 899.0,
-    "rating": 4.9
+    "name": "iPhone 15 - 128GB",
+    "price": 799.0,
+    "rating": 4.8,
+    "link": "https://example.com/iphone15-128gb"
   }
 }
