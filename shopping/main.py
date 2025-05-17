@@ -783,6 +783,84 @@ Do not return any explanation or summary, only the JSON object.""",
             print(f"\nError creating promotion campaign: {str(e)}")
             return None
 
+    async def get_available_promotions(self, product_details: dict, customer_email: str):
+        """
+        Return available promotions for the given product and customer.
+        """
+        try:
+            promotions_agent = self.agents.promotions_agent()
+            await promotions_agent.initialize()
+
+            available_promotions = []
+
+            # 1. Get personalized discount
+            shopping_history = [
+                {
+                    'amount': product_details['price'],
+                    'category': product_details.get('category', 'unknown'),
+                    'timestamp': datetime.now().isoformat()
+                }
+            ]
+            personal_discount = await promotions_agent.create_personalized_discount(
+                customer_email,
+                shopping_history
+            )
+            if personal_discount:
+                available_promotions.append({
+                    'id': 'personal',
+                    'name': 'Personal Discount',
+                    'discount_percentage': personal_discount['discount_percentage'],
+                    'minimum_purchase': personal_discount['minimum_purchase'],
+                    'valid_until': personal_discount['valid_until']
+                })
+
+            # 2. Get active campaign promotions
+            campaign_data = {
+                'name': 'Current Campaigns',
+                'description': 'Check active campaigns',
+                'start_date': datetime.now().isoformat(),
+                'end_date': (datetime.now() + timedelta(days=30)).isoformat()
+            }
+            campaign = await promotions_agent.create_promotion_campaign(campaign_data)
+            if campaign:
+                available_promotions.append({
+                    'id': 'campaign',
+                    'name': campaign['name'],
+                    'discount_percentage': campaign.get('discount_value', 0),
+                    'minimum_purchase': campaign.get('conditions', {}).get('minimum_purchase', 0),
+                    'valid_until': campaign['end_date']
+                })
+
+            return available_promotions
+
+        except Exception as e:
+            print(f"Error in get_available_promotions: {e}")
+            return []
+
+    async def capture_payment(self, order_id: str):
+        """
+        Capture a PayPal payment for the given order ID.
+        """
+        try:
+            paypal_agent = self.agents.paypal_agent()
+            await paypal_agent.initialize()
+            # Capture the payment using the PayPal agent
+            capture_result = await paypal_agent.capture_payment(order_id)
+            # Optionally, extract approval_url if needed for UI
+            approval_url = None
+            if isinstance(capture_result, dict):
+                for link in capture_result.get('links', []):
+                    if link.get('rel') == 'approve':
+                        approval_url = link.get('href')
+                        break
+            return {
+                "capture_result": capture_result,
+                "approval_url": approval_url
+            }
+        except Exception as e:
+            print(f"Error in capture_payment: {e}")
+            return {"error": str(e)}
+
 
 def read_latest_payment_detail():
     project_root = os.path.dirname(os.path.abspath(__file__))

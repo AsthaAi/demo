@@ -28,15 +28,38 @@ interface Product {
 
 interface Promotion {
   id: string;
-  code: string;
-  description: string;
-  discount: number;
+  name: string;
+  discount_percentage: number;
+  minimum_purchase: number;
+  valid_until: string;
 }
 
 interface Message {
   type: 'user' | 'assistant';
   content: string;
   product?: Product;
+}
+
+interface PromotionSummary {
+  originalPrice: number;
+  discountPercentage: number;
+  discountAmount: number;
+  finalPrice: number;
+  promotionName: string;
+}
+
+function calculatePromotionSummary(product: Product, promotion: Promotion): PromotionSummary | null {
+  if (!promotion || !product) return null;
+  const originalPrice = parseFloat(product.price.replace('$', ''));
+  const discountAmount = originalPrice * (promotion.discount_percentage / 100);
+  const finalPrice = originalPrice - discountAmount;
+  return {
+    originalPrice,
+    discountPercentage: promotion.discount_percentage,
+    discountAmount,
+    finalPrice,
+    promotionName: promotion.name,
+  };
 }
 
 export default function Home() {
@@ -54,9 +77,11 @@ export default function Home() {
   const [customerEmail, setCustomerEmail] = useState('');
   const [paymentUrl, setPaymentUrl] = useState('');
   const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [selectedPromotion, setSelectedPromotion] = useState<string | null>(null);
+  const [promotionStep, setPromotionStep] = useState<'none' | 'select' | 'capturing' | 'ready'>('none');
+  const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<'initial' | 'processing' | 'promotions' | 'ready' | 'capturing'>('initial');
+  const [approvalUrl, setApprovalUrl] = useState<string>('');
+  const [promotionSummary, setPromotionSummary] = useState<PromotionSummary | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -130,75 +155,55 @@ export default function Home() {
     }
   };
 
-  const handlePayment = async () => {
+  const handleProcessOrder = async () => {
     if (!selectedProduct || !customerEmail) return;
-
+    setIsProcessingPayment(true);
+    setPromotionStep('none');
     try {
-      setPaymentStatus('processing');
-      setShowPaymentModal(true);
-
       // Process the order
       const response = await axios.post('http://localhost:8000/api/process-order', {
         product_details: selectedProduct,
         customer_email: customerEmail,
       });
-
-      if (!response.data.success) {
-        throw new Error('Failed to process order');
-      }
-
-      const data = response.data.result;
-      setOrderId(data.id);
-
+      if (!response.data.success) throw new Error('Failed to process order');
+      setOrderId(response.data.result.id);
       // Get available promotions
-      const promotionsResponse = await axios.post('http://localhost:8000/api/get-promotions', {
+      const promoRes = await axios.post('http://localhost:8000/api/get-promotions', {
         product_details: selectedProduct,
         customer_email: customerEmail,
       });
-
-      if (!promotionsResponse.data.success || !promotionsResponse.data.promotions) {
-        throw new Error('Failed to get promotions');
-      }
-
-      const promotionsData = promotionsResponse.data.promotions;
-      setPromotions(promotionsData);
-      setPaymentStatus('promotions');
-
+      if (!promoRes.data.success) throw new Error('Failed to get promotions');
+      setPromotions(promoRes.data.promotions);
+      setPromotionStep('select');
     } catch (error) {
-      console.error('Error processing order:', error);
-      setPaymentStatus('initial');
-      alert('Failed to process order. Please try again.');
+      alert('Failed to process order or get promotions.');
+      setShowPaymentModal(false);
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
-  const handlePromotionSelect = (promotionId: string) => {
-    setSelectedPromotion(promotionId);
-  };
-
-  const handleProceedToPayment = async () => {
-    if (!orderId) return;
-
+  const handlePromotionSelect = async (promotion: Promotion | null) => {
+    setSelectedPromotion(promotion);
+    // Calculate summary if promotion is selected
+    if (promotion && selectedProduct) {
+      const summary = calculatePromotionSummary(selectedProduct, promotion);
+      setPromotionSummary(summary);
+    } else {
+      setPromotionSummary(null);
+    }
+    setPromotionStep('capturing');
     try {
-      setPaymentStatus('capturing');
-      
-      // Capture the payment
       const response = await axios.post('http://localhost:8000/api/capture-payment', {
         order_id: orderId,
-        promotion_id: selectedPromotion,
+        promotion: promotion, // send full promotion object or null
       });
-
-      if (!response.data.success) {
-        throw new Error('Failed to capture payment');
-      }
-
-      const data = response.data.result;
-      setPaymentStatus('ready');
-      setPaymentUrl(data.payment_url);
-
+      if (!response.data.success) throw new Error('Failed to capture payment');
+      setApprovalUrl(response.data.result.approval_url);
+      setPromotionStep('ready');
     } catch (error) {
-      console.error('Error capturing payment:', error);
-      setPaymentStatus('promotions');
-      alert('Failed to capture payment. Please try again.');
+      alert('Failed to capture payment.');
+      setShowPaymentModal(false);
     }
   };
 
@@ -241,7 +246,7 @@ export default function Home() {
             {isLoading && (
               <>
                 <LoadingSkeleton type="message" />
-                <LoadingSkeleton type="product" />
+                {/* <LoadingSkeleton type="product" /> */}
               </>
             )}
             <div ref={messagesEndRef} />
@@ -280,138 +285,136 @@ export default function Home() {
         setSelectedProduct(null);
         setSelectedPromotion(null);
         setOrderId(null);
-        setPaymentStatus('initial');
+        setPromotionStep('none');
+        setPromotionSummary(null);
       }}>
         <Modal.Header className="text-gray-900">Complete Your Purchase</Modal.Header>
         <Modal.Body>
           <div className="space-y-4">
-            {selectedProduct && (
-              <div className="flex flex-col items-center space-y-4">
-                {paymentStatus === 'initial' && (
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg w-full mb-4">
-                      <div className="space-y-2">
-                        <p className="font-medium">Product: {selectedProduct.name}</p>
-                        <p className="font-medium">Price: {selectedProduct.price}</p>
-                        {selectedProduct.brand && (
-                          <p className="text-sm text-gray-600">Brand: {selectedProduct.brand}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="w-full">
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address
-                      </label>
-                      <TextInput
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                        value={customerEmail}
-                        onChange={(e) => setCustomerEmail(e.target.value)}
-                        required
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {paymentStatus === 'processing' && (
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold mb-4">Processing Your Order</h3>
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Please wait while we process your order...</p>
-                  </div>
-                )}
-
-                {paymentStatus === 'promotions' && (
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Available Promotions</h3>
-                    <div className="space-y-4 mb-6">
-                      {promotions.map((promotion) => (
-                        <div
-                          key={promotion.id}
-                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                            selectedPromotion === promotion.id
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-blue-300'
-                          }`}
-                          onClick={() => handlePromotionSelect(promotion.id)}
-                        >
-                          <div className="font-medium">{promotion.code}</div>
-                          <div className="text-sm text-gray-600">{promotion.description}</div>
-                          <div className="text-sm font-medium text-green-600">
-                            Save ${promotion.discount}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={handleProceedToPayment}
-                      disabled={!selectedPromotion}
-                      className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Proceed to Payment
-                    </button>
-                  </div>
-                )}
-
-                {paymentStatus === 'capturing' && (
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold mb-4">Processing Payment</h3>
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Please wait while we process your payment...</p>
-                  </div>
-                )}
-
-                {paymentStatus === 'ready' && (
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Your Order is Ready!</h3>
-                    <p className="text-gray-600 mb-4">Click below to proceed to PayPal</p>
-                    {paymentUrl && (
-                      <a
-                        href={paymentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block w-full bg-blue-500 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-600"
-                      >
-                        Proceed to PayPal
-                      </a>
+            {selectedProduct && promotionStep === 'none' && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
+                <div className="bg-gray-50 p-4 rounded-lg w-full mb-4">
+                  <div className="space-y-2">
+                    <p className="font-medium">Product: {selectedProduct.name}</p>
+                    <p className="font-medium">Price: {selectedProduct.price}</p>
+                    {selectedProduct.brand && (
+                      <p className="text-sm text-gray-600">Brand: {selectedProduct.brand}</p>
                     )}
                   </div>
+                </div>
+                <div className="w-full">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <TextInput
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    required
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+            {promotionStep === 'select' && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Available Promotions</h3>
+                <div className="space-y-4 mb-6">
+                  {promotions.map((promotion, idx) => (
+                    <div
+                      key={promotion.id || idx}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedPromotion?.id === promotion.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
+                      onClick={() => handlePromotionSelect(promotion)}
+                    >
+                      <div className="font-medium">{promotion.name}</div>
+                      <div className="text-sm text-gray-600">Discount: {promotion.discount_percentage}%</div>
+                      <div className="text-sm text-gray-600">Minimum Purchase: ${promotion.minimum_purchase}</div>
+                      <div className="text-sm text-gray-600">Valid Until: {promotion.valid_until}</div>
+                    </div>
+                  ))}
+                  <button
+                    className="w-full mt-2 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+                    onClick={() => handlePromotionSelect(null)}
+                  >
+                    Skip Promotions
+                  </button>
+                </div>
+              </div>
+            )}
+            {promotionStep === 'capturing' && (
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-4">Processing Payment</h3>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Please wait while we process your payment...</p>
+              </div>
+            )}
+            {promotionStep === 'ready' && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Your Order is Ready!</h3>
+                {/* Promotion summary */}
+                <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                  {promotionSummary ? (
+                    <>
+                      <div className="font-medium mb-2">Promotion Applied: {promotionSummary.promotionName}</div>
+                      <div className="text-sm text-gray-700">Original Price: ${promotionSummary.originalPrice.toFixed(2)}</div>
+                      <div className="text-sm text-gray-700">Discount: {promotionSummary.discountPercentage}% (-${promotionSummary.discountAmount.toFixed(2)})</div>
+                      <div className="text-lg font-bold text-green-700 mt-2">Final Price: ${promotionSummary.finalPrice.toFixed(2)}</div>
+                    </>
+                  ) : (
+                    <div className="text-sm text-gray-700">No promotion applied. Price: {selectedProduct?.price}</div>
+                  )}
+                </div>
+                <p className="text-gray-600 mb-4">Click below to proceed to PayPal</p>
+                {approvalUrl && (
+                  <a
+                    href={approvalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full bg-blue-500 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-600"
+                  >
+                    Proceed to PayPal
+                  </a>
                 )}
+                <div className="mt-2 text-xs text-gray-500 break-all">{approvalUrl}</div>
+                <div className="mt-4 text-gray-700">
+                  <ol className="list-decimal ml-5">
+                    <li>Open the above URL in your browser.</li>
+                    <li>Log in with your PayPal sandbox buyer account.</li>
+                    <li>Approve the payment to complete your order.</li>
+                  </ol>
+                </div>
               </div>
             )}
           </div>
         </Modal.Body>
         <Modal.Footer>
-          {selectedProduct && (
-            <>
-              {paymentStatus === 'initial' && (
-                <Button
-                  onClick={handlePayment}
-                  disabled={!customerEmail}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                >
-                  Proceed to Payment
-                </Button>
-              )}
-              <Button 
-                color="gray" 
-                onClick={() => { 
-                  setShowPaymentModal(false); 
-                  setPaymentUrl(''); 
-                  setCustomerEmail(''); 
-                  setSelectedProduct(null);
-                  setSelectedPromotion(null);
-                  setOrderId(null);
-                  setPaymentStatus('initial');
-                }}
-              >
-                {paymentUrl ? 'Close' : 'Cancel'}
-              </Button>
-            </>
+          {selectedProduct && promotionStep === 'none' && (
+            <Button
+              onClick={handleProcessOrder}
+              disabled={!customerEmail}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+            >
+              Proceed to Payment
+            </Button>
           )}
+          <Button 
+            color="gray" 
+            onClick={() => { 
+              setShowPaymentModal(false); 
+              setPaymentUrl(''); 
+              setCustomerEmail(''); 
+              setSelectedProduct(null);
+              setSelectedPromotion(null);
+              setOrderId(null);
+              setPromotionStep('none');
+              setPromotionSummary(null);
+            }}
+          >
+            {approvalUrl ? 'Close' : 'Cancel'}
+          </Button>
         </Modal.Footer>
       </Modal>
     </div>

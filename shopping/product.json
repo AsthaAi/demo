@@ -1,78 +1,73 @@
 {
   "raw_products": [
     {
-      "name": "Product A",
-      "price": 500.0,
+      "name": "iPhone 14 - 128GB",
+      "price": 799.0,
+      "rating": 4.7
+    },
+    {
+      "name": "iPhone 14 - 256GB",
+      "price": 899.0,
+      "rating": 4.6
+    },
+    {
+      "name": "iPhone 14 - 512GB",
+      "price": 1099.0,
       "rating": 4.5
     },
     {
-      "name": "Product B",
-      "price": 300.0,
-      "rating": 3.7
-    },
-    {
-      "name": "Product C",
-      "price": 950.0,
+      "name": "iPhone 14 - 128GB (Unlocked)",
+      "price": 799.0,
       "rating": 4.8
     },
     {
-      "name": "Product D",
-      "price": 200.0,
-      "rating": 4.0
-    },
-    {
-      "name": "Product E",
-      "price": 1000.0,
+      "name": "iPhone 14 - 256GB (Unlocked)",
+      "price": 899.0,
       "rating": 4.9
     }
   ],
   "filtered_products": [
     {
-      "name": "Product A",
-      "price": 500.0,
-      "rating": 4.5
+      "name": "iPhone 14 - 128GB",
+      "price": 799.0,
+      "rating": 4.7
     },
     {
-      "name": "Product B",
-      "price": 300.0,
-      "rating": 3.7
+      "name": "iPhone 14 - 256GB",
+      "price": 899.0,
+      "rating": 4.6
     },
     {
-      "name": "Product C",
-      "price": 950.0,
+      "name": "iPhone 14 - 128GB (Unlocked)",
+      "price": 799.0,
       "rating": 4.8
     },
     {
-      "name": "Product D",
-      "price": 200.0,
-      "rating": 4.0
-    },
-    {
-      "name": "Product E",
-      "price": 1000.0,
+      "name": "iPhone 14 - 256GB (Unlocked)",
+      "price": 899.0,
       "rating": 4.9
     }
   ],
   "top_products": [
     {
-      "name": "Product E",
-      "price": 1000.0,
+      "name": "iPhone 14 - 256GB (Unlocked)",
+      "price": 899.0,
       "rating": 4.9
     },
     {
-      "name": "Product C",
-      "price": 950.0,
+      "name": "iPhone 14 - 128GB (Unlocked)",
+      "price": 799.0,
       "rating": 4.8
     },
     {
-      "name": "Product A",
-      "price": 500.0,
-      "rating": 4.5
+      "name": "iPhone 14 - 128GB",
+      "price": 799.0,
+      "rating": 4.7
     }
   ],
   "best_match": {
-    "name": "Product E",
-    "price": 1000.0,
+    "name": "iPhone 14 - 256GB (Unlocked)",
+    "price": 899.0,
     "rating": 4.9
   }
 }
