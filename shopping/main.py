@@ -352,10 +352,11 @@ Do not return any explanation or summary, only the JSON object.""",
                 "best_match": None
             }
 
-    def run_price_comparison(self, products: List[Dict[str, Any]] = None):
+    async def run_price_comparison(self, products: List[Dict[str, Any]] = None):
         """Run the price comparison phase"""
         # Initialize price comparison agent
         price_agent = self.agents.price_comparison_agent()
+        await price_agent.initialize()
 
         # If no products provided, try to load from file
         if products is None or not products:
@@ -473,8 +474,8 @@ Do not return any explanation or summary, only the JSON object.""",
             paypal_agent = self.agents.paypal_agent()
             await paypal_agent.initialize()  # Initialize the agent
 
-            # Get access token
-            access_token = await paypal_agent.get_access_token()
+            # Get access token using the payment tool
+            access_token = await paypal_agent.payment_tool.get_access_token()
 
             # Create PayPal order
             order_data = await paypal_agent.create_payment_order(
@@ -509,16 +510,16 @@ Do not return any explanation or summary, only the JSON object.""",
                 if capture_now == 'y':
                     # Use order_data.id instead of paypal_order_id
                     if order_data.get('id'):
-                        capture_data = await paypal_agent.capture_payment(order_data['id'])
+                        capture_result = await paypal_agent.capture_payment(order_data['id'])
                         print("\n[PayPal Payment Capture]")
-                        print(json.dumps(capture_data, indent=2))
+                        print(json.dumps(capture_result, indent=2))
 
                         # Check if there was an error with the capture
-                        if isinstance(capture_data, dict) and "error" in capture_data:
+                        if isinstance(capture_result, dict) and "error" in capture_result:
                             print(
                                 "\nPayment capture failed. The order may need to be approved first.")
-                            print(f"Error: {capture_data.get('error')}")
-                            print(f"Status: {capture_data.get('status')}")
+                            print(f"Error: {capture_result.get('error')}")
+                            print(f"Status: {capture_result.get('status')}")
                         else:
                             print("\nPayment captured successfully!")
                 else:
@@ -651,7 +652,7 @@ def main():
                 else:
                     products_to_compare = products
 
-                price_results = shopper.run_price_comparison(
+                price_results = await shopper.run_price_comparison(
                     products_to_compare)
 
                 if price_results:
@@ -721,6 +722,9 @@ def main():
 
                                         # Capture the payment
                                         if paypal_order_id:
+                                            # Initialize a new PayPal agent for capture
+                                            paypal_agent = self.agents.paypal_agent()
+                                            await paypal_agent.initialize()
                                             capture_result = await paypal_agent.capture_payment(paypal_order_id)
                                             if capture_result:
                                                 if capture_result.get('status') == 'COMPLETED':

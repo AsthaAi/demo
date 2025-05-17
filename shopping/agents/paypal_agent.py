@@ -135,9 +135,6 @@ class PayPalAgent(Agent):
         if hasattr(self.payment_tool, 'aztp_id'):
             self.payment_tool_aztp_id = self.payment_tool.aztp_id
 
-        # Run the async initialization
-        asyncio.run(self._initialize_identity())
-
     async def initialize(self):
         """Initialize the agent and its tools"""
         if not self.is_initialized:

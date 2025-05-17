@@ -33,6 +33,7 @@ class PriceComparisonAgent(Agent):
         default=None, exclude=True)
     aztp_id: str = Field(default="", exclude=True)
     iam_utils: IAMUtils = Field(default=None, exclude=True)
+    is_initialized: bool = Field(default=False, exclude=True)
 
     # Add memory storage
     _comparison_memory: Dict[str, Dict[str, Any]] = {}
@@ -59,8 +60,13 @@ class PriceComparisonAgent(Agent):
         self.iam_utils = IAMUtils()  # Initialize IAM utilities
         self.aztp_id = ""  # Initialize as empty string
 
-        # Run the async initialization
-        asyncio.run(self._initialize_identity())
+    async def initialize(self):
+        """Initialize the agent's identity asynchronously"""
+        if self.is_initialized:
+            return
+
+        await self._initialize_identity()
+        self.is_initialized = True
 
     async def _initialize_identity(self):
         """Initialize the agent's identity asynchronously"""
