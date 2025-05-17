@@ -460,7 +460,7 @@ Do not return any explanation or summary, only the JSON object.""",
             "summary": "Selected the first product as the best deal"
         }
 
-    def process_order_with_payment(self, product_details: dict, customer_email: str):
+    async def process_order_with_payment(self, product_details: dict, customer_email: str):
         """
         Process an order with PayPal payment integration
 
@@ -468,107 +468,69 @@ Do not return any explanation or summary, only the JSON object.""",
             product_details: Dictionary containing product information
             customer_email: Customer's email address
         """
-        # Initialize agents
-        order_agent = self.agents.order_agent()
-        paypal_agent = self.agents.paypal_agent()
+        try:
+            # Initialize PayPal agent
+            paypal_agent = self.agents.paypal_agent()
+            await paypal_agent.initialize()  # Initialize the agent
 
-        # Create order task
-        order_task = Task(
-            description=f"""
-            Process the order for the following product:
-            - Name: {product_details.get('name')}
-            - Price: {product_details.get('price')}
-            - Quantity: {product_details.get('quantity', 1)}
-            
-            Generate order details and prepare for payment processing.
-            """,
-            agent=order_agent,
-            expected_output="Order details including transaction ID and status"
-        )
+            # Get access token
+            access_token = await paypal_agent.get_access_token()
 
-        # Create payment order task
-        payment_order_task = Task(
-            description=f"""
-            Create PayPal payment order:
-            - Amount: {product_details.get('price')}
-            - Customer Email: {customer_email}
-            - Description: Order for {product_details.get('name')}
-            - Checkout URL Template: https://www.sandbox.paypal.com/checkoutnow?token={{orderId}}
-            
-            Use the create_payment_order method to create a PayPal order.
-            The order should be processed using the sandbox environment for testing.
-            Replace {{orderId}} in the checkout URL with the actual order ID returned from PayPal.
-            """,
-            agent=paypal_agent,
-            expected_output="PayPal order details with order ID and checkout URL"
-        )
+            # Create PayPal order
+            order_data = await paypal_agent.create_payment_order(
+                amount=product_details['price'],
+                currency="USD",
+                description=product_details.get('description', ''),
+                payee_email=customer_email
+            )
 
-        # Capture payment task
-        capture_payment_task = Task(
-            description=f"""
-            Capture the payment for the created PayPal order.
-            Use the capture_payment method to finalize the payment.
-            The capture_payment method will automatically display a formatted payment success message.
-            Provide the payment confirmation details.
-            """,
-            agent=paypal_agent,
-            expected_output="Payment capture confirmation with transaction details"
-        )
+            print("\n[PayPal Order Created]")
+            print(json.dumps(order_data, indent=2))
 
-        # Create and run the crew
-        crew = Crew(
-            agents=[order_agent, paypal_agent],
-            tasks=[order_task, payment_order_task, capture_payment_task],
-            verbose=True
-        )
+            # Get the approval URL
+            approval_url = None
+            for link in order_data.get('links', []):
+                if link.get('rel') == 'approve':
+                    approval_url = link.get('href')
+                    break
 
-        result = crew.kickoff()
+            if approval_url:
+                print(
+                    f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
+                print("\nInstructions:")
+                print("1. Open the above URL in your browser.")
+                print("2. Log in with your PayPal sandbox buyer account.")
+                print("3. Approve the payment to complete your order.")
+                print("\nAfter approval, the payment will be captured automatically.")
 
-        # Directly call PayPalAgent methods to ensure paymentdetail.json is updated
-        order_data = paypal_agent.create_payment_order(
-            amount=product_details['price'],
-            currency="USD",
-            description=product_details.get('description', ''),
-            payee_email=customer_email
-        )
-        print("\n[Direct PayPalAgent.create_payment_order]")
-        print(json.dumps(order_data, indent=2))
+                # Ask if user wants to proceed with capture now or later
+                capture_now = input(
+                    "\nDo you want to capture the payment now? (y/n): ").lower()
+                if capture_now == 'y':
+                    # Use order_data.id instead of paypal_order_id
+                    if order_data.get('id'):
+                        capture_data = await paypal_agent.capture_payment(order_data['id'])
+                        print("\n[PayPal Payment Capture]")
+                        print(json.dumps(capture_data, indent=2))
 
-        # Get the approval URL
-        approval_url = order_data.get('approval_url')
-        if approval_url:
-            print(
-                f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
-            print("\nInstructions:")
-            print("1. Open the above URL in your browser.")
-            print("2. Log in with your PayPal sandbox buyer account.")
-            print("3. Approve the payment to complete your order.")
-            print("\nAfter approval, the payment will be captured automatically.")
-
-            # Ask if user wants to proceed with capture now or later
-            capture_now = input(
-                "\nDo you want to capture the payment now? (y/n): ").lower()
-            if capture_now == 'y':
-                if order_data.get('paypal_order_id'):
-                    capture_data = paypal_agent.capture_payment(
-                        order_data['paypal_order_id'])
-                    print("\n[Direct PayPalAgent.capture_payment]")
-                    print(json.dumps(capture_data, indent=2))
-
-                    # Check if there was an error with the capture
-                    if isinstance(capture_data, dict) and "error" in capture_data:
-                        print(
-                            "\nPayment capture failed. The order may need to be approved first.")
-                        print(f"Error: {capture_data.get('error')}")
-                        print(f"Status: {capture_data.get('status')}")
-                    else:
-                        print("\nPayment captured successfully!")
+                        # Check if there was an error with the capture
+                        if isinstance(capture_data, dict) and "error" in capture_data:
+                            print(
+                                "\nPayment capture failed. The order may need to be approved first.")
+                            print(f"Error: {capture_data.get('error')}")
+                            print(f"Status: {capture_data.get('status')}")
+                        else:
+                            print("\nPayment captured successfully!")
+                else:
+                    print("\nPayment will need to be captured after approval.")
             else:
-                print("\nPayment will need to be captured after approval.")
-        else:
-            print("\nNo approval URL found. Cannot proceed with payment.")
+                print("\nNo approval URL found. Cannot proceed with payment.")
 
-        return result
+            return order_data
+
+        except Exception as e:
+            print(f"\nError processing payment: {str(e)}")
+            return None
 
 
 def read_latest_payment_detail():
@@ -717,9 +679,9 @@ def main():
                         proceed_payment = input(
                             "\nWould you like to proceed with payment? (y/n): ").lower()
                         if proceed_payment == 'y':
-                            # Get customer email
-                            customer_email = input(
-                                "\nPlease enter your email for payment: ")
+                            # Get merchant/business email
+                            payee_email = input(
+                                "\nPlease enter the merchant/business PayPal email address to receive payment: ")
 
                             # Process order with payment
                             print("\nProcessing order with PayPal...")
@@ -729,17 +691,18 @@ def main():
                                     "name": product.get('name', 'Unknown Product'),
                                     "price": product.get('price', '0.00'),
                                     "quantity": 1,
-                                    "description": product.get('description', '')
+                                    "description": product.get('description', ''),
+                                    "payee_email": payee_email  # Add payee email to product details
                                 }
 
                                 # Process the order with payment
-                                payment_result = shopper.process_order_with_payment(
-                                    product_details, customer_email)
+                                payment_result = asyncio.run(shopper.process_order_with_payment(
+                                    product_details, payee_email))
 
                                 # Only show real PayPal order ID and approval URL
                                 if isinstance(payment_result, dict):
                                     paypal_order_id = payment_result.get(
-                                        "paypal_order_id")
+                                        "id")
                                     approval_url = payment_result.get(
                                         "approval_url")
                                     capture_result = payment_result.get(

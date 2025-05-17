@@ -98,119 +98,175 @@ class PayPalPaymentTool(BaseModel):
             raise
 
     async def get_access_token(self):
-        # Verify access before proceeding
-        await self.iam_utils.verify_access_or_raise(
-            agent_id=self.aztp_id,
-            action="get_access_token",
-            policy_code="policy:3ee68df2c5e7",
-            operation_name="Get PayPal Access Token"
-        )
+        try:
+            # Verify access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="get_access_token",
+                policy_code="policy:3ee68df2c5e7",
+                operation_name="Get PayPal Access Token"
+            )
 
-        client_id = os.getenv("PAYPAL_CLIENT_ID")
-        client_secret = os.getenv("PAYPAL_SECRET")
-        auth = b64encode(f"{client_id}:{client_secret}".encode(
-            'utf-8')).decode('utf-8')
-        url = "https://api-m.sandbox.paypal.com/v1/oauth2/token"
-        headers = {
-            "Authorization": f"Basic {auth}",
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-        data = {"grant_type": "client_credentials"}
-        response = requests.post(url, headers=headers, data=data)
-        response.raise_for_status()
-        print(f"[PayPalPaymentTool] Access token response: {response.json()}")
-        return response.json()["access_token"]
+            client_id = os.getenv("PAYPAL_CLIENT_ID")
+            client_secret = os.getenv("PAYPAL_SECRET")
+
+            if not client_id or not client_secret:
+                raise ValueError("PayPal credentials not properly configured")
+
+            auth = b64encode(f"{client_id}:{client_secret}".encode(
+                'utf-8')).decode('utf-8')
+            url = "https://api-m.sandbox.paypal.com/v1/oauth2/token"
+            headers = {
+                "Authorization": f"Basic {auth}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+            data = {"grant_type": "client_credentials"}
+            response = requests.post(url, headers=headers, data=data)
+            response.raise_for_status()
+            result = response.json()
+            print(f"[PayPalPaymentTool] Access token obtained successfully")
+            return result["access_token"]
+        except Exception as e:
+            print(f"[PayPalPaymentTool] Error getting access token: {str(e)}")
+            raise
 
     async def create_order(self, access_token, amount, currency="USD", description="Test Product", payee_email=None):
-        # Verify access before proceeding
-        await self.iam_utils.verify_access_or_raise(
-            agent_id=self.aztp_id,
-            action="create_order",
-            policy_code="policy:3ee68df2c5e7",
-            operation_name="Create PayPal Order"
-        )
+        try:
+            # Verify access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="create_order",
+                policy_code="policy:3ee68df2c5e7",
+                operation_name="Create PayPal Order"
+            )
 
-        url = "https://api-m.sandbox.paypal.com/v2/checkout/orders"
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json"
-        }
-        purchase_unit = {
-            "amount": {"currency_code": currency, "value": amount},
-            "description": description
-        }
-        if payee_email:
-            purchase_unit["payee"] = {"email_address": payee_email}
-        order_data = {
-            "intent": "CAPTURE",
-            "purchase_units": [purchase_unit],
-            "application_context": {
-                "return_url": "https://example.com/success",
-                "cancel_url": "https://example.com/cancel",
-                "shipping_preference": "NO_SHIPPING"
+            # Validate payee email if provided
+            if payee_email and not '@' in payee_email:
+                raise ValueError("Invalid payee email address format")
+
+            # Generate a unique timestamp-based ID for sandbox testing
+            import time
+            import uuid
+            unique_id = f"ORDER_{int(time.time())}_{str(uuid.uuid4())[:8]}"
+
+            url = "https://api-m.sandbox.paypal.com/v2/checkout/orders"
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
             }
-        }
-        response = requests.post(url, headers=headers, json=order_data)
-        response.raise_for_status()
-        order_response = response.json()
-        print(f"[PayPalPaymentTool] Create order response: {order_response}")
-        print(
-            f"[PayPalPaymentTool] Created order ID: {order_response.get('id')}")
-        for link in order_response.get('links', []):
-            if link.get('rel') == 'approve':
-                print(f"[PayPalPaymentTool] Approval URL: {link.get('href')}")
-        return order_response
+
+            # Ensure amount is properly formatted
+            amount_str = str(amount)
+            if '.' not in amount_str:
+                amount_str = f"{amount_str}.00"
+            elif len(amount_str.split('.')[1]) == 1:
+                amount_str = f"{amount_str}0"
+
+            purchase_unit = {
+                "reference_id": unique_id,
+                "amount": {"currency_code": currency, "value": amount_str},
+                "description": description
+            }
+
+            # Add payee information if email is provided
+            if payee_email:
+                purchase_unit["payee"] = {
+                    "email_address": payee_email
+                }
+                print(
+                    f"[PayPalPaymentTool] Setting up payment to merchant: {payee_email}")
+
+            order_data = {
+                "intent": "CAPTURE",
+                "purchase_units": [purchase_unit],
+                "application_context": {
+                    "return_url": "https://example.com/success",
+                    "cancel_url": "https://example.com/cancel",
+                    "shipping_preference": "NO_SHIPPING",
+                    "user_action": "PAY_NOW"  # Add this to force immediate payment
+                }
+            }
+
+            response = requests.post(url, headers=headers, json=order_data)
+            response.raise_for_status()
+            order_response = response.json()
+
+            # Log the order creation
+            print(
+                f"[PayPalPaymentTool] Created order with ID: {order_response.get('id')}")
+
+            # Extract and add the approval URL to the response
+            for link in order_response.get('links', []):
+                if link.get('rel') == 'approve':
+                    order_response['approval_url'] = link.get('href')
+                    print(
+                        f"[PayPalPaymentTool] Approval URL: {link.get('href')}")
+                    break
+
+            return order_response
+
+        except Exception as e:
+            print(f"[PayPalPaymentTool] Error creating order: {str(e)}")
+            raise
 
     async def get_order_status(self, access_token, order_id):
         """Get the current status of a PayPal order"""
-        # Verify access before proceeding
-        await self.iam_utils.verify_access_or_raise(
-            agent_id=self.aztp_id,
-            action="get_order_status",
-            policy_code="policy:3ee68df2c5e7",
-            operation_name="Get PayPal Order Status"
-        )
+        try:
+            # Verify access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="get_order_status",
+                policy_code="policy:3ee68df2c5e7",
+                operation_name="Get PayPal Order Status"
+            )
 
-        url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}"
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json"
-        }
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        order_details = response.json()
-        print(
-            f"[PayPalPaymentTool] Order status: {order_details.get('status')}")
-        return order_details
+            url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}"
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            }
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            order_details = response.json()
+            print(
+                f"[PayPalPaymentTool] Order {order_id} status: {order_details.get('status')}")
+            return order_details
+        except Exception as e:
+            print(f"[PayPalPaymentTool] Error getting order status: {str(e)}")
+            raise
 
     async def capture_payment(self, access_token, order_id):
-        # Verify access before proceeding
-        await self.iam_utils.verify_access_or_raise(
-            agent_id=self.aztp_id,
-            action="capture_payment",
-            policy_code="policy:3ee68df2c5e7",
-            operation_name="Capture PayPal Payment"
-        )
+        try:
+            # Verify access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="capture_payment",
+                policy_code="policy:3ee68df2c5e7",
+                operation_name="Capture PayPal Payment"
+            )
 
-        # First check the order status
-        order_details = await self.get_order_status(access_token, order_id)
-        status = order_details.get('status')
+            # First check the order status
+            order_details = await self.get_order_status(access_token, order_id)
+            status = order_details.get('status')
 
-        if status != 'APPROVED':
+            if status != 'APPROVED':
+                print(
+                    f"[PayPalPaymentTool] Cannot capture payment: Order status is {status}, not APPROVED")
+                print(
+                    "[PayPalPaymentTool] Please approve the order first using the approval URL")
+                return {"error": f"Order status is {status}, not APPROVED", "status": status}
+
+            url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}/capture"
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            }
+            response = requests.post(url, headers=headers)
+            response.raise_for_status()
+            capture_response = response.json()
             print(
-                f"[PayPalPaymentTool] Cannot capture payment: Order status is {status}, not APPROVED")
-            print(
-                f"[PayPalPaymentTool] Please approve the order first using the approval URL")
-            return {"error": f"Order status is {status}, not APPROVED", "status": status}
-
-        url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}/capture"
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json"
-        }
-        response = requests.post(url, headers=headers)
-        response.raise_for_status()
-        capture_response = response.json()
-        print(
-            f"[PayPalPaymentTool] Capture payment response: {capture_response}")
-        return capture_response
+                f"[PayPalPaymentTool] Successfully captured payment for order {order_id}")
+            return capture_response
+        except Exception as e:
+            print(f"[PayPalPaymentTool] Error capturing payment: {str(e)}")
+            raise
