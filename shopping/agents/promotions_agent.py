@@ -97,7 +97,22 @@ class PromotionsAgent(Agent):
                 raise ValueError(
                     "Failed to verify identity for agent: Promotions Agent")
 
+            # Verify promotions access before proceeding
+            print(
+                f"\n3. Verifying access permissions for Promotions Agent {self.aztp_id}")
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="create_promotion",
+                policy_code="policy:182a30a9c944",
+                operation_name="Promotions Management"
+            )
+
             print("\n✅ Promotions agent initialized successfully")
+
+        except PolicyVerificationError as e:
+            error_msg = str(e)
+            print(f"❌ Policy verification failed: {error_msg}")
+            raise  # Re-raise the exception to stop execution
 
         except Exception as e:
             error_msg = f"Failed to initialize promotions agent: {str(e)}"
@@ -118,35 +133,56 @@ class PromotionsAgent(Agent):
         if not self.is_initialized:
             await self.initialize()
 
-        # Analyze shopping patterns
-        total_spent = sum(item.get('amount', 0) for item in shopping_history)
-        purchase_frequency = len(shopping_history) / 30  # purchases per month
+        try:
+            # Verify discount creation access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="discount_creation",
+                policy_code="policy:182a30a9c944",
+                operation_name="Discount Creation"
+            )
 
-        # Calculate discount percentage based on user behavior
-        base_discount = 5  # Base discount percentage
-        if total_spent > 1000:
-            base_discount += 5
-        if purchase_frequency > 5:
-            base_discount += 3
+            # Analyze shopping patterns
+            total_spent = sum(item.get('amount', 0)
+                              for item in shopping_history)
+            purchase_frequency = len(shopping_history) / \
+                30  # purchases per month
 
-        # Cap maximum discount
-        final_discount = min(base_discount, 15)
+            # Calculate discount percentage based on user behavior
+            base_discount = 5  # Base discount percentage
+            if total_spent > 1000:
+                base_discount += 5
+            if purchase_frequency > 5:
+                base_discount += 3
 
-        discount = {
-            'user_id': user_id,
-            'discount_percentage': final_discount,
-            'valid_from': datetime.now().isoformat(),
-            'valid_until': (datetime.now() + timedelta(days=7)).isoformat(),
-            'minimum_purchase': 50.0,
-            'created_at': datetime.now().isoformat()
-        }
+            # Cap maximum discount
+            final_discount = min(base_discount, 15)
 
-        # Store in history
-        if user_id not in self._user_discount_history:
-            self._user_discount_history[user_id] = []
-        self._user_discount_history[user_id].append(discount)
+            discount = {
+                'user_id': user_id,
+                'discount_percentage': final_discount,
+                'valid_from': datetime.now().isoformat(),
+                'valid_until': (datetime.now() + timedelta(days=7)).isoformat(),
+                'minimum_purchase': 50.0,
+                'created_at': datetime.now().isoformat()
+            }
 
-        return discount
+            # Store in history
+            if user_id not in self._user_discount_history:
+                self._user_discount_history[user_id] = []
+            self._user_discount_history[user_id].append(discount)
+
+            return discount
+
+        except PolicyVerificationError as e:
+            error_msg = str(e)
+            print(f"❌ Policy verification failed: {error_msg}")
+            raise
+
+        except Exception as e:
+            error_msg = f"Failed to create personalized discount: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise
 
     async def create_promotion_campaign(self, campaign_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -161,32 +197,51 @@ class PromotionsAgent(Agent):
         if not self.is_initialized:
             await self.initialize()
 
-        campaign_id = f"camp_{int(datetime.now().timestamp())}"
+        try:
+            # Verify campaign creation access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="campaign_creation",
+                policy_code="policy:182a30a9c944",
+                operation_name="Campaign Creation"
+            )
 
-        campaign = {
-            'campaign_id': campaign_id,
-            'name': campaign_data.get('name', 'Unnamed Campaign'),
-            'description': campaign_data.get('description', ''),
-            'start_date': campaign_data.get('start_date', datetime.now().isoformat()),
-            'end_date': campaign_data.get('end_date'),
-            'discount_type': campaign_data.get('discount_type', 'percentage'),
-            'discount_value': campaign_data.get('discount_value', 10),
-            'conditions': campaign_data.get('conditions', {}),
-            'status': 'active',
-            'created_at': datetime.now().isoformat()
-        }
+            campaign_id = f"camp_{int(datetime.now().timestamp())}"
 
-        # Store campaign
-        self._active_promotions[campaign_id] = campaign
+            campaign = {
+                'campaign_id': campaign_id,
+                'name': campaign_data.get('name', 'Unnamed Campaign'),
+                'description': campaign_data.get('description', ''),
+                'start_date': campaign_data.get('start_date', datetime.now().isoformat()),
+                'end_date': campaign_data.get('end_date'),
+                'discount_type': campaign_data.get('discount_type', 'percentage'),
+                'discount_value': campaign_data.get('discount_value', 10),
+                'conditions': campaign_data.get('conditions', {}),
+                'status': 'active',
+                'created_at': datetime.now().isoformat()
+            }
 
-        # Initialize metrics
-        self._campaign_metrics[campaign_id] = {
-            'impressions': 0,
-            'redemptions': 0,
-            'total_discount_amount': 0.0
-        }
+            # Store campaign
+            self._active_promotions[campaign_id] = campaign
 
-        return campaign
+            # Initialize metrics
+            self._campaign_metrics[campaign_id] = {
+                'impressions': 0,
+                'redemptions': 0,
+                'total_discount_amount': 0.0
+            }
+
+            return campaign
+
+        except PolicyVerificationError as e:
+            error_msg = str(e)
+            print(f"❌ Policy verification failed: {error_msg}")
+            raise
+
+        except Exception as e:
+            error_msg = f"Failed to create promotion campaign: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise
 
     async def analyze_shopping_history(self, user_id: str, history: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
@@ -202,29 +257,49 @@ class PromotionsAgent(Agent):
         if not self.is_initialized:
             await self.initialize()
 
-        # Analyze purchase patterns
-        total_purchases = len(history)
-        total_spent = sum(item.get('amount', 0) for item in history)
-        avg_purchase = total_spent / total_purchases if total_purchases > 0 else 0
+        try:
+            # Verify history analysis access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="read_history",
+                policy_code="policy:182a30a9c944",
+                operation_name="History Analysis"
+            )
 
-        # Category analysis
-        category_counts = {}
-        for item in history:
-            category = item.get('category', 'unknown')
-            category_counts[category] = category_counts.get(category, 0) + 1
+            # Analyze purchase patterns
+            total_purchases = len(history)
+            total_spent = sum(item.get('amount', 0) for item in history)
+            avg_purchase = total_spent / total_purchases if total_purchases > 0 else 0
 
-        # Find favorite category
-        favorite_category = max(category_counts.items(), key=lambda x: x[1])[
-            0] if category_counts else None
+            # Category analysis
+            category_counts = {}
+            for item in history:
+                category = item.get('category', 'unknown')
+                category_counts[category] = category_counts.get(
+                    category, 0) + 1
 
-        analysis = {
-            'user_id': user_id,
-            'total_purchases': total_purchases,
-            'total_spent': total_spent,
-            'average_purchase': avg_purchase,
-            'favorite_category': favorite_category,
-            'category_distribution': category_counts,
-            'analyzed_at': datetime.now().isoformat()
-        }
+            # Find favorite category
+            favorite_category = max(category_counts.items(), key=lambda x: x[1])[
+                0] if category_counts else None
 
-        return analysis
+            analysis = {
+                'user_id': user_id,
+                'total_purchases': total_purchases,
+                'total_spent': total_spent,
+                'average_purchase': avg_purchase,
+                'favorite_category': favorite_category,
+                'category_distribution': category_counts,
+                'analyzed_at': datetime.now().isoformat()
+            }
+
+            return analysis
+
+        except PolicyVerificationError as e:
+            error_msg = str(e)
+            print(f"❌ Policy verification failed: {error_msg}")
+            raise
+
+        except Exception as e:
+            error_msg = f"Failed to analyze shopping history: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise

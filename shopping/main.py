@@ -9,6 +9,7 @@ from agents.price_comparison_agent import PriceComparisonAgent
 from agents.order_agent import OrderAgent
 from agents.paypal_agent import PayPalAgent
 from agents.promotions_agent import PromotionsAgent
+from agents.customer_support_agent import CustomerSupportAgent
 from agents.tasks import ResearchTasks
 from dotenv import load_dotenv
 from crewai import Crew, Task
@@ -42,6 +43,10 @@ class ShopperAgents:
     def promotions_agent(self):
         """Create and return the promotions agent"""
         return PromotionsAgent()
+
+    def customer_support_agent(self):
+        """Create and return the customer support agent"""
+        return CustomerSupportAgent()
 
 
 class ShopperAI:
@@ -783,6 +788,87 @@ Do not return any explanation or summary, only the JSON object.""",
             print(f"\nError creating promotion campaign: {str(e)}")
             return None
 
+    async def process_refund_request(self, order_details: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process a refund request for an order
+
+        Args:
+            order_details: Dictionary containing order information including transaction ID and refund reason
+
+        Returns:
+            Dictionary containing refund confirmation details
+        """
+        print("\n=== Processing Refund Request ===")
+        try:
+            # Initialize customer support agent
+            customer_support_agent = self.agents.customer_support_agent()
+            await customer_support_agent.initialize()
+
+            # Process the refund
+            refund_confirmation = await customer_support_agent.process_refund(order_details)
+            print("✅ Refund processed successfully")
+
+            return refund_confirmation
+
+        except Exception as e:
+            error_msg = f"Failed to process refund: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise
+
+    async def get_faq_answer(self, query: str) -> Dict[str, Any]:
+        """
+        Get answer for a FAQ query
+
+        Args:
+            query: The customer's question
+
+        Returns:
+            Dictionary containing FAQ response
+        """
+        print("\n=== Processing FAQ Query ===")
+        try:
+            # Initialize customer support agent
+            customer_support_agent = self.agents.customer_support_agent()
+            await customer_support_agent.initialize()
+
+            # Get FAQ response
+            faq_response = await customer_support_agent.get_faq_response(query)
+            print("✅ FAQ response retrieved successfully")
+
+            return faq_response
+
+        except Exception as e:
+            error_msg = f"Failed to get FAQ response: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise
+
+    async def create_support_ticket(self, issue_details: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a support ticket for customer issue
+
+        Args:
+            issue_details: Dictionary containing issue information
+
+        Returns:
+            Dictionary containing ticket details
+        """
+        print("\n=== Creating Support Ticket ===")
+        try:
+            # Initialize customer support agent
+            customer_support_agent = self.agents.customer_support_agent()
+            await customer_support_agent.initialize()
+
+            # Create support ticket
+            ticket = await customer_support_agent.create_support_ticket(issue_details)
+            print("✅ Support ticket created successfully")
+
+            return ticket
+
+        except Exception as e:
+            error_msg = f"Failed to create support ticket: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise
+
 
 def read_latest_payment_detail():
     project_root = os.path.dirname(os.path.abspath(__file__))
@@ -817,11 +903,12 @@ def main():
         print("1. Search and buy products")
         print("2. View your shopping history and personalized discounts")
         print("3. View active promotions")
-        print("4. Exit")
+        print("4. Customer Support")
+        print("5. Exit")
 
         while True:
             try:
-                choice = input("\nPlease select an action (1-4): ")
+                choice = input("\nPlease select an action (1-5): ")
 
                 if choice == "1":
                     await search_and_buy_products()
@@ -885,10 +972,86 @@ def main():
                         print(json.dumps(campaign, indent=2))
 
                 elif choice == "4":
+                    # Customer Support Menu
+                    print("\nCustomer Support Options:")
+                    print("1. Request Refund")
+                    print("2. FAQ Help")
+                    print("3. Create Support Ticket")
+                    print("4. Back to Main Menu")
+
+                    while True:
+                        support_choice = input(
+                            "\nPlease select an option (1-4): ")
+
+                        if support_choice == "4":
+                            break
+
+                        # Initialize ShopperAI for customer support
+                        shopper = ShopperAI("", {})
+
+                        if support_choice == "1":
+                            # Get refund details
+                            transaction_id = input("\nEnter transaction ID: ")
+                            reason = input("Enter refund reason: ")
+                            amount = float(input("Enter refund amount: "))
+
+                            refund_details = {
+                                "transaction_id": transaction_id,
+                                "reason": reason,
+                                "amount": amount
+                            }
+
+                            try:
+                                refund_result = await shopper.process_refund_request(refund_details)
+                                print("\n[Refund Request Result]")
+                                print(json.dumps(refund_result, indent=2))
+                            except Exception as e:
+                                print(f"\nError processing refund: {str(e)}")
+
+                        elif support_choice == "2":
+                            # Get FAQ query
+                            query = input("\nWhat's your question? ")
+
+                            try:
+                                faq_result = await shopper.get_faq_answer(query)
+                                print("\n[FAQ Response]")
+                                print(json.dumps(faq_result, indent=2))
+                            except Exception as e:
+                                print(
+                                    f"\nError getting FAQ response: {str(e)}")
+
+                        elif support_choice == "3":
+                            # Get ticket details
+                            customer_id = input("\nEnter your customer ID: ")
+                            issue_type = input(
+                                "Enter issue type (Technical/Billing/General): ")
+                            priority = input(
+                                "Enter priority (Low/Medium/High): ")
+                            description = input("Enter issue description: ")
+
+                            ticket_details = {
+                                "customer_id": customer_id,
+                                "issue_type": issue_type,
+                                "priority": priority,
+                                "description": description
+                            }
+
+                            try:
+                                ticket_result = await shopper.create_support_ticket(ticket_details)
+                                print("\n[Support Ticket Created]")
+                                print(json.dumps(ticket_result, indent=2))
+                            except Exception as e:
+                                print(
+                                    f"\nError creating support ticket: {str(e)}")
+
+                        else:
+                            print("\nInvalid choice. Please select 1-4.")
+
+                elif choice == "5":
                     print("\nThank you for using ShopperAI!")
                     break
                 else:
-                    print("\nInvalid choice. Please select 1-4.")
+                    print("\nInvalid choice. Please select 1-5.")
 
             except Exception as e:
                 print(f"\nError: {str(e)}")
