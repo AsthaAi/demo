@@ -244,68 +244,37 @@ class PayPalAgent(Agent):
         with open(payment_json_path, 'w') as f:
             json.dump(existing, f, indent=2)
 
-    def create_payment_order(self, amount, currency="USD", description="", payee_email=None):
-        access_token = self.payment_tool.get_access_token()
-        order_response = self.payment_tool.create_order(
-            access_token, amount, currency, description, payee_email)
-        approval_url = None
-        for link in order_response.get('links', []):
-            if link.get('rel') == 'approve':
-                approval_url = link.get('href')
-                break
-        result = {
-            'paypal_order_id': order_response.get('id'),
-            'approval_url': approval_url,
-            'raw_response': order_response
-        }
-        self._log_payment_detail({'action': 'create_order', **result})
-        return result
+    async def create_payment_order(self, amount, currency="USD", description="", payee_email=None):
+        """Create a PayPal payment order"""
+        if not self.is_initialized:
+            await self.initialize()
 
-    def capture_payment(self, order_id):
-        access_token = self.payment_tool.get_access_token()
-        capture_response = self.payment_tool.capture_payment(
-            access_token, order_id)
+        try:
+            access_token = await self.payment_tool.get_access_token()
+            order_data = await self.payment_tool.create_order(
+                access_token=access_token,
+                amount=amount,
+                currency=currency,
+                description=description,
+                payee_email=payee_email
+            )
+            return order_data
+        except Exception as e:
+            print(f"Error creating payment order: {str(e)}")
+            raise
 
-        # Check if there was an error with the capture
-        if isinstance(capture_response, dict) and "error" in capture_response:
-            error_message = capture_response.get("error", "Unknown error")
-            status = capture_response.get("status", "Unknown")
+    async def capture_payment(self, order_id):
+        """Capture a PayPal payment"""
+        if not self.is_initialized:
+            await self.initialize()
 
-            # Get the approval URL from paymentdetail.json
-            approval_url = None
-            try:
-                with open('shopping/paymentdetail.json', 'r') as f:
-                    payment_details = json.load(f)
-                    for detail in payment_details:
-                        if detail.get('paypal_order_id') == order_id:
-                            approval_url = detail.get('approval_url')
-                            break
-            except Exception as e:
-                print(f"Error reading payment details: {str(e)}")
-
-            result = {
-                'error': error_message,
-                'status': status,
-                'paypal_order_id': order_id
-            }
-
-            if approval_url:
-                result['approval_url'] = approval_url
-                print(
-                    f"\nOrder needs to be approved first. Please use this URL to approve the payment:")
-                print(f"{approval_url}")
-                print("\nAfter approval, try capturing the payment again.")
-
-            self._log_payment_detail(
-                {'action': 'capture_payment_error', **result})
-            return result
-
-        result = {
-            'capture_result': capture_response,
-            'paypal_order_id': order_id
-        }
-        self._log_payment_detail({'action': 'capture_payment', **result})
-        return result
+        try:
+            access_token = await self.payment_tool.get_access_token()
+            capture_data = await self.payment_tool.capture_payment(access_token, order_id)
+            return capture_data
+        except Exception as e:
+            print(f"Error capturing payment: {str(e)}")
+            raise
 
     def display_payment_success(self, capture_result: Dict[str, Any], order_details: Dict[str, Any]) -> None:
         """

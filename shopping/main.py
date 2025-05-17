@@ -107,14 +107,14 @@ class ShopperAI:
             print("Using default result structure")
             return result
 
-    def run_research(self):
+    async def run_research(self):
         """Run the research phase"""
         # Initialize research agent
         print("\n=== Initializing Research Agent ===")
         try:
             research_agent = self.agents.research_agent()
-            # Ensure async initialization is complete
-            asyncio.run(research_agent.initialize())
+            # Properly await initialization
+            await research_agent.initialize()
             print("Research agent initialized successfully")
         except ValueError as e:
             if "SERPAPI_API_KEY" in str(e):
@@ -560,194 +560,200 @@ def main():
     """
     Main function to run the ShopperAI application
     """
-    print("Welcome to ShopperAI!")
-    print("I'll help you find and compare products across multiple platforms.")
+    async def run_async():
+        print("Welcome to ShopperAI!")
+        print("I'll help you find and compare products across multiple platforms.")
 
-    # Get search criteria from user
-    query = input("\nWhat would you like to search for? ")
+        # Get search criteria from user
+        query = input("\nWhat would you like to search for? ")
 
-    # Ask for maximum price separately
-    while True:
-        try:
-            max_price_input = input("Maximum price (in USD): ")
-            max_price = float(max_price_input)
-            break
-        except ValueError:
-            print("Please enter a valid number for the maximum price.")
-
-    # Ask for minimum rating separately
-    while True:
-        try:
-            min_rating_input = input("Minimum rating (0-5): ")
-            min_rating = float(min_rating_input)
-            if 0 <= min_rating <= 5:
+        # Ask for maximum price separately
+        while True:
+            try:
+                max_price_input = input("Maximum price (in USD): ")
+                max_price = float(max_price_input)
                 break
-            else:
-                print("Rating must be between 0 and 5.")
-        except ValueError:
-            print("Please enter a valid number for the minimum rating.")
+            except ValueError:
+                print("Please enter a valid number for the maximum price.")
 
-    # Initialize ShopperAI
-    shopper = ShopperAI(
-        query, {"max_price": max_price, "min_rating": min_rating})
-
-    # Run research phase
-    print("\nSearching for products...")
-    research_results = shopper.run_research()
-
-    # Extract and display products
-    products = []
-    best = None
-    if isinstance(research_results, dict):
-        # Always use best_match if it exists and is not None
-        if research_results.get("best_match") and research_results["best_match"]:
-            best = research_results["best_match"]
-            products = [best]
-        elif research_results.get("top_products") and research_results["top_products"]:
-            products = research_results["top_products"]
-        elif research_results.get("filtered_products") and research_results["filtered_products"]:
-            products = research_results["filtered_products"]
-        elif research_results.get("raw_products") and research_results["raw_products"]:
-            products = research_results["raw_products"]
-
-    # Debug information
-    # print(f"\nNumber of products found: {len(products)}")
-
-    if best:
-        print("\nBest Match:")
-        print(f"Name: {best.get('name', best.get('title', ''))}")
-        # print(f"Brand: {best.get('brand', '')}")
-        print(f"Price: {best.get('price', '')}")
-        print(f"Rating: {best.get('rating', '')}")
-    elif products:
-        print("\nFound the following products:")
-        print("\n{:<40} {:<10} {:<10} {:<20}".format(
-            "Product", "Price", "Rating"))
-        print("-" * 80)
-        for product in products:
-            # Handle different product structures
-            name = product.get("name", product.get("title", "Unknown"))
-            price = product.get("price", "N/A")
-            rating = product.get("rating", "N/A")
-            # brand = product.get("brand", "Unknown")
-
-            print("{:<40} {:<10} {:<10} {:<20}".format(
-                name[:37] + "..." if len(name) > 37 else name,
-                price,
-                rating,
-                # brand
-            ))
-    else:
-        print("\nNo products found matching your criteria.")
-
-    # Ask user if they want to compare prices
-    if products:
-        compare_prices = input(
-            "\nWould you like to compare prices for these products? (y/n): ").lower()
-        if compare_prices == 'y':
-            print("\nComparing prices...")
-            # Extract products from research results
-            if isinstance(research_results, dict):
-                if research_results.get("best_match"):
-                    products_to_compare = [research_results["best_match"]]
-                elif research_results.get("top_products"):
-                    products_to_compare = research_results["top_products"]
-                elif research_results.get("filtered_products"):
-                    products_to_compare = research_results["filtered_products"]
+        # Ask for minimum rating separately
+        while True:
+            try:
+                min_rating_input = input("Minimum rating (0-5): ")
+                min_rating = float(min_rating_input)
+                if 0 <= min_rating <= 5:
+                    break
                 else:
-                    products_to_compare = research_results.get(
-                        "raw_products", [])
-            else:
-                products_to_compare = products
+                    print("Rating must be between 0 and 5.")
+            except ValueError:
+                print("Please enter a valid number for the minimum rating.")
 
-            price_results = shopper.run_price_comparison(products_to_compare)
+        # Initialize ShopperAI
+        shopper = ShopperAI(
+            query, {"max_price": max_price, "min_rating": min_rating})
 
-            if price_results:
-                print("\nPrice Comparison Results:")
-                if isinstance(price_results, dict):
-                    product = price_results.get("product", {})
-                    if product:
-                        print("\nBest Deal:")
-                        print(f"Product: {product.get('name', 'Unknown')}")
-                        print(f"Price: {product.get('price', 'N/A')}")
-                        # print(f"Brand: {product.get('brand', 'Unknown')}")
-                        print(f"Rating: {product.get('rating', 'N/A')}")
-                        if "summary" in price_results:
-                            print(f"\nSummary: {price_results['summary']}")
+        # Run research phase
+        print("\nSearching for products...")
+        research_results = await shopper.run_research()
 
-                        # Ask if user wants to proceed with payment
-                        proceed_payment = input(
-                            "\nWould you like to proceed with payment? (y/n): ").lower()
-                        if proceed_payment == 'y':
-                            # Get merchant/business email
-                            payee_email = input(
-                                "\nPlease enter the merchant/business PayPal email address to receive payment: ")
+        # Extract and display products
+        products = []
+        best = None
+        if isinstance(research_results, dict):
+            if research_results.get("best_match") and research_results["best_match"]:
+                best = research_results["best_match"]
+                products = [best]
+            elif research_results.get("top_products") and research_results["top_products"]:
+                products = research_results["top_products"]
+            elif research_results.get("filtered_products") and research_results["filtered_products"]:
+                products = research_results["filtered_products"]
+            elif research_results.get("raw_products") and research_results["raw_products"]:
+                products = research_results["raw_products"]
 
-                            # Process order with payment
-                            print("\nProcessing order with PayPal...")
-                            try:
-                                # Prepare product details for payment
-                                product_details = {
-                                    "name": product.get('name', 'Unknown Product'),
-                                    "price": product.get('price', '0.00'),
-                                    "quantity": 1,
-                                    "description": product.get('description', ''),
-                                    "payee_email": payee_email  # Add payee email to product details
-                                }
+        if best:
+            print("\nBest Match:")
+            print(f"Name: {best.get('name', best.get('title', ''))}")
+            print(f"Price: {best.get('price', '')}")
+            print(f"Rating: {best.get('rating', '')}")
+        elif products:
+            print("\nFound the following products:")
+            print("\n{:<40} {:<10} {:<10}".format(
+                "Product", "Price", "Rating"))
+            print("-" * 80)
+            for product in products:
+                name = product.get("name", product.get("title", "Unknown"))
+                price = product.get("price", "N/A")
+                rating = product.get("rating", "N/A")
+                print("{:<40} {:<10} {:<10}".format(
+                    name[:37] + "..." if len(name) > 37 else name,
+                    price,
+                    rating
+                ))
+        else:
+            print("\nNo products found matching your criteria.")
 
-                                # Process the order with payment
-                                payment_result = asyncio.run(shopper.process_order_with_payment(
-                                    product_details, payee_email))
-
-                                # Only show real PayPal order ID and approval URL
-                                if isinstance(payment_result, dict):
-                                    paypal_order_id = payment_result.get(
-                                        "id")
-                                    approval_url = payment_result.get(
-                                        "approval_url")
-                                    capture_result = payment_result.get(
-                                        "capture_result")
-                                    if paypal_order_id:
-                                        print(f"Order ID: {paypal_order_id}")
-                                    if approval_url:
-                                        print(
-                                            f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
-                                        print("\nInstructions:")
-                                        print(
-                                            "1. Open the above URL in your browser.")
-                                        print(
-                                            "2. Log in with your PayPal sandbox buyer account.")
-                                        print(
-                                            "3. Approve the payment to complete your order.")
-                                    if capture_result:
-                                        if 'status' in capture_result and capture_result['status'] == 'COMPLETED':
-                                            print(
-                                                "\nPayment captured successfully!")
-                                            print(
-                                                f"Transaction ID: {capture_result.get('id')}")
-                                            print(
-                                                f"Status: {capture_result.get('status')}")
-                                            print(
-                                                f"Amount: {capture_result.get('purchase_units', [{}])[0].get('amount', {}).get('value', '')} {capture_result.get('purchase_units', [{}])[0].get('amount', {}).get('currency_code', '')}")
-                                        else:
-                                            print(
-                                                "\nPayment failed or not completed.")
-                                            print(capture_result)
-                                else:
-                                    print(f"Order details: {payment_result}")
-                            except Exception as e:
-                                print(f"\nError processing payment: {str(e)}")
+        # Ask user if they want to compare prices
+        if products:
+            compare_prices = input(
+                "\nWould you like to compare prices for these products? (y/n): ").lower()
+            if compare_prices == 'y':
+                print("\nComparing prices...")
+                if isinstance(research_results, dict):
+                    if research_results.get("best_match"):
+                        products_to_compare = [research_results["best_match"]]
+                    elif research_results.get("top_products"):
+                        products_to_compare = research_results["top_products"]
+                    elif research_results.get("filtered_products"):
+                        products_to_compare = research_results["filtered_products"]
                     else:
-                        print("No specific product recommendation available.")
+                        products_to_compare = research_results.get(
+                            "raw_products", [])
                 else:
-                    print("Price comparison results are in an unexpected format.")
-            else:
-                print("\nUnable to compare prices at this time.")
+                    products_to_compare = products
 
-    # After payment processing
-    read_latest_payment_detail()
+                price_results = shopper.run_price_comparison(
+                    products_to_compare)
 
-    print("\nThank you for using ShopperAI!")
+                if price_results:
+                    print("\nPrice Comparison Results:")
+                    if isinstance(price_results, dict):
+                        product = price_results.get("product", {})
+                        if product:
+                            print("\nBest Deal:")
+                            print(f"Product: {product.get('name', 'Unknown')}")
+                            print(f"Price: {product.get('price', 'N/A')}")
+                            print(f"Rating: {product.get('rating', 'N/A')}")
+                            if "summary" in price_results:
+                                print(f"\nSummary: {price_results['summary']}")
+
+                            # Ask if user wants to proceed with payment
+                            proceed_payment = input(
+                                "\nWould you like to proceed with payment? (y/n): ").lower()
+                            if proceed_payment == 'y':
+                                # Get merchant/business email
+                                payee_email = input(
+                                    "\nPlease enter the merchant/business PayPal email address to receive payment: ")
+
+                                # Process order with payment
+                                print("\nProcessing order with PayPal...")
+                                try:
+                                    # Prepare product details for payment
+                                    product_details = {
+                                        "name": product.get('name', 'Unknown Product'),
+                                        "price": product.get('price', '0.00'),
+                                        "quantity": 1,
+                                        "description": product.get('description', ''),
+                                        "payee_email": payee_email
+                                    }
+
+                                    # Process the order with payment
+                                    payment_result = await shopper.process_order_with_payment(product_details, payee_email)
+
+                                    # Only show real PayPal order ID and approval URL
+                                    if isinstance(payment_result, dict):
+                                        paypal_order_id = payment_result.get(
+                                            "id")
+
+                                        # Get approval URL from links
+                                        approval_url = None
+                                        for link in payment_result.get('links', []):
+                                            if link.get('rel') == 'approve':
+                                                approval_url = link.get('href')
+                                                break
+
+                                        if paypal_order_id:
+                                            print(
+                                                f"\nOrder ID: {paypal_order_id}")
+                                        if approval_url:
+                                            print(
+                                                f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
+                                            print("\nInstructions:")
+                                            print(
+                                                "1. Open the above URL in your browser.")
+                                            print(
+                                                "2. Log in with your PayPal sandbox buyer account.")
+                                            print(
+                                                "3. Approve the payment to complete your order.")
+
+                                        # Wait for user to complete payment
+                                        input(
+                                            "\nPress Enter after completing the payment in your browser...")
+
+                                        # Capture the payment
+                                        if paypal_order_id:
+                                            capture_result = await paypal_agent.capture_payment(paypal_order_id)
+                                            if capture_result:
+                                                if capture_result.get('status') == 'COMPLETED':
+                                                    print(
+                                                        "\nPayment captured successfully!")
+                                                    print(
+                                                        f"Transaction ID: {capture_result.get('id')}")
+                                                    print(
+                                                        f"Status: {capture_result.get('status')}")
+                                                else:
+                                                    print(
+                                                        "\nPayment capture failed or is incomplete.")
+                                                    print(
+                                                        f"Status: {capture_result.get('status')}")
+                                    else:
+                                        print(
+                                            f"\nOrder processing failed: {payment_result}")
+                                except Exception as e:
+                                    print(
+                                        f"\nError processing payment: {str(e)}")
+                        else:
+                            print("No specific product recommendation available.")
+                    else:
+                        print("Price comparison results are in an unexpected format.")
+                else:
+                    print("\nUnable to compare prices at this time.")
+
+        # After payment processing
+        read_latest_payment_detail()
+        print("\nThank you for using ShopperAI!")
+
+    # Run the async main function
+    asyncio.run(run_async())
 
 
 if __name__ == "__main__":
