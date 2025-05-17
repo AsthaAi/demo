@@ -1,99 +1,86 @@
 {
   "raw_products": [
     {
-      "make": "Honda",
-      "model": "Civic",
-      "year": 2005,
+      "make": "Ford",
+      "model": "Focus",
       "price": 2500.0,
-      "rating": 4.0
+      "rating": 3.5
     },
     {
       "make": "Toyota",
       "model": "Corolla",
-      "year": 2004,
       "price": 2800.0,
-      "rating": 3.5
+      "rating": 4.0
     },
     {
-      "make": "Ford",
-      "model": "Focus",
-      "year": 2007,
-      "price": 2300.0,
-      "rating": 4.5
+      "make": "Honda",
+      "model": "Civic",
+      "price": 3000.0,
+      "rating": 3.0
     },
     {
       "make": "Nissan",
-      "model": "Sentra",
-      "year": 2006,
-      "price": 2900.0,
+      "model": "Altima",
+      "price": 2700.0,
+      "rating": 2.5
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Malibu",
+      "price": 1500.0,
+      "rating": 4.5
+    }
+  ],
+  "filtered_products": [
+    {
+      "make": "Ford",
+      "model": "Focus",
+      "price": 2500.0,
+      "rating": 3.5
+    },
+    {
+      "make": "Toyota",
+      "model": "Corolla",
+      "price": 2800.0,
+      "rating": 4.0
+    },
+    {
+      "make": "Honda",
+      "model": "Civic",
+      "price": 3000.0,
       "rating": 3.0
     },
     {
       "make": "Chevrolet",
       "model": "Malibu",
-      "year": 2003,
-      "price": 2200.0,
-      "rating": 2.5
-    }
-  ],
-  "filtered_products": [
-    {
-      "make": "Honda",
-      "model": "Civic",
-      "year": 2005,
-      "price": 2500.0,
-      "rating": 4.0
-    },
-    {
-      "make": "Toyota",
-      "model": "Corolla",
-      "year": 2004,
-      "price": 2800.0,
-      "rating": 3.5
-    },
-    {
-      "make": "Ford",
-      "model": "Focus",
-      "year": 2007,
-      "price": 2300.0,
+      "price": 1500.0,
       "rating": 4.5
-    },
-    {
-      "make": "Nissan",
-      "model": "Sentra",
-      "year": 2006,
-      "price": 2900.0,
-      "rating": 3.0
     }
   ],
   "top_products": [
     {
       "make": "Ford",
       "model": "Focus",
-      "year": 2007,
-      "price": 2300.0,
-      "rating": 4.5
-    },
-    {
-      "make": "Honda",
-      "model": "Civic",
-      "year": 2005,
       "price": 2500.0,
-      "rating": 4.0
+      "rating": 3.5
     },
     {
       "make": "Toyota",
       "model": "Corolla",
-      "year": 2004,
       "price": 2800.0,
-      "rating": 3.5
+      "rating": 4.0
+    },
+    {
+      "make": "Chevrolet",
+      "model": "Malibu",
+      "price": 1500.0,
+      "rating": 4.5
     }
   ],
   "best_match": {
-    "make": "Ford",
-    "model": "Focus",
-    "year": 2007,
-    "price": 2300.0,
-    "rating": 4.5
+    "make": "Toyota",
+    "model": "Corolla",
+    "price": 2800.0,
+    "rating": 4.0
   }
 }

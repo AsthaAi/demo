@@ -17,6 +17,8 @@ import requests
 from base64 import b64encode
 from tools.payment_tool import PayPalPaymentTool
 import json
+from utils.iam_utils import IAMUtils
+from utils.exceptions import PolicyVerificationError
 
 # Import PayPal toolkit
 try:
@@ -56,6 +58,8 @@ class PayPalAgent(Agent):
     payment_tool: PayPalPaymentTool = Field(
         default_factory=PayPalPaymentTool, exclude=True)
     payment_tool_aztp_id: str = Field(default="", exclude=True)
+    iam_utils: IAMUtils = Field(default=None, exclude=True)
+    is_initialized: bool = Field(default=False, exclude=True)
 
     def __init__(self):
         """Initialize the PayPal agent with necessary tools"""
@@ -119,7 +123,9 @@ class PayPalAgent(Agent):
             raise ValueError("AZTP_API_KEY is not set")
 
         self.aztpClient = Aztp(api_key=api_key)
+        self.iam_utils = IAMUtils()  # Initialize IAM utilities
         self.aztp_id = ""  # Initialize as empty string
+        self.is_initialized = False
 
         # Initialize payment tool and store its AZTP ID
         if not hasattr(self, 'payment_tool') or self.payment_tool is None:
@@ -132,41 +138,90 @@ class PayPalAgent(Agent):
         # Run the async initialization
         asyncio.run(self._initialize_identity())
 
+    async def initialize(self):
+        """Initialize the agent and its tools"""
+        if not self.is_initialized:
+            # Initialize payment tool first
+            if hasattr(self.payment_tool, 'initialize'):
+                await self.payment_tool.initialize()
+
+            # Then initialize the agent's identity
+            await self._initialize_identity()
+            self.is_initialized = True
+        return self
+
     async def _initialize_identity(self):
         """Initialize the agent's identity asynchronously"""
-        print(f"1. Issuing identity for agent: PayPal Agent")
+        try:
+            print(f"1. Issuing identity for agent: PayPal Agent")
 
-        # Create array of tool IDs to link
-        tool_ids = []
-        if self.payment_tool_aztp_id:
-            tool_ids.append(self.payment_tool_aztp_id)
+            # Create array of tool IDs to link
+            tool_ids = []
+            if self.payment_tool_aztp_id:
+                tool_ids.append(self.payment_tool_aztp_id)
 
-        self.paymentAgent = await self.aztpClient.secure_connect(
-            self,
-            "paypal-agent",
-            {
-                "isGlobalIdentity": False,
-                "linkTo": tool_ids
-            }
-        )
-        print("AZTP ID:", self.paymentAgent.identity.aztp_id)
+            # Create payment agent identity without linkTo
+            self.paymentAgent = await self.aztpClient.secure_connect(
+                self,
+                "paypal-agent",
+                {
+                    "isGlobalIdentity": False
+                }
+            )
 
-        print(f"\n2. Verifying identity for agent: PayPal Agent")
-        self.is_valid = await self.aztpClient.verify_identity(
-            self.paymentAgent
-        )
-        print("Verified Agent:", self.is_valid)
-
-        if self.is_valid:
-            if self.paymentAgent and hasattr(self.paymentAgent, 'identity'):
-                self.aztp_id = self.paymentAgent.identity.aztp_id
-                print(f"✅ Extracted AZTP ID: {self.aztp_id}")
-                if self.payment_tool_aztp_id:
+            # Link payment agent with payment tool identity
+            print("\nLinking payment agent with payment tool identity...")
+            for tool_id in tool_ids:
+                try:
+                    link_result = await self.aztpClient.link_identities(
+                        self.paymentAgent.identity.aztp_id,
+                        tool_id,
+                        "linked"
+                    )
                     print(
-                        f"✅ Linked to Payment Tool with AZTP ID: {self.payment_tool_aztp_id}")
-        else:
-            raise ValueError(
-                "Failed to verify identity for agent: PayPal Agent")
+                        f"Successfully linked payment agent with tool ID: {tool_id}")
+                    print(f"Link result: {link_result}")
+                except Exception as e:
+                    print(
+                        f"Error linking payment agent with tool ID {tool_id}: {str(e)}")
+
+            print("AZTP ID:", self.paymentAgent.identity.aztp_id)
+
+            print(f"\n2. Verifying identity for agent: PayPal Agent")
+            self.is_valid = await self.aztpClient.verify_identity(
+                self.paymentAgent
+            )
+            print("Verified Agent:", self.is_valid)
+
+            if self.is_valid:
+                if self.paymentAgent and hasattr(self.paymentAgent, 'identity'):
+                    self.aztp_id = self.paymentAgent.identity.aztp_id
+                    print(f"✅ Extracted AZTP ID: {self.aztp_id}")
+            else:
+                raise ValueError(
+                    "Failed to verify identity for agent: PayPal Agent")
+
+            # Verify payment processing access before proceeding
+            print(
+                f"\n3. Verifying access permissions for PayPal Agent {self.aztp_id}")
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="payment_processing",
+                policy_code="policy:a07507f6fe70",
+                operation_name="Payment Processing"
+            )
+
+            print("\n✅ PayPal agent initialized successfully")
+
+        except PolicyVerificationError as e:
+            error_msg = str(e)
+            print(f"❌ Policy verification failed: {error_msg}")
+            raise  # Re-raise the exception to stop execution
+
+        except Exception as e:
+            error_msg = f"Failed to initialize payment agent: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise  # Re-raise the exception to stop execution
 
     def _log_payment_detail(self, data):
         # Always use the project root (shopping) for paymentdetail.json

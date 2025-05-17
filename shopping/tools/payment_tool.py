@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from pydantic import Field, ConfigDict, BaseModel
 import asyncio
 from typing import Dict, Any, Optional
+from utils.iam_utils import IAMUtils
+from utils.exceptions import PolicyVerificationError
 
 # Load environment variables
 load_dotenv()
@@ -24,11 +26,12 @@ class PayPalPaymentTool(BaseModel):
         default=None, exclude=True, alias="secured_connection")
     is_valid: bool = Field(default=False, exclude=True)
     identity: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
-    identity_access_policy: Optional[Dict[str, Any]] = Field(
-        default=None, exclude=True)
     aztp_id: str = Field(default="", exclude=True)
+    iam_utils: IAMUtils = Field(default=None, exclude=True)
+    is_initialized: bool = Field(default=False, exclude=True)
+    verbose: bool = Field(default=True, exclude=True)
 
-    def __init__(self):
+    def __init__(self, verbose=True):
         """Initialize the PayPal payment tool"""
         super().__init__()
 
@@ -38,71 +41,71 @@ class PayPalPaymentTool(BaseModel):
             raise ValueError("AZTP_API_KEY is not set")
 
         self.aztpClient = Aztp(api_key=api_key)
+        self.iam_utils = IAMUtils()  # Initialize IAM utilities
         self.aztp_id = ""  # Initialize as empty string
+        self.is_initialized = False
+        self.verbose = verbose
 
-        # Run the async initialization
-        asyncio.run(self._initialize_identity())
+    async def initialize(self):
+        """Initialize the tool's identity"""
+        if not self.is_initialized:
+            await self._initialize_identity()
+            self.is_initialized = True
+        return self
 
     async def _initialize_identity(self):
         """Initialize the tool's identity asynchronously"""
-        print(f"1. Issuing identity for tool: PayPal Payment Tool")
-        self.paymentTool = await self.aztpClient.secure_connect(
-            self,
-            "paypal-payment-tool",
-            {
-                "isGlobalIdentity": False
-            }
-        )
-        print("AZTP ID:", self.paymentTool.identity.aztp_id)
+        try:
+            if self.verbose:
+                print(f"1. Issuing identity for tool: PayPal Payment Tool")
 
-        print(f"\n2. Verifying identity for tool: PayPal Payment Tool")
-        self.is_valid = await self.aztpClient.verify_identity(
-            self.paymentTool
-        )
-        print("Verified Tool:", self.is_valid)
+            # Create secure connection
+            self.paymentTool = await self.aztpClient.secure_connect(
+                self,
+                "paypal-payment-tool",
+                {
+                    "isGlobalIdentity": False
+                }
+            )
 
-        if self.is_valid:
-            if self.paymentTool and hasattr(self.paymentTool, 'identity'):
+            # Store the identity
+            if hasattr(self.paymentTool, 'identity'):
                 self.aztp_id = self.paymentTool.identity.aztp_id
-                print(f"✅ Extracted AZTP ID: {self.aztp_id}")
-        else:
-            raise ValueError(
-                "Failed to verify identity for tool: PayPal Payment Tool")
+                if self.verbose:
+                    print(f"✅ Identity issued successfully")
+                    print(f"AZTP ID: {self.aztp_id}")
+            else:
+                if self.verbose:
+                    print("Warning: No AZTP ID received from secure_connect")
+                self.aztp_id = ""
 
-        print(
-            f"\n3. Getting policy information for tool: PayPal Payment Tool {self.aztp_id}")
-        if self.paymentTool and hasattr(self.paymentTool, 'identity'):
-            try:
-                self.identity_access_policy = await self.aztpClient.get_policy(
-                    self.paymentTool.identity.aztp_id
-                )
-                # Display policy information
-                print("\nPolicy Information:")
-                if isinstance(self.identity_access_policy, dict):
-                    # Handle dictionary response
-                    for policy in self.identity_access_policy.get('data', []):
-                        print("\nPolicy Statement:",
-                              policy.get('policyStatement'))
-                        statement = policy.get('policyStatement', {}).get(
-                            'Statement', [{}])[0]
-                        if statement.get('Effect') == "Allow":
-                            print("Statement Effect:", statement.get('Effect'))
-                            print("Statement Actions:",
-                                  statement.get('Action'))
-                            if 'Condition' in statement:
-                                print("Statement Conditions:",
-                                      statement.get('Condition'))
-                            print("Identity:", policy.get('identity'))
-                else:
-                    # Handle string response
-                    print(self.identity_access_policy)
-            except Exception as e:
-                print(f"Error getting policy: {str(e)}")
-        else:
-            print(
-                f"Warning: No valid AZTP ID available for policy retrieval. AZTP ID: {self.aztp_id}")
+            # Verify payment access before proceeding
+            if self.verbose:
+                print(
+                    f"\n2. Verifying access permissions for PayPal Payment Tool {self.aztp_id}")
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="payment_processing",
+                policy_code="policy:3ee68df2c5e7",
+                operation_name="Payment Processing"
+            )
 
-    def get_access_token(self):
+            if self.verbose:
+                print("\n✅ PayPal payment tool initialized successfully")
+
+        except Exception as e:
+            print(f"Error initializing identity: {str(e)}")
+            raise
+
+    async def get_access_token(self):
+        # Verify access before proceeding
+        await self.iam_utils.verify_access_or_raise(
+            agent_id=self.aztp_id,
+            action="get_access_token",
+            policy_code="policy:3ee68df2c5e7",
+            operation_name="Get PayPal Access Token"
+        )
+
         client_id = os.getenv("PAYPAL_CLIENT_ID")
         client_secret = os.getenv("PAYPAL_SECRET")
         auth = b64encode(f"{client_id}:{client_secret}".encode(
@@ -118,7 +121,15 @@ class PayPalPaymentTool(BaseModel):
         print(f"[PayPalPaymentTool] Access token response: {response.json()}")
         return response.json()["access_token"]
 
-    def create_order(self, access_token, amount, currency="USD", description="Test Product", payee_email=None):
+    async def create_order(self, access_token, amount, currency="USD", description="Test Product", payee_email=None):
+        # Verify access before proceeding
+        await self.iam_utils.verify_access_or_raise(
+            agent_id=self.aztp_id,
+            action="create_order",
+            policy_code="policy:3ee68df2c5e7",
+            operation_name="Create PayPal Order"
+        )
+
         url = "https://api-m.sandbox.paypal.com/v2/checkout/orders"
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -150,8 +161,16 @@ class PayPalPaymentTool(BaseModel):
                 print(f"[PayPalPaymentTool] Approval URL: {link.get('href')}")
         return order_response
 
-    def get_order_status(self, access_token, order_id):
+    async def get_order_status(self, access_token, order_id):
         """Get the current status of a PayPal order"""
+        # Verify access before proceeding
+        await self.iam_utils.verify_access_or_raise(
+            agent_id=self.aztp_id,
+            action="get_order_status",
+            policy_code="policy:3ee68df2c5e7",
+            operation_name="Get PayPal Order Status"
+        )
+
         url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}"
         headers = {
             "Authorization": f"Bearer {access_token}",
@@ -164,9 +183,17 @@ class PayPalPaymentTool(BaseModel):
             f"[PayPalPaymentTool] Order status: {order_details.get('status')}")
         return order_details
 
-    def capture_payment(self, access_token, order_id):
+    async def capture_payment(self, access_token, order_id):
+        # Verify access before proceeding
+        await self.iam_utils.verify_access_or_raise(
+            agent_id=self.aztp_id,
+            action="capture_payment",
+            policy_code="policy:3ee68df2c5e7",
+            operation_name="Capture PayPal Payment"
+        )
+
         # First check the order status
-        order_details = self.get_order_status(access_token, order_id)
+        order_details = await self.get_order_status(access_token, order_id)
         status = order_details.get('status')
 
         if status != 'APPROVED':

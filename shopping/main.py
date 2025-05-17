@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from crewai import Crew, Task
 from textwrap import dedent
 import json
+import asyncio
 
 load_dotenv()
 
@@ -112,6 +113,8 @@ class ShopperAI:
         print("\n=== Initializing Research Agent ===")
         try:
             research_agent = self.agents.research_agent()
+            # Ensure async initialization is complete
+            asyncio.run(research_agent.initialize())
             print("Research agent initialized successfully")
         except ValueError as e:
             if "SERPAPI_API_KEY" in str(e):

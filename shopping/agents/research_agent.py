@@ -13,6 +13,8 @@ from pydantic import Field, ConfigDict
 import asyncio
 import re
 import json
+from utils.iam_utils import IAMUtils
+from utils.exceptions import PolicyVerificationError
 
 load_dotenv()
 
@@ -29,9 +31,9 @@ class ResearchAgent(Agent):
         default=None, exclude=True, alias="secured_connection")
     is_valid: bool = Field(default=False, exclude=True)
     identity: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
-    identity_access_policy: Optional[Dict[str, Any]] = Field(
-        default=None, exclude=True)
     aztp_id: str = Field(default="", exclude=True)
+    iam_utils: IAMUtils = Field(default=None, exclude=True)
+    is_initialized: bool = Field(default=False, exclude=True)
 
     # Add fields for tool AZTP IDs (without leading underscores)
     search_tool_aztp_id: str = Field(default="", exclude=True)
@@ -65,10 +67,21 @@ class ResearchAgent(Agent):
             raise ValueError("AZTP_API_KEY is not set")
 
         self.aztpClient = Aztp(api_key=api_key)
+        self.iam_utils = IAMUtils()  # Initialize IAM utilities
         self.aztp_id = ""  # Initialize as empty string
+        self.is_initialized = False
 
-        # Run the async initialization
-        asyncio.run(self._initialize_identity())
+    async def initialize(self):
+        """Initialize the agent and its tools"""
+        if not self.is_initialized:
+            # Initialize tools first
+            await self._search_tool.initialize()
+            await self._analyzer_tool.initialize()
+
+            # Then initialize the agent's identity
+            await self._initialize_identity()
+            self.is_initialized = True
+        return self
 
     def get_all_aztp_ids(self) -> Dict[str, str]:
         """Get all AZTP IDs associated with this agent and its tools"""
@@ -80,82 +93,84 @@ class ResearchAgent(Agent):
 
     async def _initialize_identity(self):
         """Initialize the agent's identity asynchronously"""
-        print(f"1. Issuing identity for agent: Research Agent")
+        try:
+            print(f"1. Issuing identity for agent: Research Agent")
 
-        # Store tool IDs before creating research agent's identity
-        self.search_tool_aztp_id = self._search_tool.aztp_id if hasattr(
-            self._search_tool, 'aztp_id') else ""
-        self.analyzer_tool_aztp_id = self._analyzer_tool.aztp_id if hasattr(
-            self._analyzer_tool, 'aztp_id') else ""
+            # Store tool IDs before creating research agent's identity
+            self.search_tool_aztp_id = self._search_tool.aztp_id if hasattr(
+                self._search_tool, 'aztp_id') else ""
+            self.analyzer_tool_aztp_id = self._analyzer_tool.aztp_id if hasattr(
+                self._analyzer_tool, 'aztp_id') else ""
 
-        # Create array of tool IDs to link
-        tool_ids = []
-        if self.search_tool_aztp_id:
-            tool_ids.append(self.search_tool_aztp_id)
-        if self.analyzer_tool_aztp_id:
-            tool_ids.append(self.analyzer_tool_aztp_id)
+            # Create array of tool IDs to link
+            tool_ids = []
+            if self.search_tool_aztp_id:
+                tool_ids.append(self.search_tool_aztp_id)
+            if self.analyzer_tool_aztp_id:
+                tool_ids.append(self.analyzer_tool_aztp_id)
 
-        self.researchAgent = await self.aztpClient.secure_connect(
-            self,
-            "research-agent",
-            {
-                "isGlobalIdentity": False,
-                "linkTo": tool_ids,
-            }
-        )
-        print("AZTP ID:", self.researchAgent.identity.aztp_id)
+            # Create research agent identity without linkTo
+            self.researchAgent = await self.aztpClient.secure_connect(
+                self,
+                "research-agent",
+                {
+                    "isGlobalIdentity": False
+                }
+            )
 
-        print(f"\n2. Verifying identity for agent: Research Agent")
-        self.is_valid = await self.aztpClient.verify_identity(
-            self.researchAgent
-        )
-        print("Verified Agent:", self.is_valid)
+            # Link research agent with each tool identity
+            print("\nLinking research agent with tool identities...")
+            for tool_id in tool_ids:
+                try:
+                    link_result = await self.aztpClient.link_identities(
+                        self.researchAgent.identity.aztp_id,
+                        tool_id,
+                        "linked"
+                    )
+                    print(
+                        f"Successfully linked research agent with tool ID: {tool_id}")
+                    print(f"Link result: {link_result}")
+                except Exception as e:
+                    print(
+                        f"Error linking research agent with tool ID {tool_id}: {str(e)}")
 
-        if self.is_valid:
-            # self.identity = await self.aztpClient.get_identity(self.researchAgent)
-            # print(f"Research Agent Identity verified: {self.identity}")
-            # Get the AZTP ID from the secured connection
-            if self.researchAgent and hasattr(self.researchAgent, 'identity'):
-                self.aztp_id = self.researchAgent.identity.aztp_id
-                print(f"✅ Extracted AZTP ID: {self.aztp_id}")
-        else:
-            raise ValueError(
-                "Failed to verify identity for agent: Research Agent")
+            print("AZTP ID:", self.researchAgent.identity.aztp_id)
 
-        print(
-            f"\n3. Getting policy information for agent: Research Agent {self.aztp_id}")
-        if self.researchAgent and hasattr(self.researchAgent, 'identity'):
-            try:
-                self.identity_access_policy = await self.aztpClient.get_policy(
-                    self.researchAgent.identity.aztp_id
-                )
-                # print("Identity Access Policy:", self.identity_access_policy)
+            print(f"\n2. Verifying identity for agent: Research Agent")
+            self.is_valid = await self.aztpClient.verify_identity(
+                self.researchAgent
+            )
+            print("Verified Agent:", self.is_valid)
 
-                # Display policy information
-                print("\nPolicy Information:")
-                if isinstance(self.identity_access_policy, dict):
-                    # Handle dictionary response
-                    for policy in self.identity_access_policy.get('data', []):
-                        print("\nPolicy Statement:",
-                              policy.get('policyStatement'))
-                        statement = policy.get('policyStatement', {}).get(
-                            'Statement', [{}])[0]
-                        if statement.get('Effect') == "Allow":
-                            print("Statement Effect:", statement.get('Effect'))
-                            print("Statement Actions:",
-                                  statement.get('Action'))
-                            if 'Condition' in statement:
-                                print("Statement Conditions:",
-                                      statement.get('Condition'))
-                            print("Identity:", policy.get('identity'))
-                else:
-                    # Handle string response
-                    print(self.identity_access_policy)
-            except Exception as e:
-                print(f"Error getting policy: {str(e)}")
-        else:
+            if self.is_valid:
+                if self.researchAgent and hasattr(self.researchAgent, 'identity'):
+                    self.aztp_id = self.researchAgent.identity.aztp_id
+                    print(f"✅ Extracted AZTP ID: {self.aztp_id}")
+            else:
+                raise ValueError(
+                    "Failed to verify identity for agent: Research Agent")
+
+            # Verify research access before proceeding
             print(
-                f"Warning: No valid AZTP ID available for policy retrieval. AZTP ID: {self.aztp_id}")
+                f"\n3. Verifying access permissions for Research Agent {self.aztp_id}")
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="research_products",
+                policy_code="policy:c4e88b812bc0",
+                operation_name="Product Research"
+            )
+
+            print("\n✅ Research agent initialized successfully")
+
+        except PolicyVerificationError as e:
+            error_msg = str(e)
+            print(f"❌ Policy verification failed: {error_msg}")
+            raise  # Re-raise the exception to stop execution
+
+        except Exception as e:
+            error_msg = f"Failed to initialize research agent: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise  # Re-raise the exception to stop execution
 
     def _get_memory_key(self, query: str, criteria: Dict[str, Any]) -> str:
         """Generate a unique key for memory storage"""

@@ -7,6 +7,8 @@ from crewai import Agent
 from aztp_client import Aztp
 from aztp_client.client import SecureConnection
 from dotenv import load_dotenv
+from utils.iam_utils import IAMUtils
+from utils.exceptions import PolicyVerificationError
 import os
 from pydantic import Field, ConfigDict
 import asyncio
@@ -30,6 +32,7 @@ class PriceComparisonAgent(Agent):
     identity_access_policy: Optional[Dict[str, Any]] = Field(
         default=None, exclude=True)
     aztp_id: str = Field(default="", exclude=True)
+    iam_utils: IAMUtils = Field(default=None, exclude=True)
 
     # Add memory storage
     _comparison_memory: Dict[str, Dict[str, Any]] = {}
@@ -53,6 +56,7 @@ class PriceComparisonAgent(Agent):
             raise ValueError("AZTP_API_KEY is not set")
 
         self.aztpClient = Aztp(api_key=api_key)
+        self.iam_utils = IAMUtils()  # Initialize IAM utilities
         self.aztp_id = ""  # Initialize as empty string
 
         # Run the async initialization
@@ -60,29 +64,52 @@ class PriceComparisonAgent(Agent):
 
     async def _initialize_identity(self):
         """Initialize the agent's identity asynchronously"""
-        print(f"1. Issuing identity for agent: Price Comparison Agent")
-        self.priceAgent = await self.aztpClient.secure_connect(
-            self,
-            "price-comparison-agent",
-            {
-                "isGlobalIdentity": False
-            }
-        )
-        print("AZTP ID:", self.priceAgent.identity.aztp_id)
+        try:
+            print(f"1. Issuing identity for agent: Price Comparison Agent")
+            self.priceAgent = await self.aztpClient.secure_connect(
+                self,
+                "price-comparison-agent",
+                {
+                    "isGlobalIdentity": False
+                }
+            )
+            print("AZTP ID:", self.priceAgent.identity.aztp_id)
 
-        print(f"\n2. Verifying identity for agent: Price Comparison Agent")
-        self.is_valid = await self.aztpClient.verify_identity(
-            self.priceAgent
-        )
-        print("Verified Agent:", self.is_valid)
+            print(f"\n2. Verifying identity for agent: Price Comparison Agent")
+            self.is_valid = await self.aztpClient.verify_identity(
+                self.priceAgent
+            )
+            print("Verified Agent:", self.is_valid)
 
-        if self.is_valid:
-            if self.priceAgent and hasattr(self.priceAgent, 'identity'):
-                self.aztp_id = self.priceAgent.identity.aztp_id
-                print(f"✅ Extracted AZTP ID: {self.aztp_id}")
-        else:
-            raise ValueError(
-                "Failed to verify identity for agent: Price Comparison Agent")
+            if self.is_valid:
+                if self.priceAgent and hasattr(self.priceAgent, 'identity'):
+                    self.aztp_id = self.priceAgent.identity.aztp_id
+                    print(f"✅ Extracted AZTP ID: {self.aztp_id}")
+            else:
+                raise ValueError(
+                    "Failed to verify identity for agent: Price Comparison Agent")
+
+            # Verify price comparison access before proceeding
+            print(
+                f"\n3. Verifying access permissions for Price Comparison Agent {self.aztp_id}")
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="compare_prices",
+                policy_code="policy:c047c5e5ec66",
+                operation_name="Price Comparison"
+            )
+
+            print("\n✅ Price comparison agent initialized successfully")
+
+        except PolicyVerificationError as e:
+            error_msg = str(e)
+            print(f"❌ Policy verification failed: {error_msg}")
+            raise  # Re-raise the exception to stop execution
+
+        except Exception as e:
+            error_msg = f"Failed to initialize price comparison agent: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise  # Re-raise the exception to stop execution
 
     def _extract_price(self, price_str: str) -> float:
         """
@@ -176,7 +203,7 @@ class PriceComparisonAgent(Agent):
             key_parts.append(f"{title}_{price}")
         return "_".join(sorted(key_parts))
 
-    def find_best_deal(self, products: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def find_best_deal(self, products: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Find the single best deal from a list of products
 
@@ -186,44 +213,63 @@ class PriceComparisonAgent(Agent):
         Returns:
             Best deal product with price analysis
         """
-        if not products:
-            return {}
+        try:
+            # Verify price comparison access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="compare_prices",
+                policy_code="policy:c047c5e5ec66",
+                operation_name="Price Comparison"
+            )
 
-        # Check memory first
-        memory_key = self._get_memory_key(products)
-        if memory_key in self._best_deal_memory:
-            print("Using cached best deal result...")
-            return self._best_deal_memory[memory_key]
+            if not products:
+                return {}
 
-        # Calculate total cost for each product
-        products_with_total = []
-        for product in products:
-            total_cost = self._calculate_total_cost(product)
-            product_copy = product.copy()
-            product_copy["total_cost"] = total_cost
-            products_with_total.append(product_copy)
+            # Check memory first
+            memory_key = self._get_memory_key(products)
+            if memory_key in self._best_deal_memory:
+                print("Using cached best deal result...")
+                return self._best_deal_memory[memory_key]
 
-        # Sort by total cost
-        sorted_products = sorted(
-            products_with_total, key=lambda x: x["total_cost"])
+            # Calculate total cost for each product
+            products_with_total = []
+            for product in products:
+                total_cost = self._calculate_total_cost(product)
+                product_copy = product.copy()
+                product_copy["total_cost"] = total_cost
+                products_with_total.append(product_copy)
 
-        # Get the cheapest product
-        best_deal = sorted_products[0]
+            # Sort by total cost
+            sorted_products = sorted(
+                products_with_total, key=lambda x: x["total_cost"])
 
-        # Add price analysis
-        best_deal["price_analysis"] = {
-            "base_price": self._extract_price(best_deal.get("price", "0")),
-            "shipping_cost": self._extract_price(best_deal.get("delivery", "0")),
-            "total_cost": best_deal["total_cost"],
-            "price_rank": 1,
-            "total_products_compared": len(products),
-            "savings_vs_average": self._calculate_savings_vs_average(products_with_total)
-        }
+            # Get the cheapest product
+            best_deal = sorted_products[0]
 
-        # Store in memory
-        self._best_deal_memory[memory_key] = best_deal
+            # Add price analysis
+            best_deal["price_analysis"] = {
+                "base_price": self._extract_price(best_deal.get("price", "0")),
+                "shipping_cost": self._extract_price(best_deal.get("delivery", "0")),
+                "total_cost": best_deal["total_cost"],
+                "price_rank": 1,
+                "total_products_compared": len(products),
+                "savings_vs_average": self._calculate_savings_vs_average(products_with_total)
+            }
 
-        return best_deal
+            # Store in memory
+            self._best_deal_memory[memory_key] = best_deal
+
+            return best_deal
+
+        except PolicyVerificationError as e:
+            error_msg = str(e)
+            print(f"❌ Policy verification failed: {error_msg}")
+            raise  # Re-raise the exception to stop execution
+
+        except Exception as e:
+            error_msg = f"Failed to find best deal: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise  # Re-raise the exception to stop execution
 
     def _calculate_savings_vs_average(self, products: List[Dict[str, Any]]) -> float:
         """
@@ -244,7 +290,7 @@ class PriceComparisonAgent(Agent):
 
         return average_cost - cheapest_cost
 
-    def recommend_best_product(self, products: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def recommend_best_product(self, products: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Recommend the single best product based on price
 
@@ -254,48 +300,67 @@ class PriceComparisonAgent(Agent):
         Returns:
             Recommendation with the best product and price details
         """
-        if not products:
-            return {
-                "error": "No products to analyze",
-                "recommendation": None
+        try:
+            # Verify price comparison access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="compare_prices",
+                policy_code="policy:c047c5e5ec66",
+                operation_name="Price Comparison"
+            )
+
+            if not products:
+                return {
+                    "error": "No products to analyze",
+                    "recommendation": None
+                }
+
+            # Check memory first
+            memory_key = self._get_memory_key(products)
+            if memory_key in self._comparison_memory:
+                print("Using cached price comparison result...")
+                return self._comparison_memory[memory_key]
+
+            # Find the best deal
+            best_deal = await self.find_best_deal(products)
+
+            if not best_deal:
+                return {
+                    "error": "Could not find a suitable product",
+                    "recommendation": None
+                }
+
+            # Extract product details
+            title = best_deal.get("title", "Unknown Product")
+            brand = self._extract_brand(title)
+            price = best_deal.get("price", "Price not available")
+            color = self._extract_color(best_deal)
+            total_cost = f"${best_deal.get('total_cost', 0):.2f}"
+
+            # Create a focused recommendation with just the requested details
+            recommendation = {
+                "product": {
+                    "name": title,
+                    "brand": brand,
+                    "price": price,
+                    "color": color,
+                    "total_cost": total_cost,
+                    "rating": best_deal.get("rating", "N/A")
+                },
+                "summary": f"The best deal is {title} ({brand}) in {color} at {price} (total cost: {total_cost})."
             }
 
-        # Check memory first
-        memory_key = self._get_memory_key(products)
-        if memory_key in self._comparison_memory:
-            print("Using cached price comparison result...")
-            return self._comparison_memory[memory_key]
+            # Store in memory
+            self._comparison_memory[memory_key] = recommendation
 
-        # Find the best deal
-        best_deal = self.find_best_deal(products)
+            return recommendation
 
-        if not best_deal:
-            return {
-                "error": "Could not find a suitable product",
-                "recommendation": None
-            }
+        except PolicyVerificationError as e:
+            error_msg = str(e)
+            print(f"❌ Policy verification failed: {error_msg}")
+            raise  # Re-raise the exception to stop execution
 
-        # Extract product details
-        title = best_deal.get("title", "Unknown Product")
-        brand = self._extract_brand(title)
-        price = best_deal.get("price", "Price not available")
-        color = self._extract_color(best_deal)
-        total_cost = f"${best_deal.get('total_cost', 0):.2f}"
-
-        # Create a focused recommendation with just the requested details
-        recommendation = {
-            "product": {
-                "name": title,
-                "brand": brand,
-                "price": price,
-                "color": color,
-                "total_cost": total_cost,
-                "rating": best_deal.get("rating", "N/A")
-            },
-            "summary": f"The best deal is {title} ({brand}) in {color} at {price} (total cost: {total_cost})."
-        }
-
-        # Store in memory
-        self._comparison_memory[memory_key] = recommendation
-
-        return recommendation
+        except Exception as e:
+            error_msg = f"Failed to recommend best product: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise  # Re-raise the exception to stop execution
