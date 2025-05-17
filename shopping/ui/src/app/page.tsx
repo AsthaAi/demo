@@ -166,44 +166,16 @@ export default function Home() {
         customer_email: customerEmail,
       });
       if (!response.data.success) throw new Error('Failed to process order');
-      setOrderId(response.data.result.id);
-      // Get available promotions
-      const promoRes = await axios.post('http://localhost:8000/api/get-promotions', {
-        product_details: selectedProduct,
-        customer_email: customerEmail,
-      });
-      if (!promoRes.data.success) throw new Error('Failed to get promotions');
-      setPromotions(promoRes.data.promotions);
-      setPromotionStep('select');
+      // Find approval_url in response
+      const links = response.data.result.links || [];
+      const approvalLink = links.find((link: any) => link.rel === 'approve');
+      setApprovalUrl(approvalLink?.href || '');
+      setPromotionStep('ready');
     } catch (error) {
-      alert('Failed to process order or get promotions.');
+      alert('Failed to process order.');
       setShowPaymentModal(false);
     } finally {
       setIsProcessingPayment(false);
-    }
-  };
-
-  const handlePromotionSelect = async (promotion: Promotion | null) => {
-    setSelectedPromotion(promotion);
-    // Calculate summary if promotion is selected
-    if (promotion && selectedProduct) {
-      const summary = calculatePromotionSummary(selectedProduct, promotion);
-      setPromotionSummary(summary);
-    } else {
-      setPromotionSummary(null);
-    }
-    setPromotionStep('capturing');
-    try {
-      const response = await axios.post('http://localhost:8000/api/capture-payment', {
-        order_id: orderId,
-        promotion: promotion, // send full promotion object or null
-      });
-      if (!response.data.success) throw new Error('Failed to capture payment');
-      setApprovalUrl(response.data.result.approval_url);
-      setPromotionStep('ready');
-    } catch (error) {
-      alert('Failed to capture payment.');
-      setShowPaymentModal(false);
     }
   };
 
@@ -286,7 +258,7 @@ export default function Home() {
         setSelectedPromotion(null);
         setOrderId(null);
         setPromotionStep('none');
-        setPromotionSummary(null);
+        setApprovalUrl('');
       }}>
         <Modal.Header className="text-gray-900">Complete Your Purchase</Modal.Header>
         <Modal.Body>
@@ -319,53 +291,11 @@ export default function Home() {
                 </div>
               </div>
             )}
-            {promotionStep === 'select' && (
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Available Promotions</h3>
-                <div className="space-y-4 mb-6">
-                  {promotions.map((promotion, idx) => (
-                    <div
-                      key={promotion.id || idx}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedPromotion?.id === promotion.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
-                      onClick={() => handlePromotionSelect(promotion)}
-                    >
-                      <div className="font-medium">{promotion.name}</div>
-                      <div className="text-sm text-gray-600">Discount: {promotion.discount_percentage}%</div>
-                      <div className="text-sm text-gray-600">Minimum Purchase: ${promotion.minimum_purchase}</div>
-                      <div className="text-sm text-gray-600">Valid Until: {promotion.valid_until}</div>
-                    </div>
-                  ))}
-                  <button
-                    className="w-full mt-2 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
-                    onClick={() => handlePromotionSelect(null)}
-                  >
-                    Skip Promotions
-                  </button>
-                </div>
-              </div>
-            )}
-            {promotionStep === 'capturing' && (
-              <div className="text-center">
-                <h3 className="text-xl font-semibold mb-4">Processing Payment</h3>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p className="text-gray-600">Please wait while we process your payment...</p>
-              </div>
-            )}
             {promotionStep === 'ready' && (
               <div>
                 <h3 className="text-xl font-semibold mb-4">Your Order is Ready!</h3>
-                {/* Promotion summary */}
                 <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                  {promotionSummary ? (
-                    <>
-                      <div className="font-medium mb-2">Promotion Applied: {promotionSummary.promotionName}</div>
-                      <div className="text-sm text-gray-700">Original Price: ${promotionSummary.originalPrice.toFixed(2)}</div>
-                      <div className="text-sm text-gray-700">Discount: {promotionSummary.discountPercentage}% (-${promotionSummary.discountAmount.toFixed(2)})</div>
-                      <div className="text-lg font-bold text-green-700 mt-2">Final Price: ${promotionSummary.finalPrice.toFixed(2)}</div>
-                    </>
-                  ) : (
-                    <div className="text-sm text-gray-700">No promotion applied. Price: {selectedProduct?.price}</div>
-                  )}
+                  <div className="text-sm text-gray-700">No promotion applied. Price: {selectedProduct?.price}</div>
                 </div>
                 <p className="text-gray-600 mb-4">Click below to proceed to PayPal</p>
                 {approvalUrl && (
@@ -410,7 +340,7 @@ export default function Home() {
               setSelectedPromotion(null);
               setOrderId(null);
               setPromotionStep('none');
-              setPromotionSummary(null);
+              setApprovalUrl('');
             }}
           >
             {approvalUrl ? 'Close' : 'Cancel'}
