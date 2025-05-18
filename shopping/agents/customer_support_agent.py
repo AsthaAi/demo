@@ -2,7 +2,7 @@
 Customer Support Agent for ShopperAI
 Handles customer support operations including refunds, FAQ responses, and ticket escalations.
 """
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union, Tuple
 from crewai import Agent
 from aztp_client import Aztp
 from aztp_client.client import SecureConnection
@@ -10,12 +10,54 @@ from dotenv import load_dotenv
 from utils.iam_utils import IAMUtils
 from utils.exceptions import PolicyVerificationError
 import os
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, BaseModel
 import asyncio
 import uuid
 import datetime
+import json
+from pathlib import Path
+from difflib import get_close_matches
+import logging
+from dataclasses import dataclass
+from enum import Enum
+import openai
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-load_dotenv()
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class MatchType(Enum):
+    """Types of matches for FAQ searching"""
+    EXACT = "exact"
+    PARTIAL = "partial"
+    KEYWORD = "keyword"
+    NONE = "none"
+
+
+@dataclass
+class MatchScore:
+    """Data class for storing match scores"""
+    keyword_score: float
+    similarity_score: float
+    combined_score: float
+    match_type: MatchType
+
+
+class FAQResponse(BaseModel):
+    """Pydantic model for FAQ response validation"""
+    query: str
+    found: bool
+    timestamp: str
+    category: Optional[str] = None
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    confidence_score: Optional[float] = None
+    suggested_questions: List[str] = []
+    helpful_links: List[str] = []
+    related_topics: List[str] = []
+    message: Optional[str] = None
 
 
 class CustomerSupportAgent(Agent):
@@ -35,6 +77,11 @@ class CustomerSupportAgent(Agent):
     aztp_id: str = Field(default="", exclude=True)
     iam_utils: IAMUtils = Field(default=None, exclude=True)
     is_initialized: bool = Field(default=False, exclude=True)
+    faq_data: Dict = Field(default={}, exclude=True)
+    categories: Dict = Field(default={}, exclude=True)
+    metadata: Dict = Field(default={}, exclude=True)
+    openai_client: openai.OpenAI = Field(default=None, exclude=True)
+    knowledge_base: str = Field(default="", exclude=True)
 
     def __init__(self):
         """Initialize the customer support agent with necessary tools"""
@@ -47,14 +94,25 @@ class CustomerSupportAgent(Agent):
             verbose=True
         )
 
-        # Initialize the client with API key from environment
-        api_key = os.getenv("AZTP_API_KEY")
-        if not api_key:
-            raise ValueError("AZTP_API_KEY is not set")
+        try:
+            # Initialize the client with API key from environment
+            api_key = os.getenv("AZTP_API_KEY")
+            if not api_key:
+                raise ValueError("AZTP_API_KEY is not set")
 
-        self.aztpClient = Aztp(api_key=api_key)
-        self.iam_utils = IAMUtils()  # Initialize IAM utilities
-        self.aztp_id = ""  # Initialize as empty string
+            openai_api_key = os.getenv("OPENAI_API_KEY")
+            if not openai_api_key:
+                raise ValueError("OPENAI_API_KEY is not set")
+
+            self.aztpClient = Aztp(api_key=api_key)
+            self.iam_utils = IAMUtils()
+            self.aztp_id = ""
+            self.openai_client = openai.OpenAI(api_key=openai_api_key)
+            self._load_faq_database()  # Load FAQ database during initialization
+
+        except Exception as e:
+            logger.error(f"Error initializing CustomerSupportAgent: {str(e)}")
+            raise
 
     async def initialize(self):
         """Initialize the agent asynchronously"""
@@ -181,20 +239,16 @@ class CustomerSupportAgent(Agent):
             raise
 
     async def get_faq_response(self, query: str) -> Dict[str, Any]:
-        """
-        Get response for a FAQ query
-
-        Args:
-            query: The customer's question
-
-        Returns:
-            FAQ response with relevant information
-        """
+        """Get response for a FAQ query using LLM."""
         if not self.is_initialized:
             await self.initialize()
 
         try:
-            # Verify FAQ access before proceeding
+            # Input validation
+            if not query or not isinstance(query, str):
+                raise ValueError("Invalid query format")
+
+            # Verify FAQ access
             await self.iam_utils.verify_access_or_raise(
                 agent_id=self.aztp_id,
                 action="read_faq",
@@ -202,27 +256,37 @@ class CustomerSupportAgent(Agent):
                 operation_name="FAQ Access"
             )
 
-            # Here you would typically integrate with a FAQ database or knowledge base
-            # For now, we'll return a simple response structure
-            response = {
+            # Get answer from LLM
+            llm_response = await self._get_llm_response(query)
+
+            # Create response using Pydantic model
+            response_data = {
                 "query": query,
-                "response": "This is a placeholder response. In production, this would be fetched from a FAQ database.",
+                "found": llm_response["found"],
                 "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "category": llm_response.get("category"),
+                "question": llm_response.get("question"),
+                "answer": llm_response.get("answer"),
+                "confidence_score": llm_response.get("confidence_score"),
+                "suggested_questions": llm_response.get("suggested_questions", []),
                 "helpful_links": [],
                 "related_topics": []
             }
 
-            return response
+            # Validate response using Pydantic model
+            validated_response = FAQResponse(**response_data)
+            logger.info("FAQ response generated successfully")
+            return validated_response.model_dump()
 
+        except ValueError as e:
+            logger.error(f"Validation error: {str(e)}")
+            return self._create_error_response(f"Invalid input: {str(e)}")
         except PolicyVerificationError as e:
-            error_msg = str(e)
-            print(f"❌ Policy verification failed: {error_msg}")
-            raise
-
+            logger.error(f"Policy verification failed: {str(e)}")
+            return self._create_error_response("Access denied")
         except Exception as e:
-            error_msg = f"Failed to get FAQ response: {str(e)}"
-            print(f"❌ {error_msg}")
-            raise
+            logger.error(f"Error processing FAQ response: {str(e)}")
+            return self._create_error_response("An unexpected error occurred")
 
     async def create_support_ticket(self, issue_details: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -281,3 +345,284 @@ class CustomerSupportAgent(Agent):
             error_msg = f"Failed to create support ticket: {str(e)}"
             print(f"❌ {error_msg}")
             raise
+
+    def _load_faq_database(self) -> None:
+        """Load the FAQ database from JSON file."""
+        try:
+            faq_path = Path(__file__).parent.parent / \
+                "data" / "faq_database.json"
+            if not faq_path.exists():
+                raise FileNotFoundError(
+                    f"FAQ database not found at {faq_path}")
+
+            with open(faq_path, 'r', encoding='utf-8') as file:
+                data = json.load(file)
+
+            # Validate FAQ database structure
+            required_keys = ["version", "categories", "metadata"]
+            if not all(key in data for key in required_keys):
+                raise ValueError(
+                    "Invalid FAQ database structure: missing required keys")
+
+            self.faq_data = data
+            self.categories = data["categories"]
+            self.metadata = data["metadata"]
+
+            # Create a knowledge base for the LLM
+            self.knowledge_base = self._create_knowledge_base()
+            logger.info("FAQ database loaded successfully")
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Error parsing FAQ database: {str(e)}")
+            raise
+        except Exception as e:
+            logger.error(f"Error loading FAQ database: {str(e)}")
+            raise
+
+    def _create_knowledge_base(self) -> str:
+        """Create a formatted knowledge base from FAQ data for the LLM."""
+        knowledge_base = []
+        for category_id, category in self.categories.items():
+            knowledge_base.append(f"\nCategory: {category['title']}")
+            for faq in category["faqs"]:
+                knowledge_base.append(f"\nQ: {faq['question']}")
+                knowledge_base.append(f"A: {faq['answer']}")
+        return "\n".join(knowledge_base)
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+    async def _get_llm_response(self, query: str) -> Dict[str, Any]:
+        """Get response from LLM using the FAQ knowledge base."""
+        try:
+            system_prompt = f"""You are a helpful customer support agent for our shopping application.
+Use the following FAQ knowledge base to answer questions:
+
+{self.knowledge_base}
+
+If the exact answer isn't in the FAQs, use the knowledge to provide a helpful response.
+Always maintain a professional and helpful tone.
+If you really can't help, suggest contacting human support.
+
+Format your response as JSON with the following structure:
+{{
+    "found": boolean,
+    "category": string or null,
+    "question": string or null,
+    "answer": string,
+    "confidence_score": float between 0 and 1,
+    "suggested_questions": list of related questions
+}}"""
+
+            user_prompt = f"Question: {query}"
+
+            response = self.openai_client.chat.completions.create(
+                model="gpt-3.5-turbo-0125",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.7
+            )
+
+            try:
+                result = json.loads(response.choices[0].message.content)
+                return result
+            except json.JSONDecodeError:
+                logger.error("Failed to parse LLM response as JSON")
+                return self._create_error_response("Failed to parse response")
+
+        except Exception as e:
+            logger.error(f"Error getting LLM response: {str(e)}")
+            raise
+
+    def _create_error_response(self, error_message: str) -> Dict:
+        """Create a standardized error response"""
+        return {
+            "found": False,
+            "message": f"I apologize, but there was an error: {error_message}. Would you like to try rephrasing your question or speak with a customer support representative?",
+            "suggested_questions": self._get_popular_questions(3)
+        }
+
+    def _get_popular_questions(self, limit: int) -> List[str]:
+        """Get most popular/common questions when no matches are found"""
+        try:
+            popular_questions = []
+            for category in self.categories.values():
+                for faq in category["faqs"]:
+                    if len(popular_questions) < limit:
+                        popular_questions.append(faq["question"])
+                    else:
+                        break
+            return popular_questions[:limit]
+        except Exception as e:
+            logger.warning(f"Error getting popular questions: {str(e)}")
+            return []
+
+    def _calculate_match_score(self, question: str, faq: Dict[str, Any]) -> MatchScore:
+        """Calculate match score between question and FAQ entry"""
+        try:
+            # Normalize inputs
+            user_question = question.lower().strip()
+            faq_question = faq["question"].lower().strip()
+            user_keywords = set(self._get_question_keywords(user_question))
+            faq_keywords = set(k.lower() for k in faq["keywords"])
+
+            # Calculate keyword match score
+            keyword_score = float(len(user_keywords.intersection(
+                faq_keywords))) / float(len(faq_keywords)) if faq_keywords else 0.0
+
+            # Calculate question similarity
+            try:
+                close_matches = get_close_matches(
+                    user_question,
+                    [faq_question],
+                    n=1,
+                    cutoff=0.1
+                )
+                similarity_score = float(
+                    close_matches[0][1]) if close_matches else 0.0
+            except (IndexError, AttributeError):
+                similarity_score = 0.0
+
+            # Calculate combined score
+            combined_score = float(max(keyword_score, similarity_score))
+
+            # Determine match type
+            if combined_score >= 0.9:
+                match_type = MatchType.EXACT
+            elif combined_score >= 0.7:
+                match_type = MatchType.PARTIAL
+            elif combined_score >= 0.5:
+                match_type = MatchType.KEYWORD
+            else:
+                match_type = MatchType.NONE
+
+            return MatchScore(
+                keyword_score=keyword_score,
+                similarity_score=similarity_score,
+                combined_score=combined_score,
+                match_type=match_type
+            )
+
+        except Exception as e:
+            logger.error(f"Error calculating match score: {str(e)}")
+            return MatchScore(0.0, 0.0, 0.0, MatchType.NONE)
+
+    def _find_best_matches(self, question: str, threshold: float = 0.6) -> List[Dict]:
+        """Find the best matching FAQs for the given question."""
+        if not question or not isinstance(question, str):
+            logger.warning("Invalid question input")
+            return []
+
+        matches = []
+        try:
+            for category_id, category in self.categories.items():
+                for faq in category["faqs"]:
+                    try:
+                        match_score = self._calculate_match_score(
+                            question, faq)
+
+                        if match_score.combined_score >= float(threshold):
+                            matches.append({
+                                "faq": faq,
+                                "category": category_id,
+                                "score": match_score.combined_score,
+                                "match_type": match_score.match_type.value
+                            })
+
+                    except Exception as e:
+                        logger.warning(f"Error processing FAQ entry: {str(e)}")
+                        continue
+
+            # Sort matches by score
+            return sorted(matches, key=lambda x: float(x["score"]), reverse=True)
+
+        except Exception as e:
+            logger.error(f"Error finding matches: {str(e)}")
+            return []
+
+    def get_answer(self, question: str) -> Dict:
+        """Get the best answer for a given question."""
+        if not question or not isinstance(question, str):
+            return self._create_error_response("Invalid question format")
+
+        try:
+            matches = self._find_best_matches(question)
+
+            if not matches:
+                return self._create_no_match_response()
+
+            best_match = matches[0]
+            match_type = best_match.get("match_type", MatchType.NONE.value)
+
+            # Get suggested questions based on match type
+            suggested_questions = self._get_suggested_questions(
+                matches[1:],
+                max_suggestions=self.metadata.get("max_related_questions", 3)
+            )
+
+            return {
+                "found": True,
+                "category": self.categories[best_match["category"]]["title"],
+                "question": best_match["faq"]["question"],
+                "answer": best_match["faq"]["answer"],
+                "confidence_score": float(best_match["score"]),
+                "match_type": match_type,
+                "suggested_questions": suggested_questions
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting answer: {str(e)}")
+            return self._create_error_response(str(e))
+
+    def _create_no_match_response(self) -> Dict:
+        """Create a response for when no matches are found"""
+        return {
+            "found": False,
+            "message": "I apologize, but I couldn't find a specific answer to your question. Would you like me to connect you with a human customer support representative?",
+            "suggested_questions": self._get_popular_questions(3)
+        }
+
+    def _get_suggested_questions(self, matches: List[Dict], max_suggestions: int) -> List[str]:
+        """Get suggested questions based on matches"""
+        try:
+            return [
+                m["faq"]["question"]
+                for m in matches[:max_suggestions]
+                if float(m["score"]) > 0.5
+            ]
+        except Exception as e:
+            logger.warning(f"Error getting suggested questions: {str(e)}")
+            return []
+
+    def _extract_keywords(self) -> List[str]:
+        """Extract all keywords from the FAQ database."""
+        keywords = []
+        for category in self.categories.values():
+            for faq in category["faqs"]:
+                keywords.extend(faq["keywords"])
+        return list(set(keywords))
+
+    def _get_question_keywords(self, question: str) -> List[str]:
+        """Extract relevant keywords from the user's question."""
+        return [word.lower() for word in question.split()]
+
+    def get_category_faqs(self, category: str) -> List[Dict]:
+        """Get all FAQs for a specific category."""
+        if category in self.categories:
+            return self.categories[category]["faqs"]
+        return []
+
+    def get_all_categories(self) -> List[Dict[str, str]]:
+        """Get a list of all available FAQ categories.
+
+        Returns:
+            List of dictionaries containing category ID and title
+        """
+        return [
+            {
+                "id": cat_id,
+                "title": data["title"]
+            }
+            for cat_id, data in self.categories.items()
+        ]
