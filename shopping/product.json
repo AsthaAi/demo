@@ -1,78 +1,98 @@
 {
   "raw_products": [
     {
-      "name": "iPhone 13 Pro",
-      "price": 999.0,
-      "rating": 4.8
-    },
-    {
-      "name": "iPhone 12",
-      "price": 699.0,
+      "id": 1,
+      "name": "Product A",
+      "price": 950.0,
       "rating": 4.5
     },
     {
-      "name": "iPhone SE",
-      "price": 399.0,
-      "rating": 4.3
+      "id": 2,
+      "name": "Product B",
+      "price": 850.0,
+      "rating": 4.8
     },
     {
-      "name": "iPhone 13",
-      "price": 799.0,
-      "rating": 4.6
+      "id": 3,
+      "name": "Product C",
+      "price": 400.0,
+      "rating": 3.5
     },
     {
-      "name": "iPhone 14 Pro",
-      "price": 1099.0,
-      "rating": 4.9
+      "id": 4,
+      "name": "Product D",
+      "price": 600.0,
+      "rating": 4.0
+    },
+    {
+      "id": 5,
+      "name": "Product E",
+      "price": 1050.0,
+      "rating": 5.0
+    },
+    {
+      "id": 6,
+      "name": "Product F",
+      "price": 300.0,
+      "rating": 2.0
     }
   ],
   "filtered_products": [
     {
-      "name": "iPhone 13 Pro",
-      "price": 999.0,
-      "rating": 4.8
-    },
-    {
-      "name": "iPhone 12",
-      "price": 699.0,
+      "id": 1,
+      "name": "Product A",
+      "price": 950.0,
       "rating": 4.5
     },
     {
-      "name": "iPhone SE",
-      "price": 399.0,
-      "rating": 4.3
+      "id": 2,
+      "name": "Product B",
+      "price": 850.0,
+      "rating": 4.8
     },
     {
-      "name": "iPhone 13",
-      "price": 799.0,
-      "rating": 4.6
+      "id": 3,
+      "name": "Product C",
+      "price": 400.0,
+      "rating": 3.5
     },
     {
-      "name": "iPhone 14 Pro",
-      "price": 1099.0,
-      "rating": 4.9
+      "id": 4,
+      "name": "Product D",
+      "price": 600.0,
+      "rating": 4.0
+    },
+    {
+      "id": 6,
+      "name": "Product F",
+      "price": 300.0,
+      "rating": 2.0
     }
   ],
   "top_products": [
     {
-      "name": "iPhone 14 Pro",
-      "price": 1099.0,
-      "rating": 4.9
-    },
-    {
-      "name": "iPhone 13 Pro",
-      "price": 999.0,
+      "id": 2,
+      "name": "Product B",
+      "price": 850.0,
       "rating": 4.8
     },
     {
-      "name": "iPhone 13",
-      "price": 799.0,
-      "rating": 4.6
+      "id": 1,
+      "name": "Product A",
+      "price": 950.0,
+      "rating": 4.5
+    },
+    {
+      "id": 4,
+      "name": "Product D",
+      "price": 600.0,
+      "rating": 4.0
     }
   ],
   "best_match": {
-    "name": "iPhone 14 Pro",
-    "price": 1099.0,
-    "rating": 4.9
+    "id": 2,
+    "name": "Product B",
+    "price": 850.0,
+    "rating": 4.8
   }
 }
