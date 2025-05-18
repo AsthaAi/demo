@@ -2,7 +2,116 @@
 
 ## Project Overview
 
-ShopperAI is an intelligent shopping assistant that helps users find and analyze products based on their criteria. The system uses AI agents to perform product research, analysis, and recommendations.
+ShopperAI is an intelligent shopping assistant that helps users find and analyze products based on their criteria. The system uses AI agents to perform product research, analysis, recommendations, and provides comprehensive customer support.
+
+## Main Menu Options
+
+1. **Search and Buy Products**
+
+   - Search for products with specific criteria
+   - Compare prices and features
+   - Apply available promotions
+   - Complete purchase with PayPal integration
+
+2. **View Shopping History and Personalized Discounts**
+
+   - View past transactions
+   - Access personalized discount offers
+   - See shopping patterns and insights
+   - Track order history
+
+3. **View Active Promotions**
+
+   - Browse current promotional campaigns
+   - Check campaign details and validity
+   - View discount percentages and conditions
+   - See minimum purchase requirements
+
+4. **Customer Support**
+   - Request refunds
+   - Access FAQ help
+   - Create support tickets
+   - Track support requests
+
+## Customer Support Options
+
+### 1. Request Refund
+
+Process:
+
+- Enter transaction ID
+- Provide refund reason
+- Specify refund amount
+- Receive refund confirmation with:
+  - Refund ID
+  - Transaction ID
+  - Refund time
+  - Status
+  - Amount
+  - Reason
+  - Confirmation message
+
+### 2. FAQ Help
+
+Process:
+
+- Submit your question
+- Receive detailed response
+- Access common troubleshooting steps
+- Get links to relevant resources
+
+### 3. Create Support Ticket
+
+Process:
+
+- Enter customer ID
+- Select issue type (Technical/Billing/General)
+- Choose priority level (Low/Medium/High)
+- Provide detailed description
+- Receive ticket confirmation with tracking number
+
+## Product Search and Purchase Flow
+
+1. **Initial Search**
+
+   - Enter search query
+   - Specify maximum price
+   - Set minimum rating requirement (0-5)
+
+2. **View Results**
+
+   - See best match
+   - Compare multiple products
+   - View detailed specifications
+   - Check prices and ratings
+
+3. **Price Comparison**
+
+   - Compare prices across products
+   - View shipping costs
+   - See total cost calculations
+   - Check available discounts
+
+4. **Promotions**
+
+   - View available promotions:
+     - Personal discounts
+     - Campaign promotions
+   - Select applicable promotion
+   - See discount calculations:
+     - Original price
+     - Discount amount
+     - Final price
+
+5. **Payment Process**
+   - Enter merchant/business PayPal email
+   - Review order details
+   - See promotion applications
+   - Complete PayPal payment:
+     1. Access PayPal URL
+     2. Log in to sandbox account
+     3. Approve payment
+     4. Confirm transaction
 
 ## Architecture
 
@@ -246,38 +355,48 @@ The payment processing flow has been enhanced to include a complete order lifecy
    - Order details are captured
    - Order ID is generated
    - Payee email is included in the order
+   - Promotions are applied if eligible
 
-2. **Payment Approval**
+2. **Promotion Application**
+
+   - System checks for available promotions:
+     - Personal discounts based on shopping history
+     - Active campaign promotions
+   - User selects desired promotion
+   - System verifies minimum purchase requirements
+   - Applies discount to order total
+
+3. **Payment Approval**
 
    - User is presented with PayPal approval URL
    - User approves the payment in PayPal interface
    - Order status changes to "APPROVED"
+   - System verifies approval status
 
-3. **Payment Processing**
+4. **Payment Processing**
 
    - System verifies order status before capture
    - Payment is captured only if order is approved
    - Transaction ID is generated
    - Order status is updated to "COMPLETED"
 
-4. **Confirmation**
+5. **Confirmation**
    - Payment status is verified
    - Order status is confirmed
    - Transaction details are provided
    - Payment details are logged
+   - Promotion details are recorded
 
-Example payment confirmation:
+Example payment confirmation with promotion:
 
 ```
 Payment Capture Confirmation:
 - Order ID: 9876543210
 - Product Name: [Product Name]
-- Customer Email: [Email]
-- Price: [Amount]
-- Quantity Ordered: [Quantity]
-- Total Amount: [Total]
-
-Transaction Details:
+- Original Price: $100.00
+- Applied Promotion: Personal Discount (15% off)
+- Discount Amount: $15.00
+- Final Price: $85.00
 - Transaction ID: 1234567890
 - Payment Status: Processed
 - Order Status: Confirmed
@@ -849,3 +968,764 @@ The system now includes enhanced product search and analysis features:
    - Detailed product information
    - Easy price comparison
    - Rating visualization
+
+## Promotions System
+
+### Types of Promotions
+
+1. **Personal Discounts**
+
+   - Based on shopping history
+   - Customized discount percentages
+   - Minimum purchase requirements
+   - Limited time validity
+   - Example structure:
+     ```json
+     {
+       "type": "personal",
+       "name": "Personal Discount",
+       "discount_percentage": 15,
+       "minimum_purchase": 100,
+       "valid_until": "2024-12-31T23:59:59Z"
+     }
+     ```
+
+2. **Campaign Promotions**
+   - Store-wide or category-specific
+   - Fixed discount percentages
+   - Campaign duration
+   - Specific conditions
+   - Example structure:
+     ```json
+     {
+       "type": "campaign",
+       "name": "Summer Sale",
+       "discount_percentage": 20,
+       "minimum_purchase": 50,
+       "valid_until": "2024-08-31T23:59:59Z",
+       "conditions": {
+         "categories": ["summer", "outdoor"]
+       }
+     }
+     ```
+
+### Promotion Application Process
+
+1. **Availability Check**
+
+   - System checks for personal discounts
+   - Retrieves active campaigns
+   - Validates promotion dates
+   - Verifies eligibility
+
+2. **Selection**
+
+   - Display available promotions
+   - Show discount details
+   - Present minimum requirements
+   - Allow user selection
+
+3. **Validation**
+
+   - Verify minimum purchase
+   - Check category restrictions
+   - Validate promotion dates
+   - Confirm eligibility
+
+4. **Application**
+   - Calculate original price
+   - Apply discount percentage
+   - Calculate final price
+   - Update order details
+
+## Customer Support System
+
+### Refund Processing
+
+1. **Request Initiation**
+
+   ```python
+   refund_details = {
+       "transaction_id": "1234567890",
+       "reason": "Product not as described",
+       "amount": 99.99
+   }
+   ```
+
+2. **Validation**
+
+   - Verify transaction exists
+   - Check refund amount
+   - Validate reason
+   - Confirm eligibility
+
+3. **Processing**
+
+   - Generate refund ID
+   - Record timestamp
+   - Process refund
+   - Update transaction status
+
+4. **Confirmation**
+   ```python
+   confirmation = {
+       "refund_id": "REF-12345678",
+       "transaction_id": "1234567890",
+       "refund_time": "2024-03-20 15:30:45",
+       "status": "Processed",
+       "amount": 99.99,
+       "reason": "Product not as described",
+       "message": "Your refund has been successfully processed."
+   }
+   ```
+
+### FAQ System
+
+1. **Query Processing**
+
+   - Natural language processing
+   - Keyword extraction
+   - Category matching
+   - Response generation
+
+2. **Response Structure**
+   ```python
+   faq_response = {
+       "query": "How do I track my order?",
+       "answer": "Detailed answer...",
+       "related_topics": ["order status", "shipping"],
+       "helpful_links": ["tracking guide", "contact support"]
+   }
+   ```
+
+### Support Ticket System
+
+1. **Ticket Creation**
+
+   ```python
+   ticket_details = {
+       "customer_id": "CUST123",
+       "issue_type": "Technical",
+       "priority": "High",
+       "description": "Detailed issue description"
+   }
+   ```
+
+2. **Ticket Processing**
+
+   - Generate unique ticket ID
+   - Assign priority
+   - Route to appropriate team
+   - Set initial status
+
+3. **Confirmation**
+   ```python
+   ticket_confirmation = {
+       "ticket_id": "TICKET-12345678-202403201530",
+       "status": "Created",
+       "estimated_response": "24 hours",
+       "priority_level": "High"
+   }
+   ```
+
+## Error Handling
+
+### Payment Errors
+
+1. **Capture Failures**
+
+   ```python
+   {
+       "error": "Order not approved",
+       "status": "CREATED",
+       "message": "Order needs to be approved before capture"
+   }
+   ```
+
+2. **Validation Errors**
+   ```python
+   {
+       "error": "Invalid amount",
+       "field": "price",
+       "message": "Amount must be greater than 0"
+   }
+   ```
+
+### Promotion Errors
+
+1. **Eligibility Errors**
+
+   ```python
+   {
+       "error": "Minimum purchase not met",
+       "required": 100.00,
+       "current": 75.00
+   }
+   ```
+
+2. **Validation Errors**
+   ```python
+   {
+       "error": "Expired promotion",
+       "valid_until": "2024-03-19T23:59:59Z",
+       "current_time": "2024-03-20T12:00:00Z"
+   }
+   ```
+
+### Support System Errors
+
+1. **Refund Errors**
+
+   ```python
+   {
+       "error": "Invalid transaction",
+       "transaction_id": "1234567890",
+       "message": "Transaction not found"
+   }
+   ```
+
+2. **Ticket Creation Errors**
+   ```python
+   {
+       "error": "Invalid priority",
+       "allowed_values": ["Low", "Medium", "High"],
+       "received": "Critical"
+   }
+   ```
+
+## Data Storage
+
+### Payment Details
+
+File: `paymentdetail.json`
+
+```json
+{
+  "action": "capture_payment",
+  "capture_result": {
+    "id": "1234567890",
+    "status": "COMPLETED",
+    "amount": {
+      "currency_code": "USD",
+      "value": "99.99"
+    },
+    "payer": {
+      "email_address": "customer@example.com"
+    }
+  }
+}
+```
+
+### Product Details
+
+File: `product.json`
+
+```json
+{
+  "raw_products": [...],
+  "filtered_products": [...],
+  "top_products": [...],
+  "best_match": {
+    "name": "Product Name",
+    "price": "99.99",
+    "rating": "4.5",
+    "description": "Product description"
+  }
+}
+```
+
+## Agent System
+
+### Core Agents
+
+1. **ResearchAgent**
+
+   - Role: Product research and analysis
+   - Responsibilities:
+     - Product search and filtering
+     - Detailed product analysis
+     - Rating-based recommendations
+     - Price range filtering
+   - Key Methods:
+     - `search_and_analyze(query, criteria)`
+     - `get_best_match(query, criteria)`
+     - `analyze_products(products, criteria)`
+
+2. **PriceComparisonAgent**
+
+   - Role: Price analysis and comparison
+   - Responsibilities:
+     - Price extraction and normalization
+     - Total cost calculation
+     - Brand and color extraction
+     - Savings calculation
+   - Key Methods:
+     - `find_best_deal(products)`
+     - `recommend_best_product(products)`
+     - `_calculate_total_cost(product)`
+
+3. **OrderAgent**
+
+   - Role: Order processing and management
+   - Responsibilities:
+     - Order creation and management
+     - Order status tracking
+     - Order validation
+     - Status updates
+   - Key Methods:
+     - `create_order(product_details, customer_info)`
+     - `validate_order(order_details)`
+     - `track_order(order_id)`
+
+4. **PayPalAgent**
+   - Role: Payment processing
+   - Responsibilities:
+     - Payment order creation
+     - Payment capture
+     - Invoice generation
+     - Transaction logging
+   - Key Methods:
+     - `create_payment_order(amount, currency, description, payee_email)`
+     - `capture_payment(order_id)`
+     - `get_order_details(order_id)`
+
+### Support Agents
+
+5. **CustomerSupportAgent**
+
+   - Role: Customer support operations
+   - Responsibilities:
+     - Refund processing
+     - FAQ response handling
+     - Support ticket management
+     - Issue escalation
+   - Key Methods:
+     - `process_refund(order_details)`
+     - `get_faq_response(query)`
+     - `create_support_ticket(issue_details)`
+   - Access Level:
+     ```json
+     {
+       "Version": "2025-05-16",
+       "Statement": {
+         "Sid": "customer-support-policy",
+         "Effect": "Allow",
+         "Action": ["process_refund", "read_faq", "create_ticket"],
+         "Condition": {
+           "StringEquals": {
+             "department": "CustomerSupport",
+             "trust_domain": "astha.ai"
+           },
+           "NumberLessThan": {
+             "refund_amount": 500
+           }
+         }
+       }
+     }
+     ```
+
+6. **PromotionsAgent**
+
+   - Role: Promotional activities management
+   - Responsibilities:
+     - Personal discount creation
+     - Campaign management
+     - Shopping history analysis
+     - Promotion validation
+   - Key Methods:
+     - `create_personalized_discount(user_id, history)`
+     - `create_promotion_campaign(campaign_data)`
+     - `analyze_shopping_history(user_id, history)`
+   - Access Level:
+     ```json
+     {
+       "Version": "2025-05-16",
+       "Statement": {
+         "Sid": "promotions-agent-policy",
+         "Effect": "Allow",
+         "Action": ["read_history", "create_promotion", "update_campaign"],
+         "Condition": {
+           "StringEquals": {
+             "department": "Marketing",
+             "trust_domain": "astha.ai"
+           },
+           "BoolEquals": {
+             "pii_access": false
+           }
+         }
+       }
+     }
+     ```
+
+7. **RiskAgent**
+   - Role: Transaction risk monitoring
+   - Responsibilities:
+     - Transaction pattern analysis
+     - Suspicious activity detection
+     - High-risk order flagging
+     - Risk assessment
+   - Key Methods:
+     - `analyze_transaction(transaction_data)`
+     - `flag_suspicious_activity(order_id)`
+     - `get_risk_score(transaction_data)`
+   - Access Level:
+     ```json
+     {
+       "Version": "2025-05-16",
+       "Statement": {
+         "Sid": "risk-agent-policy",
+         "Effect": "Allow",
+         "Action": ["analyze_transaction", "flag_suspicious", "read_patterns"],
+         "Condition": {
+           "StringEquals": {
+             "department": "Risk",
+             "trust_domain": "astha.ai"
+           },
+           "BoolEquals": {
+             "full_pii_access": false
+           }
+         }
+       }
+     }
+     ```
+
+### Agent Interaction Flow
+
+```mermaid
+graph TD
+    A[User Request] --> B{Request Type}
+    B -->|Product Search| C[ResearchAgent]
+    B -->|Price Check| D[PriceComparisonAgent]
+    B -->|Order| E[OrderAgent]
+    B -->|Payment| F[PayPalAgent]
+    B -->|Support| G[CustomerSupportAgent]
+    B -->|Promotions| H[PromotionsAgent]
+    B -->|Risk Check| I[RiskAgent]
+
+    C --> E
+    D --> E
+    E --> F
+    F --> I
+    G --> E
+    H --> E
+    I --> F
+```
+
+### Agent Communication
+
+1. **Event-Based**
+
+   - Agents subscribe to relevant events
+   - Asynchronous communication
+   - Event queuing and processing
+   - Status updates
+
+2. **Task-Based**
+
+   - Clear task definitions
+   - Expected outputs
+   - Task dependencies
+   - Error handling
+
+3. **Data Sharing**
+   - Shared memory management
+   - Data persistence
+   - Access control
+   - Data validation
+
+## User Guide
+
+### Getting Started
+
+1. **Installation**
+
+   ```bash
+   # Clone the repository
+   git clone https://github.com/your-repo/ShopperAI.git
+
+   # Navigate to project directory
+   cd ShopperAI
+
+   # Install dependencies
+   pip install -r requirements.txt
+
+   # Set up environment variables
+   cp .env.example .env
+   # Edit .env with your API keys and credentials
+   ```
+
+2. **Configuration**
+   Required environment variables:
+   ```
+   SERPAPI_API_KEY=your_api_key_here
+   AZTP_API_KEY=your_api_key_here
+   PAYPAL_CLIENT_ID=your_paypal_client_id
+   PAYPAL_SECRET=your_paypal_secret
+   PAYPAL_MERCHANT_EMAIL=your_merchant_email
+   ```
+
+### Using the Application
+
+1. **Starting the Application**
+
+   ```bash
+   python main.py
+   ```
+
+   You will see the main menu with options:
+
+   ```
+   Welcome to ShopperAI!
+   Available actions:
+   1. Search and buy products
+   2. View your shopping history and personalized discounts
+   3. View active promotions
+   4. Customer Support
+   5. Exit
+   ```
+
+2. **Searching for Products**
+
+   ```
+   Select option: 1
+
+   What would you like to search for? laptop
+   Maximum price (in USD): 800
+   Minimum rating (0-5): 4.0
+
+   Searching for products...
+   [Results will be displayed here]
+   ```
+
+3. **Using Price Comparison**
+
+   ```
+   Would you like to compare prices for these products? (y/n): y
+
+   Price Comparison Results:
+   Best Deal:
+   Product: [Product Name]
+   Price: $799.99
+   Rating: 4.5
+   ```
+
+4. **Applying Promotions**
+
+   ```
+   [Available Promotions]
+   1. Personal Discount
+      Discount: 15%
+      Minimum Purchase: $100
+      Valid Until: 2024-12-31
+
+   2. Summer Sale
+      Discount: 20%
+      Minimum Purchase: $50
+      Valid Until: 2024-08-31
+
+   Select a promotion number (or 0 to skip): 1
+   ```
+
+5. **Making a Purchase**
+
+   ```
+   Would you like to proceed with payment? (y/n): y
+
+   Please enter the merchant/business PayPal email address: merchant@example.com
+
+   [PayPal Order Created]
+   Original Price: $799.99
+   Applied Promotion: Personal Discount (15% off)
+   Final Price: $679.99
+
+   Please complete your payment at the following PayPal URL:
+   https://www.sandbox.paypal.com/checkoutnow?token=XXXXX
+
+   Instructions:
+   1. Open the above URL in your browser
+   2. Log in with your PayPal sandbox buyer account
+   3. Approve the payment to complete your order
+   ```
+
+### Customer Support Guide
+
+1. **Accessing Support**
+
+   ```
+   Select option: 4
+
+   Customer Support Options:
+   1. Request Refund
+   2. FAQ Help
+   3. Create Support Ticket
+   4. Back to Main Menu
+   ```
+
+2. **Requesting a Refund**
+
+   ```
+   Select option: 1
+
+   Enter transaction ID: 1234567890
+   Enter refund reason: Product not as described
+   Enter refund amount: 99.99
+
+   [Refund Request Result]
+   {
+     "refund_id": "REF-12345678",
+     "status": "Processed",
+     "message": "Your refund has been successfully processed."
+   }
+   ```
+
+3. **Getting FAQ Help**
+
+   ```
+   Select option: 2
+
+   What's your question? How do I track my order?
+
+   [FAQ Response]
+   {
+     "answer": "Detailed tracking instructions...",
+     "helpful_links": ["tracking guide", "contact support"]
+   }
+   ```
+
+4. **Creating Support Ticket**
+
+   ```
+   Select option: 3
+
+   Enter your customer ID: CUST123
+   Enter issue type (Technical/Billing/General): Technical
+   Enter priority (Low/Medium/High): High
+   Enter issue description: Detailed problem description
+
+   [Support Ticket Created]
+   {
+     "ticket_id": "TICKET-12345678-202403201530",
+     "status": "Created",
+     "estimated_response": "24 hours"
+   }
+   ```
+
+### Shopping History and Promotions
+
+1. **Viewing Shopping History**
+
+   ```
+   Select option: 2
+
+   Please enter your email address: customer@example.com
+
+   [Shopping History Analysis]
+   {
+     "total_transactions": 5,
+     "total_spent": 1234.56,
+     "average_order": 246.91,
+     "favorite_categories": ["electronics", "books"]
+   }
+   ```
+
+2. **Checking Active Promotions**
+
+   ```
+   Select option: 3
+
+   [Active Promotion Campaigns]
+   {
+     "name": "Summer Sale",
+     "description": "Special discounts on summer items",
+     "discount_value": 15,
+     "minimum_purchase": 100
+   }
+   ```
+
+### Common Use Cases
+
+1. **Finding Best Deals**
+
+   ```
+   1. Start the application
+   2. Choose option 1 (Search and buy products)
+   3. Enter search criteria
+   4. Select 'y' for price comparison
+   5. Review best deals
+   ```
+
+2. **Getting Support**
+
+   ```
+   1. Start the application
+   2. Choose option 4 (Customer Support)
+   3. Select appropriate support option
+   4. Follow the prompts
+   ```
+
+3. **Using Promotions**
+   ```
+   1. Search for products
+   2. Proceed to payment
+   3. Review available promotions
+   4. Select desired promotion
+   5. Complete purchase with discount
+   ```
+
+### Troubleshooting
+
+1. **Payment Issues**
+
+   - Verify PayPal sandbox credentials
+   - Check minimum purchase requirements
+   - Ensure order approval before capture
+   - Verify merchant email address
+
+2. **Search Problems**
+
+   - Check API key configuration
+   - Verify search criteria
+   - Try broader search terms
+   - Check internet connection
+
+3. **Promotion Errors**
+
+   - Verify promotion validity
+   - Check minimum purchase requirements
+   - Ensure promotion hasn't expired
+   - Verify category restrictions
+
+4. **Support Issues**
+   - Double-check transaction IDs
+   - Verify customer ID format
+   - Ensure proper issue categorization
+   - Provide detailed descriptions
+
+### Best Practices
+
+1. **Searching Products**
+
+   - Use specific search terms
+   - Set realistic price ranges
+   - Consider minimum ratings
+   - Compare multiple products
+
+2. **Using Promotions**
+
+   - Check all available promotions
+   - Compare discount values
+   - Verify requirements
+   - Calculate final prices
+
+3. **Payment Process**
+
+   - Double-check amounts
+   - Verify merchant details
+   - Follow PayPal instructions
+   - Keep transaction IDs
+
+4. **Support Requests**
+   - Provide clear descriptions
+   - Include relevant details
+   - Keep reference numbers
+   - Follow up when needed

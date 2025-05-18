@@ -1,0 +1,371 @@
+{
+  "version": "1.0",
+  "last_updated": "2024-03-21",
+  "categories": {
+    "orders": {
+      "title": "Orders and Shipping",
+      "faqs": [
+        {
+          "id": "order_tracking",
+          "question": "How can I track my order?",
+          "answer": "You can track your order by:\n1. Logging into your account\n2. Going to 'Order History'\n3. Clicking on the specific order\n4. Using the provided tracking number on our shipping partner's website",
+          "keywords": [
+            "track",
+            "tracking",
+            "order status",
+            "where is my order",
+            "shipping status"
+          ]
+        },
+        {
+          "id": "cancel_order",
+          "question": "How do I cancel my order?",
+          "answer": "To cancel your order:\n1. Log into your account\n2. Go to 'Order History'\n3. Select the order you want to cancel\n4. Click 'Cancel Order' (only available if order hasn't shipped)\n\nIf the order has already shipped, you'll need to initiate a return once you receive it.",
+          "keywords": [
+            "cancel",
+            "cancellation",
+            "stop order"
+          ]
+        },
+        {
+          "id": "search_products",
+          "question": "How do I search for products?",
+          "answer": "To search for products:\n1. Enter what you're looking for in the search bar\n2. Specify your maximum price budget\n3. Set your minimum rating requirement (0-5)\n4. The system will show you the best matches based on your criteria\n\nYou can also compare prices of found products by selecting the price comparison option.",
+          "keywords": [
+            "search",
+            "find products",
+            "product search",
+            "how to search",
+            "find items"
+          ]
+        },
+        {
+          "id": "payment_process",
+          "question": "How does the payment process work?",
+          "answer": "Our payment process is secure and straightforward:\n1. Select your product\n2. Choose any available promotions or discounts\n3. Proceed to PayPal checkout\n4. Complete payment through PayPal's secure interface\n5. Wait for payment confirmation\n6. Receive order confirmation\n\nYou'll receive a transaction ID and can track your order status after payment.",
+          "keywords": [
+            "payment process",
+            "how to pay",
+            "checkout",
+            "buy",
+            "purchase"
+          ]
+        },
+        {
+          "id": "price_comparison_process",
+          "question": "What happens during price comparison?",
+          "answer": "Our price comparison feature is temporarily disabled while we work on improvements. Currently, we show you the best available products based on your search criteria, including price and rating information. You can proceed directly to purchase the product that best matches your needs.",
+          "keywords": [
+            "compare prices",
+            "price analysis",
+            "best deal",
+            "price check",
+            "value comparison"
+          ]
+        },
+        {
+          "id": "order_confirmation",
+          "question": "How do I know my order was successful?",
+          "answer": "After placing an order:\n1. You'll receive an immediate order confirmation screen\n2. A confirmation email will be sent to your address\n3. The order will appear in your account history\n4. You'll get a PayPal transaction confirmation\n5. You can track the order status in your account\n\nKeep your order confirmation and transaction ID for reference.",
+          "keywords": [
+            "order confirmation",
+            "purchase confirmation",
+            "order success",
+            "order email",
+            "transaction confirmation"
+          ]
+        }
+      ]
+    },
+    "returns_refunds": {
+      "title": "Returns and Refunds",
+      "faqs": [
+        {
+          "id": "return_policy",
+          "question": "What is your return policy?",
+          "answer": "Our return policy allows returns within 30 days of delivery. Items must be unused and in original packaging. Some restrictions apply for certain categories like electronics and personal care items.",
+          "keywords": [
+            "return",
+            "policy",
+            "send back",
+            "return period"
+          ]
+        },
+        {
+          "id": "refund_timeline",
+          "question": "How long does it take to get a refund?",
+          "answer": "After we receive your return:\n1. 2-3 business days for inspection\n2. 3-5 business days for refund processing\n3. 5-10 business days for the amount to appear in your account (varies by payment method)",
+          "keywords": [
+            "refund",
+            "money back",
+            "when refund",
+            "refund time"
+          ]
+        },
+        {
+          "id": "refund_request",
+          "question": "How do I request a refund?",
+          "answer": "To request a refund:\n1. Go to Customer Support in the main menu\n2. Select 'Request Refund'\n3. Provide your transaction ID\n4. Enter the refund reason\n5. Specify the refund amount\n6. Submit your request\n\nOur team will process your refund request and send you a confirmation with a refund ID.",
+          "keywords": [
+            "request refund",
+            "how to refund",
+            "refund process",
+            "get refund"
+          ]
+        }
+      ]
+    },
+    "account": {
+      "title": "Account Management",
+      "faqs": [
+        {
+          "id": "reset_password",
+          "question": "How do I reset my password?",
+          "answer": "To reset your password:\n1. Click 'Forgot Password' on the login page\n2. Enter your email address\n3. Check your email for reset instructions\n4. Follow the link to create a new password",
+          "keywords": [
+            "password",
+            "forgot",
+            "reset",
+            "can't login"
+          ]
+        },
+        {
+          "id": "update_info",
+          "question": "How can I update my account information?",
+          "answer": "To update your account:\n1. Log into your account\n2. Go to 'Account Settings'\n3. Select the information you want to update\n4. Make your changes and click 'Save'",
+          "keywords": [
+            "update",
+            "change",
+            "modify",
+            "account details"
+          ]
+        },
+        {
+          "id": "view_history",
+          "question": "How can I view my shopping history?",
+          "answer": "To view your shopping history:\n1. Select 'View your shopping history' from the main menu\n2. Enter your email address\n3. The system will show you:\n   - Your past purchases\n   - Total spent\n   - Available personalized discounts\n   - Transaction dates and details",
+          "keywords": [
+            "history",
+            "past orders",
+            "previous purchases",
+            "order history",
+            "shopping history"
+          ]
+        }
+      ]
+    },
+    "payment": {
+      "title": "Payment and Pricing",
+      "faqs": [
+        {
+          "id": "payment_methods",
+          "question": "What payment methods do you accept?",
+          "answer": "We accept:\n- Credit/Debit Cards (Visa, MasterCard, American Express)\n- PayPal\n- Apple Pay\n- Google Pay\n- Shop Pay",
+          "keywords": [
+            "payment",
+            "pay",
+            "credit card",
+            "debit card",
+            "paypal"
+          ]
+        },
+        {
+          "id": "price_match",
+          "question": "Do you offer price matching?",
+          "answer": "Yes, we offer price matching on identical items from major retailers. The item must be in stock and sold directly by the retailer (not third-party sellers). Contact customer support with the competitor's link to request a price match.",
+          "keywords": [
+            "price match",
+            "cheaper",
+            "competitor price",
+            "price guarantee"
+          ]
+        },
+        {
+          "id": "price_comparison",
+          "question": "How does price comparison work?",
+          "answer": "Our price comparison feature is currently undergoing maintenance and improvements. In the meantime, we display product prices and ratings directly in the search results to help you make informed purchasing decisions. You can sort products by price or rating to find the best option for your needs.",
+          "keywords": [
+            "compare prices",
+            "price comparison",
+            "best price",
+            "cheapest option",
+            "price analysis"
+          ]
+        },
+        {
+          "id": "payment_capture",
+          "question": "What happens after I approve my PayPal payment?",
+          "answer": "After PayPal payment approval:\n1. The system automatically captures your payment\n2. You'll receive a confirmation with transaction ID\n3. Order processing begins\n4. You can view the transaction in your PayPal account\n5. The order details will appear in your shopping history\n\nIf there are any issues with payment capture, our support team will assist you.",
+          "keywords": [
+            "payment capture",
+            "payment confirmation",
+            "payment processing",
+            "paypal approval",
+            "transaction confirmation"
+          ]
+        },
+        {
+          "id": "payment_failure",
+          "question": "What should I do if my payment fails?",
+          "answer": "If your payment fails:\n1. Check your PayPal balance or linked payment method\n2. Ensure your PayPal account is verified\n3. Try the payment again\n4. If problems persist:\n   - Contact our customer support\n   - Create a support ticket\n   - Check your email for error details\n\nOur support team can help resolve any payment issues.",
+          "keywords": [
+            "payment failed",
+            "payment error",
+            "transaction failed",
+            "payment issue",
+            "payment problem"
+          ]
+        }
+      ]
+    },
+    "promotions": {
+      "title": "Promotions and Discounts",
+      "faqs": [
+        {
+          "id": "promo_code",
+          "question": "How do I use a promo code?",
+          "answer": "To use a promo code:\n1. Add items to your cart\n2. Go to checkout\n3. Enter the promo code in the 'Discount Code' field\n4. Click 'Apply'\n\nNote: Only one promo code can be used per order.",
+          "keywords": [
+            "promo",
+            "coupon",
+            "discount",
+            "code"
+          ]
+        },
+        {
+          "id": "student_discount",
+          "question": "Do you offer student discounts?",
+          "answer": "Yes! Students can get 10% off by verifying their student status through SheerID. Visit the 'Student Discount' page to verify your status and receive your discount code.",
+          "keywords": [
+            "student",
+            "discount",
+            "education",
+            "school"
+          ]
+        },
+        {
+          "id": "personalized_discounts",
+          "question": "How do I get personalized discounts?",
+          "answer": "Personalized discounts are based on your shopping history:\n1. View your shopping history from the main menu\n2. Enter your email address\n3. The system will show your available personalized discounts\n4. Discounts are automatically calculated based on:\n   - Purchase history\n   - Total spent\n   - Shopping frequency\n\nThese discounts can be applied during checkout.",
+          "keywords": [
+            "personal discount",
+            "special offer",
+            "custom discount",
+            "loyalty discount"
+          ]
+        },
+        {
+          "id": "active_promotions",
+          "question": "How can I see current promotions?",
+          "answer": "To view active promotions:\n1. Select 'View active promotions' from the main menu\n2. You'll see:\n   - Current campaigns\n   - Discount percentages\n   - Minimum purchase requirements\n   - Validity periods\n\nPromotions can be selected during checkout.",
+          "keywords": [
+            "current promotions",
+            "active deals",
+            "ongoing sales",
+            "available discounts"
+          ]
+        },
+        {
+          "id": "promotion_combination",
+          "question": "Can I combine multiple promotions?",
+          "answer": "Regarding promotion combinations:\n1. Only one promotion can be applied per order\n2. The system will show available promotions during checkout\n3. You can choose the best promotion for your purchase\n4. The system automatically calculates and applies:\n   - Personal discounts\n   - Campaign promotions\n   - Student discounts\n\nChoose the promotion that gives you the best savings.",
+          "keywords": [
+            "combine promotions",
+            "multiple discounts",
+            "stack discounts",
+            "promotion rules",
+            "discount combination"
+          ]
+        }
+      ]
+    },
+    "customer_support": {
+      "title": "Customer Support",
+      "faqs": [
+        {
+          "id": "support_options",
+          "question": "What customer support options are available?",
+          "answer": "We offer several support options:\n1. FAQ Help - Quick answers to common questions\n2. Refund Requests - Process returns and refunds\n3. Support Tickets - For specific issues needing attention\n4. Live Support - Connect with our support team\n\nAccess these options through the Customer Support menu in the main menu.",
+          "keywords": [
+            "support options",
+            "help",
+            "customer service",
+            "support channels"
+          ]
+        },
+        {
+          "id": "create_ticket",
+          "question": "How do I create a support ticket?",
+          "answer": "To create a support ticket:\n1. Go to Customer Support in the main menu\n2. Select 'Create Support Ticket'\n3. Provide your customer ID\n4. Select the issue type (Technical/Billing/General)\n5. Choose priority level\n6. Describe your issue\n7. Submit the ticket\n\nYou'll receive a ticket ID for tracking your issue.",
+          "keywords": [
+            "support ticket",
+            "create ticket",
+            "raise issue",
+            "get help"
+          ]
+        },
+        {
+          "id": "ticket_tracking",
+          "question": "How do I track my support ticket status?",
+          "answer": "To track your support ticket:\n1. Go to Customer Support in the main menu\n2. Select 'Track Support Ticket'\n3. Enter your ticket ID\n4. View current status including:\n   - Current stage\n   - Assigned support agent\n   - Expected response time\n   - Any updates or comments\n\nYou'll also receive email notifications for ticket updates.",
+          "keywords": [
+            "track ticket",
+            "ticket status",
+            "support status",
+            "check ticket",
+            "ticket progress"
+          ]
+        },
+        {
+          "id": "support_priority",
+          "question": "How is support ticket priority determined?",
+          "answer": "Support ticket priority is based on:\n1. Issue type (Technical/Billing/General)\n2. Selected priority level (Low/Medium/High)\n3. Order value and status\n4. Account history\n\nPriority levels affect:\n- Response time\n- Resource allocation\n- Escalation process\n\nHigh-priority issues receive immediate attention.",
+          "keywords": [
+            "ticket priority",
+            "support priority",
+            "urgent support",
+            "priority levels",
+            "support urgency"
+          ]
+        }
+      ]
+    },
+    "shopping_history": {
+      "title": "Shopping History and Analysis",
+      "faqs": [
+        {
+          "id": "history_analysis",
+          "question": "What information can I see in my shopping history analysis?",
+          "answer": "Your shopping history analysis shows:\n1. Purchase Patterns:\n   - Total spent\n   - Frequency of purchases\n   - Preferred categories\n2. Available Benefits:\n   - Personalized discounts\n   - Loyalty rewards\n   - Special offers\n3. Transaction Details:\n   - Order dates\n   - Payment methods\n   - Order statuses\n\nThis information helps you track spending and find the best deals.",
+          "keywords": [
+            "shopping analysis",
+            "purchase history",
+            "spending patterns",
+            "transaction history",
+            "order analysis"
+          ]
+        },
+        {
+          "id": "export_history",
+          "question": "Can I export my shopping history?",
+          "answer": "To view and export your shopping history:\n1. Go to 'View your shopping history'\n2. Enter your email address\n3. View your complete history\n4. Use the export option to:\n   - Download transaction details\n   - Save order history\n   - Track spending patterns\n\nExported data includes all order and payment information.",
+          "keywords": [
+            "export history",
+            "download history",
+            "save transactions",
+            "history report",
+            "transaction export"
+          ]
+        }
+      ]
+    }
+  },
+  "metadata": {
+    "supported_languages": [
+      "en"
+    ],
+    "default_language": "en",
+    "auto_suggestion": true,
+    "max_related_questions": 3
+  }
+}

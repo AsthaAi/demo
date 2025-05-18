@@ -255,6 +255,15 @@ class PayPalAgent(Agent):
                 description=description,
                 payee_email=payee_email
             )
+
+            # Log the order creation
+            self._log_payment_detail({
+                "action": "create_order",
+                "paypal_order_id": order_data.get("id"),
+                "approval_url": order_data.get("approval_url"),
+                "raw_response": order_data
+            })
+
             return order_data
         except Exception as e:
             print(f"Error creating payment order: {str(e)}")
@@ -268,6 +277,25 @@ class PayPalAgent(Agent):
         try:
             access_token = await self.payment_tool.get_access_token()
             capture_data = await self.payment_tool.capture_payment(access_token, order_id)
+
+            # Log the payment capture
+            if isinstance(capture_data, dict):
+                if "error" in capture_data:
+                    # Log capture error
+                    self._log_payment_detail({
+                        "action": "capture_payment_error",
+                        "error": capture_data.get("error"),
+                        "status": capture_data.get("status"),
+                        "paypal_order_id": order_id
+                    })
+                else:
+                    # Log successful capture
+                    self._log_payment_detail({
+                        "action": "capture_payment",
+                        "capture_result": capture_data,
+                        "paypal_order_id": order_id
+                    })
+
             return capture_data
         except Exception as e:
             print(f"Error capturing payment: {str(e)}")

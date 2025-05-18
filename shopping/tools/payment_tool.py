@@ -9,6 +9,7 @@ import asyncio
 from typing import Dict, Any, Optional
 from utils.iam_utils import IAMUtils
 from utils.exceptions import PolicyVerificationError
+import json
 
 # Load environment variables
 load_dotenv()
@@ -155,16 +156,22 @@ class PayPalPaymentTool(BaseModel):
                 "Content-Type": "application/json"
             }
 
-            # Ensure amount is properly formatted
-            amount_str = str(amount)
+            # Ensure amount is properly formatted for PayPal
+            # Remove any currency symbols and convert to string with exactly 2 decimal places
+            amount_str = str(float(str(amount).replace('$', '').strip()))
             if '.' not in amount_str:
                 amount_str = f"{amount_str}.00"
             elif len(amount_str.split('.')[1]) == 1:
                 amount_str = f"{amount_str}0"
+            elif len(amount_str.split('.')[1]) > 2:
+                amount_str = f"{float(amount_str):.2f}"
 
             purchase_unit = {
                 "reference_id": unique_id,
-                "amount": {"currency_code": currency, "value": amount_str},
+                "amount": {
+                    "currency_code": currency,
+                    "value": amount_str
+                },
                 "description": description
             }
 
@@ -183,10 +190,12 @@ class PayPalPaymentTool(BaseModel):
                     "return_url": "https://example.com/success",
                     "cancel_url": "https://example.com/cancel",
                     "shipping_preference": "NO_SHIPPING",
-                    "user_action": "PAY_NOW"  # Add this to force immediate payment
+                    "user_action": "PAY_NOW"
                 }
             }
 
+            print(
+                f"[PayPalPaymentTool] Creating order with data: {json.dumps(order_data, indent=2)}")
             response = requests.post(url, headers=headers, json=order_data)
             response.raise_for_status()
             order_response = response.json()

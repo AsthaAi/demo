@@ -1,92 +1,78 @@
 {
   "raw_products": [
     {
-      "name": "2011 Ford Transit Connect",
-      "price": 4800.0,
-      "rating": 4.5,
-      "mileage": 95000,
-      "location": "Los Angeles, CA"
+      "name": "iPhone 13 Pro",
+      "price": 999.0,
+      "rating": 4.8
     },
     {
-      "name": "2010 Chevrolet Express 1500",
-      "price": 4995.0,
-      "rating": 4.2,
-      "mileage": 115000,
-      "location": "New York, NY"
+      "name": "iPhone 12",
+      "price": 699.0,
+      "rating": 4.5
     },
     {
-      "name": "2012 Ram ProMaster City",
-      "price": 5000.0,
-      "rating": 4.0,
-      "mileage": 89000,
-      "location": "Chicago, IL"
+      "name": "iPhone SE",
+      "price": 399.0,
+      "rating": 4.3
     },
     {
-      "name": "2009 Nissan NV200",
-      "price": 4500.0,
-      "rating": 4.0,
-      "mileage": 105000,
-      "location": "Miami, FL"
+      "name": "iPhone 13",
+      "price": 799.0,
+      "rating": 4.6
     },
     {
-      "name": "2008 GMC Savana 2500",
-      "price": 3500.0,
-      "rating": 3.8,
-      "mileage": 130000,
-      "location": "Houston, TX"
+      "name": "iPhone 14 Pro",
+      "price": 1099.0,
+      "rating": 4.9
     }
   ],
   "filtered_products": [
     {
-      "name": "2011 Ford Transit Connect",
-      "price": 4800.0,
-      "rating": 4.5,
-      "mileage": 95000,
-      "location": "Los Angeles, CA"
+      "name": "iPhone 13 Pro",
+      "price": 999.0,
+      "rating": 4.8
     },
     {
-      "name": "2010 Chevrolet Express 1500",
-      "price": 4995.0,
-      "rating": 4.2,
-      "mileage": 115000,
-      "location": "New York, NY"
+      "name": "iPhone 12",
+      "price": 699.0,
+      "rating": 4.5
     },
     {
-      "name": "2012 Ram ProMaster City",
-      "price": 5000.0,
-      "rating": 4.0,
-      "mileage": 89000,
-      "location": "Chicago, IL"
+      "name": "iPhone SE",
+      "price": 399.0,
+      "rating": 4.3
     },
     {
-      "name": "2009 Nissan NV200",
-      "price": 4500.0,
-      "rating": 4.0,
-      "mileage": 105000,
-      "location": "Miami, FL"
+      "name": "iPhone 13",
+      "price": 799.0,
+      "rating": 4.6
+    },
+    {
+      "name": "iPhone 14 Pro",
+      "price": 1099.0,
+      "rating": 4.9
     }
   ],
   "top_products": [
     {
-      "name": "2011 Ford Transit Connect",
-      "price": 4800.0,
-      "rating": 4.5,
-      "mileage": 95000,
-      "location": "Los Angeles, CA"
+      "name": "iPhone 14 Pro",
+      "price": 1099.0,
+      "rating": 4.9
     },
     {
-      "name": "2010 Chevrolet Express 1500",
-      "price": 4995.0,
-      "rating": 4.2,
-      "mileage": 115000,
-      "location": "New York, NY"
+      "name": "iPhone 13 Pro",
+      "price": 999.0,
+      "rating": 4.8
+    },
+    {
+      "name": "iPhone 13",
+      "price": 799.0,
+      "rating": 4.6
     }
   ],
   "best_match": {
-    "name": "2011 Ford Transit Connect",
-    "price": 4800.0,
-    "rating": 4.5,
-    "mileage": 95000,
-    "location": "Los Angeles, CA"
+    "name": "iPhone 14 Pro",
+    "price": 1099.0,
+    "rating": 4.9
   }
 }
