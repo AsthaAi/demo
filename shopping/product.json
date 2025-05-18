@@ -1,73 +1,108 @@
 {
   "raw_products": [
     {
-      "name": "iPhone 14 - 128GB",
-      "price": 799.0,
-      "rating": 4.7
+      "name": "iPhone 16 Pro",
+      "price": 1599.99,
+      "rating": 4.5,
+      "features": [
+        "128GB Storage",
+        "Super Retina XDR Display",
+        "Triple Camera System"
+      ]
     },
     {
-      "name": "iPhone 14 - 256GB",
-      "price": 899.0,
-      "rating": 4.6
+      "name": "iPhone 16",
+      "price": 1399.99,
+      "rating": 4.3,
+      "features": [
+        "64GB Storage",
+        "Liquid Retina Display",
+        "Dual Camera System"
+      ]
     },
     {
-      "name": "iPhone 14 - 512GB",
-      "price": 1099.0,
-      "rating": 4.5
+      "name": "iPhone 16 Pro Max",
+      "price": 1899.99,
+      "rating": 4.7,
+      "features": [
+        "256GB Storage",
+        "Super Retina XDR Display",
+        "Quad Camera System"
+      ]
     },
     {
-      "name": "iPhone 14 - 128GB (Unlocked)",
-      "price": 799.0,
-      "rating": 4.8
-    },
-    {
-      "name": "iPhone 14 - 256GB (Unlocked)",
-      "price": 899.0,
-      "rating": 4.9
+      "name": "iPhone 16 Mini",
+      "price": 999.99,
+      "rating": 4.2,
+      "features": [
+        "64GB Storage",
+        "Liquid Retina Display",
+        "Dual Camera System"
+      ]
     }
   ],
   "filtered_products": [
     {
-      "name": "iPhone 14 - 128GB",
-      "price": 799.0,
-      "rating": 4.7
+      "name": "iPhone 16 Pro",
+      "price": 1599.99,
+      "rating": 4.5,
+      "features": [
+        "128GB Storage",
+        "Super Retina XDR Display",
+        "Triple Camera System"
+      ]
     },
     {
-      "name": "iPhone 14 - 256GB",
-      "price": 899.0,
-      "rating": 4.6
+      "name": "iPhone 16",
+      "price": 1399.99,
+      "rating": 4.3,
+      "features": [
+        "64GB Storage",
+        "Liquid Retina Display",
+        "Dual Camera System"
+      ]
     },
     {
-      "name": "iPhone 14 - 128GB (Unlocked)",
-      "price": 799.0,
-      "rating": 4.8
-    },
-    {
-      "name": "iPhone 14 - 256GB (Unlocked)",
-      "price": 899.0,
-      "rating": 4.9
+      "name": "iPhone 16 Pro Max",
+      "price": 1899.99,
+      "rating": 4.7,
+      "features": [
+        "256GB Storage",
+        "Super Retina XDR Display",
+        "Quad Camera System"
+      ]
     }
   ],
   "top_products": [
     {
-      "name": "iPhone 14 - 256GB (Unlocked)",
-      "price": 899.0,
-      "rating": 4.9
+      "name": "iPhone 16 Pro Max",
+      "price": 1899.99,
+      "rating": 4.7,
+      "features": [
+        "256GB Storage",
+        "Super Retina XDR Display",
+        "Quad Camera System"
+      ]
     },
     {
-      "name": "iPhone 14 - 128GB (Unlocked)",
-      "price": 799.0,
-      "rating": 4.8
-    },
-    {
-      "name": "iPhone 14 - 128GB",
-      "price": 799.0,
-      "rating": 4.7
+      "name": "iPhone 16 Pro",
+      "price": 1599.99,
+      "rating": 4.5,
+      "features": [
+        "128GB Storage",
+        "Super Retina XDR Display",
+        "Triple Camera System"
+      ]
     }
   ],
   "best_match": {
-    "name": "iPhone 14 - 256GB (Unlocked)",
-    "price": 899.0,
-    "rating": 4.9
+    "name": "iPhone 16 Pro Max",
+    "price": 1899.99,
+    "rating": 4.7,
+    "features": [
+      "256GB Storage",
+      "Super Retina XDR Display",
+      "Quad Camera System"
+    ]
   }
 }

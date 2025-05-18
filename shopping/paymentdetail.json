@@ -1017,5 +1017,195 @@
     "error": "Order status is COMPLETED, not APPROVED",
     "status": "COMPLETED",
     "paypal_order_id": "73F39108TN3368733"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "95D53806AB921402C",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=95D53806AB921402C",
+    "raw_response": {
+      "id": "95D53806AB921402C",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/95D53806AB921402C",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=95D53806AB921402C",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/95D53806AB921402C",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/95D53806AB921402C/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=95D53806AB921402C"
+    }
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is CREATED, not APPROVED",
+    "status": "CREATED",
+    "paypal_order_id": "95D53806AB921402C"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "49263416GF944002G",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=49263416GF944002G",
+    "raw_response": {
+      "id": "49263416GF944002G",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/49263416GF944002G",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=49263416GF944002G",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/49263416GF944002G",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/49263416GF944002G/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=49263416GF944002G"
+    }
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is CREATED, not APPROVED",
+    "status": "CREATED",
+    "paypal_order_id": "49263416GF944002G"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "1YN475969U836612E",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=1YN475969U836612E",
+    "raw_response": {
+      "id": "1YN475969U836612E",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/1YN475969U836612E",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=1YN475969U836612E",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/1YN475969U836612E",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/1YN475969U836612E/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=1YN475969U836612E"
+    }
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is CREATED, not APPROVED",
+    "status": "CREATED",
+    "paypal_order_id": "1YN475969U836612E"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "4MC16634DP0626343",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=4MC16634DP0626343",
+    "raw_response": {
+      "id": "4MC16634DP0626343",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/4MC16634DP0626343",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=4MC16634DP0626343",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/4MC16634DP0626343",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/4MC16634DP0626343/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=4MC16634DP0626343"
+    }
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is CREATED, not APPROVED",
+    "status": "CREATED",
+    "paypal_order_id": "4MC16634DP0626343"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "52G0311972010192M",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=52G0311972010192M",
+    "raw_response": {
+      "id": "52G0311972010192M",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/52G0311972010192M",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=52G0311972010192M",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/52G0311972010192M",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/52G0311972010192M/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=52G0311972010192M"
+    }
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is CREATED, not APPROVED",
+    "status": "CREATED",
+    "paypal_order_id": "52G0311972010192M"
   }
 ]

@@ -38,6 +38,11 @@ interface Message {
   type: 'user' | 'assistant';
   content: string;
   product?: Product;
+  comparisonResults?: ComparisonResult;
+  products?: Product[];
+  campaign?: Promotion;
+  historyResult?: any;
+  supportResult?: any;
 }
 
 interface PromotionSummary {
@@ -47,6 +52,58 @@ interface PromotionSummary {
   finalPrice: number;
   promotionName: string;
 }
+
+interface ComparisonResult {
+  products: Product[];
+  best_deal: Product | null;
+  price_range: {
+    lowest: number;
+    highest: number;
+  };
+}
+
+interface SearchCriteria {
+  query: string;
+  maxPrice: number;
+  minRating: number;
+}
+
+type ActionStep =
+  | 'menu'
+  | 'search_product'
+  | 'search_max_price'
+  | 'search_min_rating'
+  | 'searching'
+  | 'show_results'
+  | 'history_email'
+  | 'history_result'
+  | 'promotions_list'
+  | 'support_menu'
+  | 'support_refund_tid'
+  | 'support_refund_reason'
+  | 'support_refund_amount'
+  | 'support_faq_question'
+  | 'support_ticket_cid'
+  | 'support_ticket_type'
+  | 'support_ticket_priority'
+  | 'support_ticket_desc'
+  | 'support_result'
+  | 'exit';
+
+const SUPPORT_OPTIONS = [
+  { key: 'refund', label: 'Request Refund' },
+  { key: 'faq', label: 'FAQ Help' },
+  { key: 'ticket', label: 'Create Support Ticket' },
+  { key: 'back', label: 'Back to Main Menu' },
+];
+
+const MENU_OPTIONS = [
+  { key: 'search', label: 'Search and buy products' },
+  { key: 'history', label: 'View your shopping history and personalized discounts' },
+  { key: 'promotions', label: 'View active promotions' },
+  { key: 'support', label: 'Customer Support' },
+  { key: 'exit', label: 'Exit' },
+];
 
 function calculatePromotionSummary(product: Product, promotion: Promotion): PromotionSummary | null {
   if (!promotion || !product) return null;
@@ -63,12 +120,12 @@ function calculatePromotionSummary(product: Product, promotion: Promotion): Prom
 }
 
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      type: 'assistant',
-      content: 'Welcome to ShopperAI! I can help you find and compare products. What would you like to search for?'
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [step, setStep] = useState<ActionStep>('menu');
+  const [pendingAction, setPendingAction] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
+  const [minRating, setMinRating] = useState<number | null>(null);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -82,7 +139,14 @@ export default function Home() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [approvalUrl, setApprovalUrl] = useState<string>('');
   const [promotionSummary, setPromotionSummary] = useState<PromotionSummary | null>(null);
+  const [comparisonResults, setComparisonResults] = useState<ComparisonResult | null>(null);
+  const [isComparing, setIsComparing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [historyEmail, setHistoryEmail] = useState('');
+  const [supportStep, setSupportStep] = useState<string>('');
+  const [refundDetails, setRefundDetails] = useState({ tid: '', reason: '', amount: '' });
+  const [faqQuestion, setFaqQuestion] = useState('');
+  const [ticketDetails, setTicketDetails] = useState({ cid: '', type: '', priority: '', desc: '' });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -92,87 +156,401 @@ export default function Home() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
-
-    const userMessage = input.trim();
-    setInput('');
-    setMessages(prev => [...prev, { type: 'user', content: userMessage }]);
-    setIsLoading(true);
-
-    try {
-      // Extract price and rating from user message if present
-      const priceMatch = userMessage.match(/\$(\d+)/);
-      const ratingMatch = userMessage.match(/(\d+(?:\.\d+)?)\s*stars?/i);
-      
-      const maxPrice = priceMatch ? parseFloat(priceMatch[1]) : 1000;
-      const minRating = ratingMatch ? parseFloat(ratingMatch[1]) : 0;
-
-      const response = await axios.post('http://localhost:8000/api/search', {
-        query: userMessage,
-        max_price: maxPrice,
-        min_rating: minRating
-      });
-
-      if (response.data.success) {
-        const { best_match, products } = response.data;
-        
-        // Add assistant message with best match
-        if (best_match) {
-          setMessages(prev => [
-            ...prev,
-            {
-              type: 'assistant',
-              content: `I found a great match for "${userMessage}":`,
-              product: best_match
-            }
-          ]);
-        }
-
-        // Add message about other products if available
-        if (products && products.length > 0) {
-          setMessages(prev => [
-            ...prev,
-            {
-              type: 'assistant',
-              content: `I found ${products.length} other products that match your criteria. Would you like to compare prices or proceed with the best match?`
-            }
-          ]);
-        }
-      }
-    } catch (error) {
-      console.error('Error searching products:', error);
-      setMessages(prev => [
-        ...prev,
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
         {
           type: 'assistant',
-          content: 'I apologize, but I encountered an error while searching for products. Please try again.'
+          content: `Welcome to ShopperAI!\nAvailable actions:\n${MENU_OPTIONS.map((opt, i) => `${i + 1}. ${opt.label}`).join('\n')}`
         }
       ]);
-    } finally {
-      setIsLoading(false);
+    }
+  }, []);
+
+  const handleMenuSelect = (optionKey: string) => {
+    setPendingAction(optionKey);
+    if (optionKey === 'search') {
+      setStep('search_product');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'What would you like to search for?' }
+      ]);
+    } else if (optionKey === 'history') {
+      setStep('history_email');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Please enter your email address to view your shopping history and personalized discounts.' }
+      ]);
+    } else if (optionKey === 'promotions') {
+      setStep('promotions_list');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Fetching active promotions...' }
+      ]);
+      fetchPromotions();
+    } else if (optionKey === 'support') {
+      setStep('support_menu');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: `Customer Support Options:\n${SUPPORT_OPTIONS.map((opt, i) => `${i + 1}. ${opt.label}`).join('\n')}` }
+      ]);
+    } else if (optionKey === 'exit') {
+      setStep('exit');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Thank you for using ShopperAI! Goodbye.' }
+      ]);
+    }
+  };
+
+  const fetchPromotions = async () => {
+    try {
+      // Use the same campaign_data as in main.py CLI option 3
+      const campaign_data = {
+        name: 'Summer Sale',
+        description: 'Special discounts on summer items',
+        start_date: new Date().toISOString(),
+        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        discount_type: 'percentage',
+        discount_value: 15,
+        conditions: {
+          minimum_purchase: 100,
+          categories: ['summer', 'outdoor']
+        }
+      };
+      const response = await axios.post('http://localhost:8000/api/create-promotion-campaign', campaign_data);
+      if (response.data && response.data.success && response.data.campaign) {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: '[Active Promotion Campaigns]\n' + JSON.stringify(response.data.campaign, null, 2) }
+        ]);
+      } else {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'No active promotions at this time.' }
+        ]);
+      }
+    } catch {
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Error fetching promotions.' }
+      ]);
+    }
+    setStep('menu');
+  };
+
+  const handleStepInput = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    setMessages(prev => [...prev, { type: 'user', content: input.trim() }]);
+    const value = input.trim();
+    setInput('');
+
+    if (step === 'search_product') {
+      setSearchQuery(value);
+      setStep('search_max_price');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Maximum price (in USD):' }
+      ]);
+    } else if (step === 'search_max_price') {
+      const price = parseFloat(value);
+      if (isNaN(price) || price <= 0) {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'Please enter a valid number for the maximum price.' }
+        ]);
+        return;
+      }
+      setMaxPrice(price);
+      setStep('search_min_rating');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Minimum rating (0-5):' }
+      ]);
+    } else if (step === 'search_min_rating') {
+      const rating = parseFloat(value);
+      if (isNaN(rating) || rating < 0 || rating > 5) {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'Please enter a valid rating between 0 and 5.' }
+        ]);
+        return;
+      }
+      setMinRating(rating);
+      setStep('searching');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Searching for products...' }
+      ]);
+      setIsLoading(true);
+      try {
+        const response = await axios.post('http://localhost:8000/api/search', {
+          query: searchQuery,
+          max_price: maxPrice ?? 1000,
+          min_rating: rating
+        });
+        setIsLoading(false);
+        if (response.data.success) {
+          const { best_match, products } = response.data;
+          if (best_match) {
+            setMessages(prev => [
+              ...prev,
+              {
+                type: 'assistant',
+                content: `I found a great match for "${searchQuery}":`,
+                product: best_match
+              }
+            ]);
+          }
+          if (products && products.length > 0) {
+            const otherProducts = best_match ? products.filter((p: Product) => p.name !== best_match.name) : products;
+            if (otherProducts.length > 0) {
+              setMessages(prev => [
+                ...prev,
+                {
+                  type: 'assistant',
+                  content: `Here are other matching products:`,
+                  products: otherProducts
+                }
+              ]);
+            }
+          }
+          setStep('menu');
+        } else {
+          setMessages(prev => [
+            ...prev,
+            { type: 'assistant', content: 'No products found. Please try again.' }
+          ]);
+          setStep('menu');
+        }
+      } catch (error) {
+        setIsLoading(false);
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'Error searching for products. Please try again.' }
+        ]);
+        setStep('menu');
+      }
+    } else if (step === 'history_email') {
+      setHistoryEmail(value);
+      setStep('history_result');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Analyzing your shopping history...' }
+      ]);
+      try {
+        const response = await axios.post('http://localhost:8000/api/history', { email: value });
+        if (response.data.success) {
+          setMessages(prev => [
+            ...prev,
+            { type: 'assistant', content: '', historyResult: response.data.result }
+          ]);
+        } else {
+          setMessages(prev => [
+            ...prev,
+            { type: 'assistant', content: response.data.result }
+          ]);
+        }
+      } catch {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'Error fetching history.' }
+        ]);
+      }
+      setStep('menu');
+    } else if (step === 'support_menu') {
+      const idx = parseInt(value) - 1;
+      const opt = SUPPORT_OPTIONS[idx]?.key;
+      if (opt === 'refund') {
+        setSupportStep('refund');
+        setStep('support_refund_tid');
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'Enter transaction ID:' }
+        ]);
+      } else if (opt === 'faq') {
+        setSupportStep('faq');
+        setStep('support_faq_question');
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'What is your question?' }
+        ]);
+      } else if (opt === 'ticket') {
+        setSupportStep('ticket');
+        setStep('support_ticket_cid');
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'Enter your customer ID:' }
+        ]);
+      } else {
+        setStep('menu');
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: `Welcome to ShopperAI!\nAvailable actions:\n${MENU_OPTIONS.map((opt, i) => `${i + 1}. ${opt.label}`).join('\n')}` }
+        ]);
+      }
+    } else if (step === 'support_refund_tid') {
+      setRefundDetails(prev => ({ ...prev, tid: value }));
+      setStep('support_refund_reason');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Enter refund reason:' }
+      ]);
+    } else if (step === 'support_refund_reason') {
+      setRefundDetails(prev => ({ ...prev, reason: value }));
+      setStep('support_refund_amount');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Enter refund amount:' }
+      ]);
+    } else if (step === 'support_refund_amount') {
+      setRefundDetails(prev => ({ ...prev, amount: value }));
+      setStep('support_result');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Processing refund request...' }
+      ]);
+      // Call refund API
+      try {
+        const response = await axios.post('http://localhost:8000/api/refund', {
+          transaction_id: refundDetails.tid,
+          reason: refundDetails.reason,
+          amount: parseFloat(value)
+        });
+        if (response.data.success) {
+          setMessages(prev => [
+            ...prev,
+            { type: 'assistant', content: 'Refund request submitted.', supportResult: response.data.result }
+          ]);
+        } else {
+          setMessages(prev => [
+            ...prev,
+            { type: 'assistant', content: response.data.result }
+          ]);
+        }
+      } catch {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'Error submitting refund request.' }
+        ]);
+      }
+      setStep('menu');
+    } else if (step === 'support_faq_question') {
+      setFaqQuestion(value);
+      setStep('support_result');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Fetching FAQ answer...' }
+      ]);
+      // Call FAQ API
+      try {
+        const response = await axios.post('http://localhost:8000/api/faq', {
+          question: value
+        });
+        if (response.data.success) {
+          setMessages(prev => [
+            ...prev,
+            { type: 'assistant', content: 'FAQ Answer:', supportResult: response.data.result }
+          ]);
+        } else {
+          setMessages(prev => [
+            ...prev,
+            { type: 'assistant', content: response.data.result }
+          ]);
+        }
+      } catch {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'Error fetching FAQ answer.' }
+        ]);
+      }
+      setStep('menu');
+    } else if (step === 'support_ticket_cid') {
+      setTicketDetails(prev => ({ ...prev, cid: value }));
+      setStep('support_ticket_type');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Enter issue type (Technical/Billing/General):' }
+      ]);
+    } else if (step === 'support_ticket_type') {
+      setTicketDetails(prev => ({ ...prev, type: value }));
+      setStep('support_ticket_priority');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Enter priority (Low/Medium/High):' }
+      ]);
+    } else if (step === 'support_ticket_priority') {
+      setTicketDetails(prev => ({ ...prev, priority: value }));
+      setStep('support_ticket_desc');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Enter issue description:' }
+      ]);
+    } else if (step === 'support_ticket_desc') {
+      setTicketDetails(prev => ({ ...prev, desc: value }));
+      setStep('support_result');
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Submitting support ticket...' }
+      ]);
+      // Call support ticket API
+      try {
+        const response = await axios.post('http://localhost:8000/api/support-ticket', {
+          customer_id: ticketDetails.cid,
+          issue_type: ticketDetails.type,
+          priority: ticketDetails.priority,
+          description: value
+        });
+        if (response.data.success) {
+          setMessages(prev => [
+            ...prev,
+            { type: 'assistant', content: 'Support ticket created.', supportResult: response.data.result }
+          ]);
+        } else {
+          setMessages(prev => [
+            ...prev,
+            { type: 'assistant', content: response.data.result }
+          ]);
+        }
+      } catch {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: 'Error submitting support ticket.' }
+        ]);
+      }
+      setStep('menu');
     }
   };
 
   const handleProcessOrder = async () => {
     if (!selectedProduct || !customerEmail) return;
     setIsProcessingPayment(true);
-    setPromotionStep('none');
     try {
       // Process the order
       const response = await axios.post('http://localhost:8000/api/process-order', {
         product_details: selectedProduct,
         customer_email: customerEmail,
       });
+      
       if (!response.data.success) throw new Error('Failed to process order');
-      // Find approval_url in response
-      const links = response.data.result.links || [];
+      
+      // Extract order data and approval URL
+      const orderData = response.data.result;
+      const links = orderData.links || [];
       const approvalLink = links.find((link: any) => link.rel === 'approve');
-      setApprovalUrl(approvalLink?.href || '');
+      
+      if (!approvalLink?.href) {
+        throw new Error('No approval URL found in response');
+      }
+
+      // Store order ID and approval URL
+      setOrderId(orderData.id);
+      setApprovalUrl(approvalLink.href);
       setPromotionStep('ready');
     } catch (error) {
-      alert('Failed to process order.');
+      console.error('Error processing order:', error);
+      alert('Failed to process order. Please try again.');
       setShowPaymentModal(false);
     } finally {
       setIsProcessingPayment(false);
@@ -182,6 +560,37 @@ export default function Home() {
   const handleBuyNow = (product: Product) => {
     setSelectedProduct(product);
     setShowPaymentModal(true);
+  };
+
+  const handleComparePrices = async (products: Product[]) => {
+    if (products.length < 2) {
+      alert('Need at least 2 products to compare prices');
+      return;
+    }
+
+    setIsComparing(true);
+    try {
+      const response = await axios.post('http://localhost:8000/api/compare-prices', {
+        products: products
+      });
+
+      if (response.data.success) {
+        setComparisonResults(response.data.results);
+        setMessages(prev => [
+          ...prev,
+          {
+            type: 'assistant',
+            content: 'Here are the price comparison results:',
+            comparisonResults: response.data.results
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error comparing prices:', error);
+      alert('Failed to compare prices. Please try again.');
+    } finally {
+      setIsComparing(false);
+    }
   };
 
   return (
@@ -196,7 +605,7 @@ export default function Home() {
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-700">
               <SparklesIcon className="h-5 w-5 text-yellow-400" />
-              <span>Powered by AI</span>
+              <span>Powered by astha.ai</span>
             </div>
           </div>
         </div>
@@ -212,57 +621,93 @@ export default function Home() {
                 type={message.type}
                 content={message.content}
                 product={message.product}
+                products={message.products}
                 onBuyNow={handleBuyNow}
+                onComparePrices={handleComparePrices}
+                comparisonResults={message.comparisonResults}
+                campaign={message.campaign}
+                historyResult={message.historyResult}
+                supportResult={message.supportResult}
               />
             ))}
-            {isLoading && (
-              <>
-                <LoadingSkeleton type="message" />
-                {/* <LoadingSkeleton type="product" /> */}
-              </>
-            )}
+            {isLoading && <LoadingSkeleton type="message" />}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Form */}
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <TextInput
-              type="text"
-              placeholder="What would you like to search for? (e.g., 'Find me a laptop under $1000 with 4 stars')"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={isLoading}
-              className="flex-1 bg-white text-gray-900 placeholder-gray-500"
-            />
-            <Button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-            >
-              {isLoading ? (
-                <ArrowPathIcon className="w-5 h-5 animate-spin" />
-              ) : (
+          {/* Step-based Input */}
+          {step === 'menu' && (
+            <div className="flex flex-col gap-2">
+              {MENU_OPTIONS.map((opt, i) => (
+                <Button
+                  key={opt.key}
+                  onClick={() => handleMenuSelect(opt.key)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                >
+                  {i + 1}. {opt.label}
+                </Button>
+              ))}
+            </div>
+          )}
+          {step !== 'exit' && (
+            <form onSubmit={handleStepInput} className="flex gap-2 mt-2">
+              <TextInput
+                type={step === 'search_max_price' ? 'number' : 'text'}
+                placeholder={
+                  step === 'search_product'
+                    ? 'e.g. iPhone 14'
+                    : step === 'search_max_price'
+                    ? 'Maximum price (USD)'
+                    : step === 'search_min_rating'
+                    ? 'Minimum rating (0-5)'
+                    : step === 'history_email'
+                    ? 'Enter your email address'
+                    : step === 'support_refund_tid'
+                    ? 'Transaction ID'
+                    : step === 'support_refund_reason'
+                    ? 'Refund reason'
+                    : step === 'support_refund_amount'
+                    ? 'Refund amount'
+                    : step === 'support_faq_question'
+                    ? 'Your question'
+                    : step === 'support_ticket_cid'
+                    ? 'Customer ID'
+                    : step === 'support_ticket_type'
+                    ? 'Issue type (Technical/Billing/General)'
+                    : step === 'support_ticket_priority'
+                    ? 'Priority (Low/Medium/High)'
+                    : step === 'support_ticket_desc'
+                    ? 'Issue description'
+                    : 'Type your message...'
+                }
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={isLoading}
+                className="flex-1 bg-white text-gray-900 placeholder-gray-500"
+              />
+              <Button
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              >
                 <PaperAirplaneIcon className="w-5 h-5" />
-              )}
-            </Button>
-          </form>
+              </Button>
+            </form>
+          )}
         </div>
       </main>
 
       {/* Payment Modal */}
       <Modal show={showPaymentModal} onClose={() => { 
         setShowPaymentModal(false); 
-        setPaymentUrl(''); 
         setCustomerEmail(''); 
         setSelectedProduct(null);
-        setSelectedPromotion(null);
         setOrderId(null);
         setPromotionStep('none');
         setApprovalUrl('');
       }}>
         <Modal.Header className="text-gray-900">Complete Your Purchase</Modal.Header>
         <Modal.Body>
-          <div className="space-y-4">
+          <div className="space-y-4 text-black">
             {selectedProduct && promotionStep === 'none' && (
               <div>
                 <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
@@ -272,6 +717,9 @@ export default function Home() {
                     <p className="font-medium">Price: {selectedProduct.price}</p>
                     {selectedProduct.brand && (
                       <p className="text-sm text-gray-600">Brand: {selectedProduct.brand}</p>
+                    )}
+                    {selectedProduct.description && (
+                      <p className="text-sm text-gray-600">Description: {selectedProduct.description}</p>
                     )}
                   </div>
                 </div>
@@ -292,10 +740,16 @@ export default function Home() {
               </div>
             )}
             {promotionStep === 'ready' && (
-              <div>
+              <div className='text-black'>
                 <h3 className="text-xl font-semibold mb-4">Your Order is Ready!</h3>
                 <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                  <div className="text-sm text-gray-700">No promotion applied. Price: {selectedProduct?.price}</div>
+                  <div className="space-y-2">
+                    <p className="font-medium">Product: {selectedProduct?.name}</p>
+                    <p className="font-medium">Price: {selectedProduct?.price}</p>
+                    {orderId && (
+                      <p className="text-sm text-gray-600">Order ID: {orderId}</p>
+                    )}
+                  </div>
                 </div>
                 <p className="text-gray-600 mb-4">Click below to proceed to PayPal</p>
                 {approvalUrl && (
@@ -308,10 +762,9 @@ export default function Home() {
                     Proceed to PayPal
                   </a>
                 )}
-                <div className="mt-2 text-xs text-gray-500 break-all">{approvalUrl}</div>
                 <div className="mt-4 text-gray-700">
                   <ol className="list-decimal ml-5">
-                    <li>Open the above URL in your browser.</li>
+                    <li>Open the PayPal link in your browser.</li>
                     <li>Log in with your PayPal sandbox buyer account.</li>
                     <li>Approve the payment to complete your order.</li>
                   </ol>
@@ -324,20 +777,22 @@ export default function Home() {
           {selectedProduct && promotionStep === 'none' && (
             <Button
               onClick={handleProcessOrder}
-              disabled={!customerEmail}
+              disabled={!customerEmail || isProcessingPayment}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
             >
-              Proceed to Payment
+              {isProcessingPayment ? (
+                <ArrowPathIcon className="w-5 h-5 animate-spin" />
+              ) : (
+                'Proceed to Payment'
+              )}
             </Button>
           )}
           <Button 
             color="gray" 
             onClick={() => { 
               setShowPaymentModal(false); 
-              setPaymentUrl(''); 
               setCustomerEmail(''); 
               setSelectedProduct(null);
-              setSelectedPromotion(null);
               setOrderId(null);
               setPromotionStep('none');
               setApprovalUrl('');
