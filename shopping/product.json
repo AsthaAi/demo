@@ -1,78 +1,74 @@
 {
   "raw_products": [
     {
-      "name": "iPhone 13 Pro",
-      "price": 999.0,
-      "rating": 4.8
+      "name": "Basic Cotton Hat",
+      "price": 4.99,
+      "rating": 5.0,
+      "brand": "BrandA"
     },
     {
-      "name": "iPhone 12",
-      "price": 699.0,
-      "rating": 4.5
+      "name": "Summer Sun Hat",
+      "price": 3.99,
+      "rating": 5.0,
+      "brand": "BrandB"
     },
     {
-      "name": "iPhone SE",
-      "price": 399.0,
-      "rating": 4.3
+      "name": "Foldable Travel Hat",
+      "price": 4.5,
+      "rating": 4.8,
+      "brand": "BrandC"
     },
     {
-      "name": "iPhone 13",
-      "price": 799.0,
-      "rating": 4.6
-    },
-    {
-      "name": "iPhone 14 Pro",
-      "price": 1099.0,
-      "rating": 4.9
+      "name": "Classic Baseball Cap",
+      "price": 2.5,
+      "rating": 5.0,
+      "brand": "BrandD"
     }
   ],
   "filtered_products": [
     {
-      "name": "iPhone 13 Pro",
-      "price": 999.0,
-      "rating": 4.8
+      "name": "Basic Cotton Hat",
+      "price": 4.99,
+      "rating": 5.0,
+      "brand": "BrandA"
     },
     {
-      "name": "iPhone 12",
-      "price": 699.0,
-      "rating": 4.5
+      "name": "Summer Sun Hat",
+      "price": 3.99,
+      "rating": 5.0,
+      "brand": "BrandB"
     },
     {
-      "name": "iPhone SE",
-      "price": 399.0,
-      "rating": 4.3
-    },
-    {
-      "name": "iPhone 13",
-      "price": 799.0,
-      "rating": 4.6
-    },
-    {
-      "name": "iPhone 14 Pro",
-      "price": 1099.0,
-      "rating": 4.9
+      "name": "Classic Baseball Cap",
+      "price": 2.5,
+      "rating": 5.0,
+      "brand": "BrandD"
     }
   ],
   "top_products": [
     {
-      "name": "iPhone 14 Pro",
-      "price": 1099.0,
-      "rating": 4.9
+      "name": "Basic Cotton Hat",
+      "price": 4.99,
+      "rating": 5.0,
+      "brand": "BrandA"
     },
     {
-      "name": "iPhone 13 Pro",
-      "price": 999.0,
-      "rating": 4.8
+      "name": "Summer Sun Hat",
+      "price": 3.99,
+      "rating": 5.0,
+      "brand": "BrandB"
     },
     {
-      "name": "iPhone 13",
-      "price": 799.0,
-      "rating": 4.6
+      "name": "Classic Baseball Cap",
+      "price": 2.5,
+      "rating": 5.0,
+      "brand": "BrandD"
     }
   ],
   "best_match": {
-    "name": "iPhone 14 Pro",
-    "price": 1099.0,
-    "rating": 4.9
+    "name": "Basic Cotton Hat",
+    "price": 4.99,
+    "rating": 5.0,
+    "brand": "BrandA"
   }
 }

@@ -10,13 +10,17 @@ from agents.order_agent import OrderAgent
 from agents.paypal_agent import PayPalAgent
 from agents.promotions_agent import PromotionsAgent
 from agents.customer_support_agent import CustomerSupportAgent
+from agents.risk_agent import RiskAgent
 from agents.tasks import ResearchTasks
+from utils.agent_middleware import agent_middleware
 from dotenv import load_dotenv
 from crewai import Crew, Task
 from textwrap import dedent
 import json
 import asyncio
 from datetime import datetime, timedelta
+import uuid
+import platform
 
 load_dotenv()
 
@@ -24,30 +28,54 @@ load_dotenv()
 class ShopperAgents:
     """Class to create and manage all ShopperAI agents"""
 
-    def research_agent(self):
+    def __init__(self):
+        """Initialize ShopperAgents with middleware"""
+        self._initialized = False
+        self._agents = {}
+
+    async def initialize(self):
+        """Initialize the middleware and prepare agents"""
+        if not self._initialized:
+            # Initialize the middleware first
+            await agent_middleware.initialize()
+            self._initialized = True
+            print("✅ ShopperAgents initialized with security middleware")
+
+    async def _get_agent(self, agent_type: str, create_func):
+        """Get or create an agent of the specified type"""
+        if not self._initialized:
+            await self.initialize()
+
+        if agent_type not in self._agents:
+            agent = create_func()
+            await agent.initialize()  # This will now use the secure initialization
+            self._agents[agent_type] = agent
+
+        return self._agents[agent_type]
+
+    async def research_agent(self):
         """Create and return the research agent"""
-        return ResearchAgent()
+        return await self._get_agent('research', ResearchAgent)
 
-    # Price comparison functionality has been temporarily disabled
-    # def price_comparison_agent(self):
-    #     """Create and return the price comparison agent"""
-    #     return PriceComparisonAgent()
-
-    def order_agent(self):
+    async def order_agent(self):
         """Create and return the order agent"""
-        return OrderAgent()
+        return await self._get_agent('order', OrderAgent)
 
-    def paypal_agent(self):
+    async def paypal_agent(self):
         """Create and return the PayPal agent"""
-        return PayPalAgent()
+        return await self._get_agent('paypal', PayPalAgent)
 
-    def promotions_agent(self):
+    async def promotions_agent(self):
         """Create and return the promotions agent"""
-        return PromotionsAgent()
+        return await self._get_agent('promotions', PromotionsAgent)
 
-    def customer_support_agent(self):
+    async def customer_support_agent(self):
         """Create and return the customer support agent"""
-        return CustomerSupportAgent()
+        return await self._get_agent('customer_support', CustomerSupportAgent)
+
+    async def risk_agent(self):
+        """Create and return the risk agent"""
+        return await self._get_agent('risk', RiskAgent)
 
 
 class ShopperAI:
@@ -125,9 +153,7 @@ class ShopperAI:
         # Initialize research agent
         print("\n=== Initializing Research Agent ===")
         try:
-            research_agent = self.agents.research_agent()
-            # Properly await initialization
-            await research_agent.initialize()
+            research_agent = await self.agents.research_agent()
             print("Research agent initialized successfully")
         except ValueError as e:
             if "SERPAPI_API_KEY" in str(e):
@@ -373,19 +399,61 @@ Do not return any explanation or summary, only the JSON object.""",
     #     pass
 
     async def process_order_with_payment(self, product_details: dict, customer_email: str):
-        """
-        Process an order with PayPal payment integration
-
-        Args:
-            product_details: Dictionary containing product information
-            customer_email: Customer's email address
-        """
+        """Process an order with payment"""
         try:
             # Set user_id based on email for promotions
             self.user_id = customer_email
 
+            # Initialize Risk agent for transaction analysis
+            risk_agent = await self.agents.risk_agent()
+            await risk_agent.initialize()
+
+            # Initialize PayPal agent and set risk agent
+            paypal_agent = await self.agents.paypal_agent()
+            paypal_agent.risk_agent = risk_agent
+            await paypal_agent.initialize()
+
+            # Prepare transaction data for risk analysis
+            transaction_data = {
+                'transaction_id': f"TX-{str(uuid.uuid4())[:8].upper()}",
+                'amount': float(str(product_details['price']).replace('$', '')),
+                'timestamp': datetime.now().isoformat(),
+                'location': os.getenv('TRANSACTION_LOCATION', 'Unknown'),
+                'device_info': {
+                    'os': platform.system(),
+                    'browser': 'API Client',
+                    'is_new_device': True
+                },
+                'user_history': []  # In production, you'd fetch real user history
+            }
+
+            # Perform risk analysis
+            print("\n[Risk Analysis]")
+            risk_analysis = await risk_agent.analyze_transaction(transaction_data)
+
+            if risk_analysis['risk_level'] in ['high', 'critical']:
+                print("\n⚠️ High Risk Transaction Detected!")
+                print(f"Risk Level: {risk_analysis['risk_level']}")
+                print("\nRisk Factors:")
+                for factor, level in risk_analysis['risk_factors'].items():
+                    print(f"- {factor}: {level}")
+                print("\nRecommendations:")
+                for rec in risk_analysis['recommendations']:
+                    print(f"- {rec}")
+
+                proceed = input(
+                    "\nDo you want to proceed despite the risk? (y/n): ").lower().startswith('y')
+                if not proceed:
+                    # Process payment with risk rejection flag
+                    result = await paypal_agent.process_payment(transaction_data, risk_rejected=True)
+                    if result.get('revoked'):
+                        print(f"\n🚫 {result['error']}")
+                    else:
+                        print("Transaction cancelled due to risk factors.")
+                    return None
+
             # Initialize Promotions agent
-            promotions_agent = self.agents.promotions_agent()
+            promotions_agent = await self.agents.promotions_agent()
             await promotions_agent.initialize()
 
             # Get all available promotions
@@ -482,9 +550,20 @@ Do not return any explanation or summary, only the JSON object.""",
             else:
                 print("\nNo promotions available at this time.")
 
-            # Initialize PayPal agent
-            paypal_agent = self.agents.paypal_agent()
-            await paypal_agent.initialize()
+            # Monitor PayPal agent's activities
+            is_safe = await risk_agent.monitor_aztp_agent(
+                agent_connection=paypal_agent.aztp.connection,
+                action="create_payment",
+                details={
+                    "amount": float(str(product_details['price']).replace('$', '')),
+                    "payee_email": customer_email,
+                    "transaction_id": transaction_data['transaction_id']
+                }
+            )
+
+            if not is_safe:
+                print("\n❌ Payment processing blocked due to suspicious activity")
+                return None
 
             # Get access token using the payment tool
             access_token = await paypal_agent.payment_tool.get_access_token()
@@ -631,10 +710,6 @@ Do not return any explanation or summary, only the JSON object.""",
             # Sort history by timestamp
             user_payment_history.sort(key=lambda x: x.get('timestamp', ''))
 
-            # Initialize Promotions agent
-            promotions_agent = self.agents.promotions_agent()
-            await promotions_agent.initialize()
-
             # Analyze shopping history
             analysis_results = await promotions_agent.analyze_shopping_history(
                 user_id,
@@ -672,7 +747,7 @@ Do not return any explanation or summary, only the JSON object.""",
         """
         try:
             # Initialize Promotions agent
-            promotions_agent = self.agents.promotions_agent()
+            promotions_agent = await self.agents.promotions_agent()
             await promotions_agent.initialize()
 
             # Create campaign
@@ -700,7 +775,7 @@ Do not return any explanation or summary, only the JSON object.""",
         print("\n=== Processing Refund Request ===")
         try:
             # Initialize customer support agent
-            customer_support_agent = self.agents.customer_support_agent()
+            customer_support_agent = await self.agents.customer_support_agent()
             await customer_support_agent.initialize()
 
             # Process the refund
@@ -727,7 +802,7 @@ Do not return any explanation or summary, only the JSON object.""",
         print("\n=== Processing FAQ Query ===")
         try:
             # Initialize customer support agent
-            customer_support_agent = self.agents.customer_support_agent()
+            customer_support_agent = await self.agents.customer_support_agent()
             await customer_support_agent.initialize()
 
             # Get FAQ response
@@ -754,7 +829,7 @@ Do not return any explanation or summary, only the JSON object.""",
         print("\n=== Creating Support Ticket ===")
         try:
             # Initialize customer support agent
-            customer_support_agent = self.agents.customer_support_agent()
+            customer_support_agent = await self.agents.customer_support_agent()
             await customer_support_agent.initialize()
 
             # Create support ticket
@@ -1193,23 +1268,26 @@ async def search_and_buy_products():
 
                     # Capture the payment
                     if paypal_order_id:
-                        # Initialize a new PayPal agent for capture
-                        paypal_agent = shopper.agents.paypal_agent()
-                        await paypal_agent.initialize()
-                        capture_result = await paypal_agent.capture_payment(paypal_order_id)
-                        if capture_result:
-                            if capture_result.get('status') == 'COMPLETED':
-                                print(
-                                    "\nPayment captured successfully!")
-                                print(
-                                    f"Transaction ID: {capture_result.get('id')}")
-                                print(
-                                    f"Status: {capture_result.get('status')}")
-                            else:
-                                print(
-                                    "\nPayment capture failed or is incomplete.")
-                                print(
-                                    f"Status: {capture_result.get('status')}")
+                        try:
+                            # Initialize a new PayPal agent for capture
+                            paypal_agent = await shopper.agents.paypal_agent()
+                            await paypal_agent.initialize()
+                            capture_result = await paypal_agent.capture_payment(paypal_order_id)
+                            if capture_result:
+                                if capture_result.get('status') == 'COMPLETED':
+                                    print(
+                                        "\nPayment captured successfully!")
+                                    print(
+                                        f"Transaction ID: {capture_result.get('id')}")
+                                    print(
+                                        f"Status: {capture_result.get('status')}")
+                                else:
+                                    print(
+                                        "\nPayment capture failed or is incomplete.")
+                                    print(
+                                        f"Status: {capture_result.get('status')}")
+                        except Exception as e:
+                            print(f"\nError capturing payment: {str(e)}")
                 else:
                     print(f"\nOrder processing failed: {payment_result}")
             except Exception as e:
@@ -1295,23 +1373,27 @@ async def search_and_buy_products():
 
                                 # Capture the payment
                                 if paypal_order_id:
-                                    # Initialize a new PayPal agent for capture
-                                    paypal_agent = shopper.agents.paypal_agent()
-                                    await paypal_agent.initialize()
-                                    capture_result = await paypal_agent.capture_payment(paypal_order_id)
-                                    if capture_result:
-                                        if capture_result.get('status') == 'COMPLETED':
-                                            print(
-                                                "\nPayment captured successfully!")
-                                            print(
-                                                f"Transaction ID: {capture_result.get('id')}")
-                                            print(
-                                                f"Status: {capture_result.get('status')}")
-                                        else:
-                                            print(
-                                                "\nPayment capture failed or is incomplete.")
-                                            print(
-                                                f"Status: {capture_result.get('status')}")
+                                    try:
+                                        # Initialize a new PayPal agent for capture
+                                        paypal_agent = await shopper.agents.paypal_agent()
+                                        await paypal_agent.initialize()
+                                        capture_result = await paypal_agent.capture_payment(paypal_order_id)
+                                        if capture_result:
+                                            if capture_result.get('status') == 'COMPLETED':
+                                                print(
+                                                    "\nPayment captured successfully!")
+                                                print(
+                                                    f"Transaction ID: {capture_result.get('id')}")
+                                                print(
+                                                    f"Status: {capture_result.get('status')}")
+                                            else:
+                                                print(
+                                                    "\nPayment capture failed or is incomplete.")
+                                                print(
+                                                    f"Status: {capture_result.get('status')}")
+                                    except Exception as e:
+                                        print(
+                                            f"\nError capturing payment: {str(e)}")
                             else:
                                 print(
                                     f"\nOrder processing failed: {payment_result}")

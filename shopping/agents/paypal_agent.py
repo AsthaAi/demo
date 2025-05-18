@@ -39,6 +39,17 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 
+class AztpConnection(BaseModel):
+    """AZTP connection state"""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    client: Optional[Aztp] = None
+    connection: Optional[SecureConnection] = None
+    aztp_id: str = ""
+    is_valid: bool = False
+    is_initialized: bool = False
+
+
 class PayPalAgent(Agent):
     """Agent responsible for PayPal payment processing"""
 
@@ -47,8 +58,7 @@ class PayPalAgent(Agent):
 
     # Define the fields using Pydantic's Field
     aztpClient: Aztp = Field(default=None, exclude=True)
-    paymentAgent: SecureConnection = Field(
-        default=None, exclude=True, alias="secured_connection")
+    aztp: AztpConnection = Field(default_factory=AztpConnection)
     is_valid: bool = Field(default=False, exclude=True)
     identity: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     identity_access_policy: Optional[Dict[str, Any]] = Field(
@@ -60,6 +70,8 @@ class PayPalAgent(Agent):
     payment_tool_aztp_id: str = Field(default="", exclude=True)
     iam_utils: IAMUtils = Field(default=None, exclude=True)
     is_initialized: bool = Field(default=False, exclude=True)
+    risk_agent: Optional[Any] = Field(
+        default=None, exclude=True)  # Will be set by ShopperAI
 
     def __init__(self):
         """Initialize the PayPal agent with necessary tools"""
@@ -117,14 +129,16 @@ class PayPalAgent(Agent):
             # Update the agent's tools
             self.tools = tools
 
-        # Initialize the client with API key from environment
+        # Initialize AZTP connection
         api_key = os.getenv("AZTP_API_KEY")
         if not api_key:
             raise ValueError("AZTP_API_KEY is not set")
 
         self.aztpClient = Aztp(api_key=api_key)
+        self.aztp = AztpConnection(
+            client=Aztp(api_key=api_key)
+        )
         self.iam_utils = IAMUtils()  # Initialize IAM utilities
-        self.aztp_id = ""  # Initialize as empty string
         self.is_initialized = False
 
         # Initialize payment tool and store its AZTP ID
@@ -158,11 +172,13 @@ class PayPalAgent(Agent):
                 tool_ids.append(self.payment_tool_aztp_id)
 
             # Create payment agent identity without linkTo
-            self.paymentAgent = await self.aztpClient.secure_connect(
+            self.aztp.connection = await self.aztpClient.secure_connect(
                 self,
                 "paypal-agent",
                 {
-                    "isGlobalIdentity": False
+                    "isGlobalIdentity": False,
+                    "trustLevel": "high",
+                    "department": "Payment"
                 }
             )
 
@@ -171,7 +187,7 @@ class PayPalAgent(Agent):
             for tool_id in tool_ids:
                 try:
                     link_result = await self.aztpClient.link_identities(
-                        self.paymentAgent.identity.aztp_id,
+                        self.aztp.connection.identity.aztp_id,
                         tool_id,
                         "linked"
                     )
@@ -182,27 +198,27 @@ class PayPalAgent(Agent):
                     print(
                         f"Error linking payment agent with tool ID {tool_id}: {str(e)}")
 
-            print("AZTP ID:", self.paymentAgent.identity.aztp_id)
+            print("AZTP ID:", self.aztp.connection.identity.aztp_id)
 
             print(f"\n2. Verifying identity for agent: PayPal Agent")
-            self.is_valid = await self.aztpClient.verify_identity(
-                self.paymentAgent
+            self.aztp.is_valid = await self.aztpClient.verify_identity(
+                self.aztp.connection
             )
-            print("Verified Agent:", self.is_valid)
+            print("Verified Agent:", self.aztp.is_valid)
 
-            if self.is_valid:
-                if self.paymentAgent and hasattr(self.paymentAgent, 'identity'):
-                    self.aztp_id = self.paymentAgent.identity.aztp_id
-                    print(f"✅ Extracted AZTP ID: {self.aztp_id}")
+            if self.aztp.is_valid:
+                if self.aztp.connection and hasattr(self.aztp.connection, 'identity'):
+                    self.aztp.aztp_id = self.aztp.connection.identity.aztp_id
+                    print(f"✅ Extracted AZTP ID: {self.aztp.aztp_id}")
             else:
                 raise ValueError(
                     "Failed to verify identity for agent: PayPal Agent")
 
             # Verify payment processing access before proceeding
             print(
-                f"\n3. Verifying access permissions for PayPal Agent {self.aztp_id}")
+                f"\n3. Verifying access permissions for PayPal Agent {self.aztp.aztp_id}")
             await self.iam_utils.verify_access_or_raise(
-                agent_id=self.aztp_id,
+                agent_id=self.aztp.aztp_id,
                 action="payment_processing",
                 policy_code="policy:a07507f6fe70",
                 operation_name="Payment Processing"
@@ -555,3 +571,65 @@ We are pleased to inform you that your payment has been successfully captured. B
         print(f"- **Payment Method:** Credit Card (ending in {last_digits})")
         print(f"- **Transaction Date:** {current_date}")
         print("="*50)
+
+    async def process_payment(self, transaction_data: Dict[str, Any], risk_rejected: bool = False) -> Dict[str, Any]:
+        """Process a payment through PayPal"""
+        try:
+            # Add agent ID and risk rejection flag to transaction data
+            transaction_data['paypal_agent_id'] = self.aztp.aztp_id
+            transaction_data['risk_rejected'] = risk_rejected
+
+            # If risk was rejected, check risk level first
+            if risk_rejected:
+                # Analyze transaction risk
+                risk_analysis = await self.risk_agent.analyze_transaction(transaction_data)
+
+                # If risk level is high/critical, revoke PayPal agent
+                if risk_analysis['risk_level'] in ['high', 'critical']:
+                    print(
+                        f"\n🛑 User rejected high-risk transaction. Revoking PayPal agent...")
+                    await self.risk_agent._revoke_agent_identity(
+                        self.aztp.aztp_id,  # Only pass agent_id
+                        "User rejected high-risk transaction"  # Only pass reason
+                    )
+                    return {
+                        'status': 'failed',
+                        'error': 'Transaction cancelled - PayPal agent revoked due to risk rejection',
+                        'revoked': True
+                    }
+
+                # Even if risk isn't high enough for revocation, still cancel
+                return {
+                    'status': 'cancelled',
+                    'message': 'Transaction cancelled by user due to risk',
+                    'revoked': False
+                }
+
+            # For non-rejected transactions, proceed with normal flow
+            risk_analysis = await self.risk_agent.analyze_transaction(transaction_data)
+
+            # If transaction was revoked, stop processing
+            if risk_analysis.get('status') == 'revoked':
+                print(f"\n❌ {risk_analysis['message']}")
+                return {
+                    'status': 'failed',
+                    'error': risk_analysis['message'],
+                    'revoked': True
+                }
+
+            # Create PayPal order
+            order_result = await self.create_paypal_order(transaction_data)
+
+            # Process the order
+            payment_result = await self.process_paypal_order(order_result)
+
+            return payment_result
+
+        except Exception as e:
+            error_msg = f"Failed to process payment: {str(e)}"
+            print(f"\n❌ {error_msg}")
+            return {
+                'status': 'failed',
+                'error': error_msg,
+                'revoked': False
+            }
