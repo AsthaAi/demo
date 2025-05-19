@@ -1,74 +1,120 @@
 {
   "raw_products": [
     {
-      "name": "Basic Cotton Hat",
-      "price": 4.99,
-      "rating": 5.0,
-      "brand": "BrandA"
+      "make": "Ford",
+      "model": "Focus",
+      "year": 2012,
+      "price": 4500,
+      "rating": 4.3,
+      "mileage": 80000
     },
     {
-      "name": "Summer Sun Hat",
-      "price": 3.99,
-      "rating": 5.0,
-      "brand": "BrandB"
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2010,
+      "price": 4900,
+      "rating": 4.5,
+      "mileage": 70000
     },
     {
-      "name": "Foldable Travel Hat",
-      "price": 4.5,
-      "rating": 4.8,
-      "brand": "BrandC"
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2011,
+      "price": 5000,
+      "rating": 4.2,
+      "mileage": 65000
     },
     {
-      "name": "Classic Baseball Cap",
-      "price": 2.5,
-      "rating": 5.0,
-      "brand": "BrandD"
+      "make": "Chevrolet",
+      "model": "Malibu",
+      "year": 2009,
+      "price": 3800,
+      "rating": 3.9,
+      "mileage": 90000
+    },
+    {
+      "make": "Nissan",
+      "model": "Altima",
+      "year": 2012,
+      "price": 4700,
+      "rating": 4.1,
+      "mileage": 75000
     }
   ],
   "filtered_products": [
     {
-      "name": "Basic Cotton Hat",
-      "price": 4.99,
-      "rating": 5.0,
-      "brand": "BrandA"
+      "make": "Ford",
+      "model": "Focus",
+      "year": 2012,
+      "price": 4500,
+      "rating": 4.3,
+      "mileage": 80000
     },
     {
-      "name": "Summer Sun Hat",
-      "price": 3.99,
-      "rating": 5.0,
-      "brand": "BrandB"
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2010,
+      "price": 4900,
+      "rating": 4.5,
+      "mileage": 70000
     },
     {
-      "name": "Classic Baseball Cap",
-      "price": 2.5,
-      "rating": 5.0,
-      "brand": "BrandD"
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2011,
+      "price": 5000,
+      "rating": 4.2,
+      "mileage": 65000
+    },
+    {
+      "make": "Nissan",
+      "model": "Altima",
+      "year": 2012,
+      "price": 4700,
+      "rating": 4.1,
+      "mileage": 75000
     }
   ],
   "top_products": [
     {
-      "name": "Basic Cotton Hat",
-      "price": 4.99,
-      "rating": 5.0,
-      "brand": "BrandA"
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2010,
+      "price": 4900,
+      "rating": 4.5,
+      "mileage": 70000
     },
     {
-      "name": "Summer Sun Hat",
-      "price": 3.99,
-      "rating": 5.0,
-      "brand": "BrandB"
+      "make": "Ford",
+      "model": "Focus",
+      "year": 2012,
+      "price": 4500,
+      "rating": 4.3,
+      "mileage": 80000
     },
     {
-      "name": "Classic Baseball Cap",
-      "price": 2.5,
-      "rating": 5.0,
-      "brand": "BrandD"
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2011,
+      "price": 5000,
+      "rating": 4.2,
+      "mileage": 65000
+    },
+    {
+      "make": "Nissan",
+      "model": "Altima",
+      "year": 2012,
+      "price": 4700,
+      "rating": 4.1,
+      "mileage": 75000
     }
   ],
   "best_match": {
-    "name": "Basic Cotton Hat",
-    "price": 4.99,
-    "rating": 5.0,
-    "brand": "BrandA"
+    "make": "Honda",
+    "model": "Civic",
+    "year": 2010,
+    "price": 4900,
+    "rating": 4.5,
+    "mileage": 70000
   }
 }
