@@ -431,7 +431,24 @@ Do not return any explanation or summary, only the JSON object.""",
             print("\n[Risk Analysis]")
             risk_analysis = await risk_agent.analyze_transaction(transaction_data)
 
-            if risk_analysis['risk_level'] in ['high', 'critical']:
+            # NEW LOGIC: Respect demo status from risk_agent
+            if risk_analysis.get('status') == 'revoked':
+                print(
+                    f"\n🚫 {risk_analysis.get('message', 'PayPal agent revoked due to high risk.')}")
+                return None
+            elif risk_analysis.get('status') == 'allowed':
+                print(
+                    f"\n[DEMO] {risk_analysis.get('message', 'High risk detected, but payment allowed for demonstration.')}")
+                # Only call with risk_rejected=False
+                print(f"[DEBUG] Calling process_payment with risk_rejected=False")
+                payment_result = await paypal_agent.process_payment(transaction_data, risk_rejected=False)
+                # If payment_result indicates revoked, block
+                if payment_result.get('status') == 'revoked':
+                    print(
+                        f"\n🚫 {payment_result.get('message', 'PayPal agent revoked due to high risk.')}")
+                    return None
+                # Otherwise, continue as normal (rest of the function)
+            elif risk_analysis['risk_level'] in ['high', 'critical']:
                 print("\n⚠️ High Risk Transaction Detected!")
                 print(f"Risk Level: {risk_analysis['risk_level']}")
                 print("\nRisk Factors:")
@@ -440,15 +457,30 @@ Do not return any explanation or summary, only the JSON object.""",
                 print("\nRecommendations:")
                 for rec in risk_analysis['recommendations']:
                     print(f"- {rec}")
-                # Explicitly process payment with risk_rejected=True to trigger PayPal agent revocation
-                revoke_result = await paypal_agent.process_payment(transaction_data, risk_rejected=True)
-                if revoke_result.get('revoked'):
+                # Automate the high-risk decision based on __default__ value
+                auto_choice = read_demo_tracker_main()
+                print(
+                    f"[DEBUG] Auto high-risk decision based on __default__: {'y' if auto_choice else 'n'}")
+                if auto_choice:
                     print(
-                        f"\n🚫 {revoke_result.get('error', 'PayPal agent revoked due to high risk.')}")
+                        f"[DEBUG] Calling process_payment with risk_rejected=False (auto accepted risk)")
+                    payment_result = await paypal_agent.process_payment(transaction_data, risk_rejected=False)
+                    if payment_result.get('status') == 'revoked':
+                        print(
+                            f"\n🚫 {payment_result.get('message', 'PayPal agent revoked due to high risk.')}")
+                        return None
+                    # Otherwise, continue as normal (rest of the function)
                 else:
                     print(
-                        "\n🚫 Transaction blocked due to high risk. PayPal agent revoked.")
-                return None
+                        f"[DEBUG] Calling process_payment with risk_rejected=True (auto rejected risk)")
+                    revoke_result = await paypal_agent.process_payment(transaction_data, risk_rejected=True)
+                    if revoke_result.get('revoked'):
+                        print(
+                            f"\n🚫 {revoke_result.get('error', 'PayPal agent revoked due to high risk.')}")
+                    else:
+                        print(
+                            "\n🚫 Transaction blocked due to high risk. PayPal agent revoked.")
+                    return None
 
             # Initialize Promotions agent
             promotions_agent = await self.agents.promotions_agent()
@@ -624,6 +656,7 @@ Do not return any explanation or summary, only the JSON object.""",
                             print(f"Status: {capture_result.get('status')}")
                         else:
                             print("\nPayment captured successfully!")
+                            set_demo_tracker_default_false()
                 else:
                     print("\nPayment will need to be captured after approval.")
             else:
@@ -863,6 +896,48 @@ def read_latest_payment_detail():
             print(json.dumps(latest, indent=2))
     except Exception as e:
         print(f"Error reading paymentdetail.json: {e}")
+
+
+def read_demo_tracker_main():
+    tracker_path = os.path.join(os.path.dirname(
+        __file__), 'risk_demo_tracker.json')
+    if not os.path.exists(tracker_path):
+        return True  # Default to True if file missing
+    try:
+        with open(tracker_path, 'r') as f:
+            data = json.load(f)
+            return data.get('__default__', True)
+    except Exception:
+        return True
+
+
+def set_demo_tracker_default_false():
+    tracker_path = os.path.join(os.path.dirname(
+        __file__), 'risk_demo_tracker.json')
+    try:
+        if os.path.exists(tracker_path):
+            with open(tracker_path, 'r') as f:
+                data = json.load(f)
+        else:
+            data = {}
+        data['__default__'] = False
+        with open(tracker_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        print("[DEBUG] Set __default__ to false after successful payment capture.")
+    except Exception as e:
+        print(f"[DEBUG] Failed to update __default__ in tracker: {e}")
+
+
+def test_write_demo_tracker():
+    tracker_path = os.path.join(os.path.dirname(
+        __file__), 'risk_demo_tracker.json')
+    try:
+        data = {'__default__': True}
+        with open(tracker_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        print(f"[TEST] Successfully wrote to {tracker_path}: {data}")
+    except Exception as e:
+        print(f"[TEST] Failed to write to {tracker_path}: {e}")
 
 
 def main():
@@ -1409,4 +1484,5 @@ async def search_and_buy_products():
 
 
 if __name__ == "__main__":
+    # test_write_demo_tracker()
     main()

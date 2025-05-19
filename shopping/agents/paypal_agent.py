@@ -19,6 +19,7 @@ from tools.payment_tool import PayPalPaymentTool
 import json
 from utils.iam_utils import IAMUtils
 from utils.exceptions import PolicyVerificationError
+from agents.risk_agent import write_demo_tracker
 
 # Import PayPal toolkit
 try:
@@ -584,7 +585,11 @@ We are pleased to inform you that your payment has been successfully captured. B
                 # Analyze transaction risk
                 risk_analysis = await self.risk_agent.analyze_transaction(transaction_data)
 
-                # If risk level is high/critical, revoke PayPal agent
+                # If demo logic returns allowed or revoked, return it directly
+                if risk_analysis.get('status') in ['allowed', 'revoked']:
+                    return risk_analysis
+
+                # If risk level is high/critical, revoke PayPal agent (legacy fallback)
                 if risk_analysis['risk_level'] in ['high', 'critical']:
                     print(
                         f"\n🛑 User rejected high-risk transaction. Revoking PayPal agent...")
@@ -592,6 +597,9 @@ We are pleased to inform you that your payment has been successfully captured. B
                         self.aztp.aztp_id,  # Only pass agent_id
                         "User rejected high-risk transaction"  # Only pass reason
                     )
+                    print(
+                        "[DEBUG] Updating demo tracker to True from PayPalAgent (risk rejection)")
+                    write_demo_tracker({'__default__': True})
                     return {
                         'status': 'failed',
                         'error': 'Transaction cancelled - PayPal agent revoked due to risk rejection',
@@ -608,7 +616,11 @@ We are pleased to inform you that your payment has been successfully captured. B
             # For non-rejected transactions, proceed with normal flow
             risk_analysis = await self.risk_agent.analyze_transaction(transaction_data)
 
-            # If transaction was revoked, stop processing
+            # If demo logic returns allowed or revoked, return it directly
+            if risk_analysis.get('status') in ['allowed', 'revoked']:
+                return risk_analysis
+
+            # If transaction was revoked, stop processing (legacy fallback)
             if risk_analysis.get('status') == 'revoked':
                 print(f"\n❌ {risk_analysis['message']}")
                 return {

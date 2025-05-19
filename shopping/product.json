@@ -1,106 +1,73 @@
 {
   "raw_products": [
     {
-      "make": "Ford",
-      "model": "Focus",
-      "year": 2008,
-      "price": 2500.0,
+      "name": "Product A",
+      "price": 150.0,
       "rating": 3.5
     },
     {
-      "make": "Chevrolet",
-      "model": "Cobalt",
-      "year": 2006,
-      "price": 2900.0,
-      "rating": 2.8
-    },
-    {
-      "make": "Toyota",
-      "model": "Corolla",
-      "year": 2005,
-      "price": 2200.0,
+      "name": "Product B",
+      "price": 250.0,
       "rating": 4.2
     },
     {
-      "make": "Honda",
-      "model": "Civic",
-      "year": 2007,
-      "price": 3000.0,
-      "rating": 3.0
+      "name": "Product C",
+      "price": 300.0,
+      "rating": 2.8
     },
     {
-      "make": "Nissan",
-      "model": "Sentra",
-      "year": 2004,
-      "price": 1800.0,
-      "rating": 2.5
+      "name": "Product D",
+      "price": 400.0,
+      "rating": 5.0
+    },
+    {
+      "name": "Product E",
+      "price": 100.0,
+      "rating": 1.5
+    },
+    {
+      "name": "Product F",
+      "price": 50.0,
+      "rating": 2.0
     }
   ],
   "filtered_products": [
     {
-      "make": "Ford",
-      "model": "Focus",
-      "year": 2008,
-      "price": 2500.0,
+      "name": "Product A",
+      "price": 150.0,
       "rating": 3.5
     },
     {
-      "make": "Chevrolet",
-      "model": "Cobalt",
-      "year": 2006,
-      "price": 2900.0,
-      "rating": 2.8
-    },
-    {
-      "make": "Toyota",
-      "model": "Corolla",
-      "year": 2005,
-      "price": 2200.0,
+      "name": "Product B",
+      "price": 250.0,
       "rating": 4.2
     },
     {
-      "make": "Honda",
-      "model": "Civic",
-      "year": 2007,
-      "price": 3000.0,
-      "rating": 3.0
+      "name": "Product C",
+      "price": 300.0,
+      "rating": 2.8
     },
     {
-      "make": "Nissan",
-      "model": "Sentra",
-      "year": 2004,
-      "price": 1800.0,
-      "rating": 2.5
+      "name": "Product F",
+      "price": 50.0,
+      "rating": 2.0
     }
   ],
   "top_products": [
     {
-      "make": "Toyota",
-      "model": "Corolla",
-      "year": 2005,
-      "price": 2200.0,
+      "name": "Product B",
+      "price": 250.0,
       "rating": 4.2
     },
     {
-      "make": "Ford",
-      "model": "Focus",
-      "year": 2008,
-      "price": 2500.0,
+      "name": "Product A",
+      "price": 150.0,
       "rating": 3.5
-    },
-    {
-      "make": "Honda",
-      "model": "Civic",
-      "year": 2007,
-      "price": 3000.0,
-      "rating": 3.0
     }
   ],
   "best_match": {
-    "make": "Toyota",
-    "model": "Corolla",
-    "year": 2005,
-    "price": 2200.0,
+    "name": "Product B",
+    "price": 250.0,
     "rating": 4.2
   }
 }

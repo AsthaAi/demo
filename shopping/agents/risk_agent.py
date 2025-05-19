@@ -17,8 +17,39 @@ import asyncio
 import datetime
 import uuid
 from enum import Enum
+import json
 
 load_dotenv()
+
+TRACKER_PATH = os.path.join(os.path.dirname(
+    os.path.dirname(__file__)), 'risk_demo_tracker.json')
+
+
+def read_demo_tracker(default_value=True):
+    print(f"[DEBUG] Reading demo tracker from: {TRACKER_PATH}")
+    if not os.path.exists(TRACKER_PATH):
+        print("[DEBUG] Tracker file does not exist.")
+        return {}
+    try:
+        with open(TRACKER_PATH, 'r') as f:
+            data = json.load(f)
+            print(f"[DEBUG] Tracker data loaded: {data}")
+            return data
+    except Exception as e:
+        print(f"[DEBUG] Error reading tracker: {e}")
+        return {}
+
+
+def write_demo_tracker(data):
+    print(f"[DEBUG] (FORCE) write_demo_tracker called with: {data}")
+    try:
+        print(
+            f"[DEBUG] Writing to demo tracker at: {TRACKER_PATH} with data: {data}")
+        with open(TRACKER_PATH, 'w') as f:
+            json.dump(data, f)
+        print("[DEBUG] Successfully wrote to demo tracker.")
+    except Exception as e:
+        print(f"[DEBUG] Error writing to demo tracker: {e}")
 
 
 class RiskLevel(Enum):
@@ -55,6 +86,8 @@ class RiskAgentState(BaseModel):
     audit_logger: Optional[AuditLogger] = None
     iam_utils: Optional[IAMUtils] = None
     risk_initialized: bool = Field(default=False)
+    # Track revoked transaction IDs
+    revoked_transactions: set = Field(default_factory=set)
 
 
 class RiskAgent(Agent):
@@ -208,7 +241,17 @@ class RiskAgent(Agent):
             memory_key = self._get_memory_key(transaction_data)
             if memory_key in self.state.risk_analysis_memory:
                 print("Using cached risk analysis result...")
-                return self.state.risk_analysis_memory[memory_key]
+                cached_result = self.state.risk_analysis_memory[memory_key]
+                # If cached result is a block/revoke, update the tracker
+                if cached_result.get('status') == 'revoked':
+                    print(
+                        "[DEBUG] Cached result is revoked. Updating demo tracker to True.")
+                    tracker = read_demo_tracker()
+                    tracker['__default__'] = True
+                    write_demo_tracker(tracker)
+                    print(
+                        f"[DEBUG] Wrote to demo tracker (set to True) from cache: {tracker}")
+                return cached_result
 
             # Extract transaction details
             amount = float(transaction_data.get('amount', 0))
@@ -217,6 +260,7 @@ class RiskAgent(Agent):
             user_history = transaction_data.get('user_history', [])
             risk_rejected = transaction_data.get('risk_rejected', False)
             paypal_agent_id = transaction_data.get('paypal_agent_id')
+            transaction_id = transaction_data.get('transaction_id', '')
 
             # Calculate risk factors
             amount_risk = self._calculate_amount_risk(amount)
@@ -229,27 +273,74 @@ class RiskAgent(Agent):
                             device_risk, history_risk]
             overall_risk = self._calculate_overall_risk(risk_factors)
 
-            # Automatically block/revoke if risk is HIGH or CRITICAL
-            if paypal_agent_id and overall_risk in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
-                print(
-                    f"\n🛑 High-risk transaction detected. Automatically revoking PayPal agent and blocking transaction.")
-                await self._revoke_agent_identity(paypal_agent_id)
-                return {
-                    "status": "revoked",
-                    "message": "Transaction automatically cancelled - PayPal agent revoked due to high risk",
-                    "risk_level": overall_risk.value
-                }
+            # --- DEMO LOGIC: Alternate allow/block using JSON tracker ---
+            tracker = read_demo_tracker()
+            allow_payment = tracker.get('__default__', True)
+            print(
+                f"[DEBUG] __default__ value: {allow_payment} (risk_rejected={risk_rejected})")
 
-            # If user explicitly rejected the risk, revoke PayPal agent (kept for future use)
+            if paypal_agent_id and overall_risk in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
+                if allow_payment:
+                    # Allow payment, only set __default__ to False after payment is processed
+                    print(
+                        "[DEMO] High risk detected, but payment allowed for demonstration.")
+                    result = {
+                        "status": "allowed",
+                        "message": "High risk detected, but payment allowed for demonstration.",
+                        "risk_level": overall_risk.value
+                    }
+                    print(
+                        f"[DEBUG] About to write to demo tracker (set to False): {tracker}")
+                    tracker['__default__'] = False
+                    write_demo_tracker(tracker)
+                    print(
+                        f"[DEBUG] Wrote to demo tracker (set to False): {tracker}")
+                    return result
+                else:
+                    # Block/revoke, only set __default__ to True after block/revoke is completed
+                    print(
+                        "[DEMO] High risk detected, blocking and revoking PayPal agent for demonstration.")
+                    await self._revoke_agent_identity(paypal_agent_id)
+                    result = {
+                        "status": "revoked",
+                        "message": "Transaction automatically cancelled - PayPal agent revoked due to high risk",
+                        "risk_level": overall_risk.value
+                    }
+                    print(
+                        f"[DEBUG] About to write to demo tracker (set to True): {tracker}")
+                    tracker['__default__'] = True
+                    write_demo_tracker(tracker)
+                    print(
+                        f"[DEBUG] Wrote to demo tracker (set to True): {tracker}")
+                    return result
+
+            # If user explicitly rejected the risk, treat as high risk (same logic)
             if risk_rejected and paypal_agent_id and overall_risk in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
-                print(
-                    f"\n🛑 User rejected high-risk transaction. Revoking PayPal agent...")
-                await self._revoke_agent_identity(paypal_agent_id)
-                return {
-                    "status": "revoked",
-                    "message": "Transaction cancelled - PayPal agent revoked due to risk rejection",
-                    "risk_level": overall_risk.value
-                }
+                if allow_payment:
+                    print(
+                        "[DEMO] User rejected high risk, but payment allowed for demonstration.")
+                    result = {
+                        "status": "allowed",
+                        "message": "User rejected high risk, but payment allowed for demonstration.",
+                        "risk_level": overall_risk.value
+                    }
+                    tracker['__default__'] = False
+                    write_demo_tracker(tracker)
+                    return result
+                else:
+                    print(
+                        "[DEMO] User rejected high risk, blocking and revoking PayPal agent for demonstration.")
+                    await self._revoke_agent_identity(paypal_agent_id)
+                    result = {
+                        "status": "revoked",
+                        "message": "Transaction cancelled - PayPal agent revoked due to risk rejection",
+                        "risk_level": overall_risk.value
+                    }
+                    tracker['__default__'] = True
+                    write_demo_tracker(tracker)
+                    print(
+                        "[DEBUG] Set __default__ to true after successful revocation.")
+                    return result
 
             # Generate risk ID
             risk_id = f"RISK-{str(uuid.uuid4())[:8].upper()}"
@@ -1425,3 +1516,8 @@ class RiskAgent(Agent):
                 "target_agent": target_agent_id,
                 "detection_time": datetime.datetime.now().isoformat()
             }
+
+
+if __name__ == "__main__":
+    # test_write_demo_tracker()
+    main()
