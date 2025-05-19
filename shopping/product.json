@@ -1,73 +1,93 @@
 {
   "raw_products": [
     {
-      "name": "Product A",
-      "price": 150.0,
-      "rating": 3.5
+      "name": "Catnip Toy",
+      "price": 15.99,
+      "rating": 4.5
     },
     {
-      "name": "Product B",
-      "price": 250.0,
-      "rating": 4.2
+      "name": "Scratching Post",
+      "price": 39.99,
+      "rating": 3.8
     },
     {
-      "name": "Product C",
-      "price": 300.0,
-      "rating": 2.8
+      "name": "Cat Bed",
+      "price": 29.99,
+      "rating": 4.0
     },
     {
-      "name": "Product D",
-      "price": 400.0,
+      "name": "Cat Bowl",
+      "price": 10.49,
+      "rating": 2.9
+    },
+    {
+      "name": "Laser Pointer",
+      "price": 8.99,
+      "rating": 4.1
+    },
+    {
+      "name": "Automatic Feeder",
+      "price": 44.99,
       "rating": 5.0
     },
     {
-      "name": "Product E",
-      "price": 100.0,
-      "rating": 1.5
-    },
-    {
-      "name": "Product F",
-      "price": 50.0,
-      "rating": 2.0
+      "name": "Cat Leash",
+      "price": 25.0,
+      "rating": 3.5
     }
   ],
   "filtered_products": [
     {
-      "name": "Product A",
-      "price": 150.0,
+      "name": "Catnip Toy",
+      "price": 15.99,
+      "rating": 4.5
+    },
+    {
+      "name": "Scratching Post",
+      "price": 39.99,
+      "rating": 3.8
+    },
+    {
+      "name": "Cat Bed",
+      "price": 29.99,
+      "rating": 4.0
+    },
+    {
+      "name": "Laser Pointer",
+      "price": 8.99,
+      "rating": 4.1
+    },
+    {
+      "name": "Automatic Feeder",
+      "price": 44.99,
+      "rating": 5.0
+    },
+    {
+      "name": "Cat Leash",
+      "price": 25.0,
       "rating": 3.5
-    },
-    {
-      "name": "Product B",
-      "price": 250.0,
-      "rating": 4.2
-    },
-    {
-      "name": "Product C",
-      "price": 300.0,
-      "rating": 2.8
-    },
-    {
-      "name": "Product F",
-      "price": 50.0,
-      "rating": 2.0
     }
   ],
   "top_products": [
     {
-      "name": "Product B",
-      "price": 250.0,
-      "rating": 4.2
+      "name": "Automatic Feeder",
+      "price": 44.99,
+      "rating": 5.0
     },
     {
-      "name": "Product A",
-      "price": 150.0,
-      "rating": 3.5
+      "name": "Catnip Toy",
+      "price": 15.99,
+      "rating": 4.5
+    },
+    {
+      "name": "Cat Bed",
+      "price": 29.99,
+      "rating": 4.0
     }
   ],
   "best_match": {
-    "name": "Product B",
-    "price": 250.0,
-    "rating": 4.2
+    "name": "Automatic Feeder",
+    "price": 44.99,
+    "rating": 5.0
   }
 }
