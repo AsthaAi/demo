@@ -8,6 +8,8 @@ import LoadingSkeleton from '@/components/LoadingSkeleton';
 import axios from 'axios';
 import SearchForm from '@/components/SearchForm';
 import SearchResults from '@/components/SearchResults';
+import Promotions from '../components/Promotions';
+import PaymentModal from '../components/PaymentModal';
 
 interface Product {
   name: string;
@@ -107,7 +109,9 @@ const MENU_OPTIONS = [
 
 function calculatePromotionSummary(product: Product, promotion: Promotion): PromotionSummary | null {
   if (!promotion || !product) return null;
-  const originalPrice = parseFloat(product.price.replace('$', ''));
+  const originalPrice = typeof product.price === 'string' 
+    ? parseFloat(product.price.replace('$', ''))
+    : product.price;
   const discountAmount = originalPrice * (promotion.discount_percentage / 100);
   const finalPrice = originalPrice - discountAmount;
   return {
@@ -161,7 +165,9 @@ export default function Home() {
       setMessages([
         {
           type: 'assistant',
-          content: `Welcome to ShopperAI!\nAvailable actions:\n${MENU_OPTIONS.map((opt, i) => `${i + 1}. ${opt.label}`).join('\n')}`
+          content: `Welcome to ShopperAI!`
+          // \nAvailable actions:\n`
+          // ${MENU_OPTIONS.map((opt, i) => `${i + 1}. ${opt.label}`).join('\n')}`
         }
       ]);
     }
@@ -222,7 +228,7 @@ export default function Home() {
       if (response.data && response.data.success && response.data.campaign) {
         setMessages(prev => [
           ...prev,
-          { type: 'assistant', content: '[Active Promotion Campaigns]\n' + JSON.stringify(response.data.campaign, null, 2) }
+          { type: 'assistant', campaign: response.data.campaign, content: '' }
         ]);
       } else {
         setMessages(prev => [
@@ -533,21 +539,25 @@ export default function Home() {
         customer_email: customerEmail,
       });
       
-      if (!response.data.success) throw new Error('Failed to process order');
-      
-      // Extract order data and approval URL
-      const orderData = response.data.result;
-      const links = orderData.links || [];
-      const approvalLink = links.find((link: any) => link.rel === 'approve');
-      
-      if (!approvalLink?.href) {
-        throw new Error('No approval URL found in response');
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to process order');
       }
-
-      // Store order ID and approval URL
-      setOrderId(orderData.id);
-      setApprovalUrl(approvalLink.href);
+      
+      // Store order data and approval URL
+      setOrderId(response.data.order_data.id);
+      setApprovalUrl(response.data.approval_url);
       setPromotionStep('ready');
+
+      // If a promotion was applied, update the product details
+      if (response.data.promotion_applied) {
+        const updatedProduct = {
+          ...selectedProduct,
+          original_price: response.data.original_price,
+          price: response.data.final_price,
+          applied_promotion: response.data.promotion_details
+        };
+        setSelectedProduct(updatedProduct);
+      }
     } catch (error) {
       console.error('Error processing order:', error);
       alert('Failed to process order. Please try again.');
@@ -560,6 +570,13 @@ export default function Home() {
   const handleBuyNow = (product: Product) => {
     setSelectedProduct(product);
     setShowPaymentModal(true);
+  };
+
+  const handleOrderComplete = (orderData: any) => {
+    if (orderData.success && orderData.approval_url) {
+      // Redirect to PayPal approval URL
+      window.location.href = orderData.approval_url;
+    }
   };
 
   const handleComparePrices = async (products: Product[]) => {
@@ -620,11 +637,11 @@ export default function Home() {
                 key={index}
                 type={message.type}
                 content={message.content}
-                product={message.product}
-                products={message.products}
+                product={message.product as Product}
+                products={message.products as Product[]}
                 onBuyNow={handleBuyNow}
                 onComparePrices={handleComparePrices}
-                comparisonResults={message.comparisonResults}
+                comparisonResults={message.comparisonResults as ComparisonResult}
                 campaign={message.campaign}
                 historyResult={message.historyResult}
                 supportResult={message.supportResult}
@@ -693,115 +710,72 @@ export default function Home() {
               </Button>
             </form>
           )}
+
+          {/* Product Details */}
+          {selectedProduct && (
+            <div className="mt-8">
+              <h2 className="text-2xl font-bold mb-4">Product Details</h2>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-semibold">{selectedProduct.name}</h3>
+                <p className="text-gray-600 mt-2">{selectedProduct.description}</p>
+                <div className="mt-4">
+                  <span className="text-2xl font-bold text-green-600">
+                    {selectedProduct.price}
+                  </span>
+                  {selectedProduct.rating && (
+                    <span className="ml-4 text-yellow-500">
+                      ★ {selectedProduct.rating}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Add Promotions component */}
+                <div className="mt-6">
+                  <Promotions
+                    productDetails={selectedProduct}
+                    customerEmail={customerEmail}
+                    onPromotionSelected={(updatedDetails: any) => {
+                      // Ensure price and rating are strings
+                      const updatedProduct: Product = {
+                        ...updatedDetails,
+                        price: typeof updatedDetails.price === 'number' 
+                          ? `$${updatedDetails.price.toFixed(2)}`
+                          : String(updatedDetails.price || '0'),
+                        rating: typeof updatedDetails.rating === 'number'
+                          ? String(updatedDetails.rating)
+                          : String(updatedDetails.rating || '0')
+                      };
+                      setSelectedProduct(updatedProduct);
+                    }}
+                  />
+                </div>
+
+                <button
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.preventDefault();
+                    if (selectedProduct) {
+                      handleBuyNow(selectedProduct);
+                    }
+                  }}
+                  className="mt-6 w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                >
+                  Buy Now
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
       {/* Payment Modal */}
-      <Modal show={showPaymentModal} onClose={() => { 
-        setShowPaymentModal(false); 
-        setCustomerEmail(''); 
-        setSelectedProduct(null);
-        setOrderId(null);
-        setPromotionStep('none');
-        setApprovalUrl('');
-      }}>
-        <Modal.Header className="text-gray-900">Complete Your Purchase</Modal.Header>
-        <Modal.Body>
-          <div className="space-y-4 text-black">
-            {selectedProduct && promotionStep === 'none' && (
-              <div>
-                <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
-                <div className="bg-gray-50 p-4 rounded-lg w-full mb-4">
-                  <div className="space-y-2">
-                    <p className="font-medium">Product: {selectedProduct.name}</p>
-                    <p className="font-medium">Price: {selectedProduct.price}</p>
-                    {selectedProduct.brand && (
-                      <p className="text-sm text-gray-600">Brand: {selectedProduct.brand}</p>
-                    )}
-                    {selectedProduct.description && (
-                      <p className="text-sm text-gray-600">Description: {selectedProduct.description}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="w-full">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
-                  </label>
-                  <TextInput
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    required
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            )}
-            {promotionStep === 'ready' && (
-              <div className='text-black'>
-                <h3 className="text-xl font-semibold mb-4">Your Order is Ready!</h3>
-                <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                  <div className="space-y-2">
-                    <p className="font-medium">Product: {selectedProduct?.name}</p>
-                    <p className="font-medium">Price: {selectedProduct?.price}</p>
-                    {orderId && (
-                      <p className="text-sm text-gray-600">Order ID: {orderId}</p>
-                    )}
-                  </div>
-                </div>
-                <p className="text-gray-600 mb-4">Click below to proceed to PayPal</p>
-                {approvalUrl && (
-                  <a
-                    href={approvalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full bg-blue-500 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-600"
-                  >
-                    Proceed to PayPal
-                  </a>
-                )}
-                <div className="mt-4 text-gray-700">
-                  <ol className="list-decimal ml-5">
-                    <li>Open the PayPal link in your browser.</li>
-                    <li>Log in with your PayPal sandbox buyer account.</li>
-                    <li>Approve the payment to complete your order.</li>
-                  </ol>
-                </div>
-              </div>
-            )}
-          </div>
-        </Modal.Body>
-        <Modal.Footer>
-          {selectedProduct && promotionStep === 'none' && (
-            <Button
-              onClick={handleProcessOrder}
-              disabled={!customerEmail || isProcessingPayment}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-            >
-              {isProcessingPayment ? (
-                <ArrowPathIcon className="w-5 h-5 animate-spin" />
-              ) : (
-                'Proceed to Payment'
-              )}
-            </Button>
-          )}
-          <Button 
-            color="gray" 
-            onClick={() => { 
-              setShowPaymentModal(false); 
-              setCustomerEmail(''); 
-              setSelectedProduct(null);
-              setOrderId(null);
-              setPromotionStep('none');
-              setApprovalUrl('');
-            }}
-          >
-            {approvalUrl ? 'Close' : 'Cancel'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {selectedProduct && (
+        <PaymentModal
+          show={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          product={selectedProduct}
+          onOrderComplete={handleOrderComplete}
+        />
+      )}
     </div>
   );
 }

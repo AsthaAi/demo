@@ -1207,5 +1207,171 @@
     "error": "Order status is CREATED, not APPROVED",
     "status": "CREATED",
     "paypal_order_id": "52G0311972010192M"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "1JB12935JJ427201U",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=1JB12935JJ427201U",
+    "raw_response": {
+      "id": "1JB12935JJ427201U",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/1JB12935JJ427201U",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=1JB12935JJ427201U",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/1JB12935JJ427201U",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/1JB12935JJ427201U/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=1JB12935JJ427201U"
+    }
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is CREATED, not APPROVED",
+    "status": "CREATED",
+    "paypal_order_id": "1JB12935JJ427201U"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "6SW67256YL887015J",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=6SW67256YL887015J",
+    "raw_response": {
+      "id": "6SW67256YL887015J",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6SW67256YL887015J",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=6SW67256YL887015J",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6SW67256YL887015J",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/6SW67256YL887015J/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=6SW67256YL887015J"
+    }
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "2MN2699182110594N",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=2MN2699182110594N",
+    "raw_response": {
+      "id": "2MN2699182110594N",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/2MN2699182110594N",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=2MN2699182110594N",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/2MN2699182110594N",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/2MN2699182110594N/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=2MN2699182110594N"
+    }
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "7PN00838ML728623A",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=7PN00838ML728623A",
+    "raw_response": {
+      "id": "7PN00838ML728623A",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/7PN00838ML728623A",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=7PN00838ML728623A",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/7PN00838ML728623A",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/7PN00838ML728623A/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=7PN00838ML728623A"
+    }
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "16A722557U8489834",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=16A722557U8489834",
+    "raw_response": {
+      "id": "16A722557U8489834",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/16A722557U8489834",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=16A722557U8489834",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/16A722557U8489834",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/16A722557U8489834/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=16A722557U8489834"
+    }
   }
 ]

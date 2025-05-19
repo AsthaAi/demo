@@ -17,6 +17,7 @@ from textwrap import dedent
 import json
 import asyncio
 from datetime import datetime, timedelta
+import re
 
 load_dotenv()
 
@@ -85,7 +86,6 @@ class ShopperAI:
             print(f"CrewOutput content preview: {output_str[:200]}...")
 
             # Try to find JSON in the output
-            import re
             json_pattern = r'\{[\s\S]*\}'
             matches = re.findall(json_pattern, output_str)
 
@@ -384,10 +384,16 @@ Do not return any explanation or summary, only the JSON object.""",
             }
 
             for product in products:
-                # Extract price as float, removing $ and any commas
-                price_str = product.get('price', '0').replace('$', '').replace(',', '')
+                # Extract price as float, handling both string and float inputs
+                price = product.get('price', '0')
+                if isinstance(price, str):
+                    price = float(price.replace('$', '').replace(',', ''))
+                elif isinstance(price, (int, float)):
+                    price = float(price)
+                else:
+                    price = 0.0  # Default to 0 if price is invalid
+
                 try:
-                    price = float(price_str)
                     comparison_results["products"].append({
                         "name": product.get('name', 'Unknown'),
                         "price": price,
@@ -428,28 +434,143 @@ Do not return any explanation or summary, only the JSON object.""",
             # Set user_id based on email for promotions
             self.user_id = customer_email
 
+            # Get available promotions and let user select one
+            selected_promotion = await self.select_and_apply_promotion(product_details, customer_email)
+            
+            # Initialize PayPal agent
+            paypal_agent = self.agents.paypal_agent()
+            await paypal_agent.initialize()
+
+            # Get access token using the payment tool
+            access_token = await paypal_agent.payment_tool.get_access_token()
+
+            # Create PayPal order with promotion information in description
+            description = product_details.get('description', '')
+            if product_details.get('applied_promotion'):
+                promo = product_details['applied_promotion']
+                description += f"\nApplied Promotion: {promo['name']} ({promo['discount_percentage']}% off)"
+
+            # Ensure price is a float before creating the order
+            price = product_details.get('price', '0')
+            if isinstance(price, str):
+                # Remove any currency symbols and commas, then convert to float
+                price = float(price.replace('$', '').replace(',', ''))
+            elif isinstance(price, (int, float)):
+                price = float(price)
+            else:
+                price = 0.0  # Default to 0 if price is invalid
+
+            order_data = await paypal_agent.create_payment_order(
+                amount=price,
+                currency="USD",
+                description=description,
+                payee_email=customer_email
+            )
+
+            # Get the approval URL
+            approval_url = None
+            for link in order_data.get('links', []):
+                if link.get('rel') == 'approve':
+                    approval_url = link.get('href')
+                    break
+
+            if approval_url:
+                return {
+                    "success": True,
+                    "order_data": order_data,
+                    "approval_url": approval_url,
+                    "promotion_applied": bool(product_details.get('applied_promotion')),
+                    "promotion_details": product_details.get('applied_promotion'),
+                    "original_price": product_details.get('original_price'),
+                    "final_price": product_details['price']
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "No approval URL found. Cannot proceed with payment."
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    async def select_and_apply_promotion(self, product_details: dict, customer_email: str) -> dict:
+        """
+        Get available promotions and let user select one to apply
+        
+        Args:
+            product_details: Dictionary containing product information
+            customer_email: Customer's email address
+            
+        Returns:
+            Dictionary containing the selected promotion or None if no promotion selected
+        """
+        try:
             # Initialize Promotions agent
             promotions_agent = self.agents.promotions_agent()
             await promotions_agent.initialize()
 
-            # Get all available promotions
             available_promotions = []
 
+            # If a promotion is already applied (from UI), use it directly and skip prompt
+            if product_details.get('applied_promotion'):
+                selected_promotion = product_details['applied_promotion']
+                # Validate minimum purchase
+                price = product_details['original_price'] if 'original_price' in product_details else product_details['price']
+                if isinstance(price, str):
+                    original_price = float(price.replace('$', '').replace(',', ''))
+                elif isinstance(price, (int, float)):
+                    original_price = float(price)
+                else:
+                    original_price = 0.0
+                if original_price >= selected_promotion['minimum_purchase']:
+                    discount_amount = original_price * (selected_promotion['discount_percentage'] / 100)
+                    discounted_price = original_price - discount_amount
+                    product_details['original_price'] = original_price
+                    product_details['price'] = discounted_price
+                    product_details['applied_promotion'] = selected_promotion
+                    print(f"\nApplied {selected_promotion['name']} (from UI)")
+                    print(f"Original Price: ${original_price:.2f}")
+                    print(f"Discount Amount: ${discount_amount:.2f}")
+                    print(f"Final Price: ${discounted_price:.2f}")
+                    return selected_promotion
+                else:
+                    print(f"\nMinimum purchase requirement (${selected_promotion['minimum_purchase']}) not met.")
+                    return None
+
+            # If no promotion is applied from UI, skip prompt and return None
+            if not product_details.get('applied_promotion'):
+                print("\nNo promotion selected from UI. Skipping promotion selection.")
+                return None
+
             # 1. Get personalized discount
+            # Convert price to float, handling both string and float inputs
+            price = product_details.get('price', '0')
+            if isinstance(price, str):
+                # Remove any currency symbols and commas, then convert to float
+                price = float(price.replace('$', '').replace(',', ''))
+            elif isinstance(price, (int, float)):
+                price = float(price)
+            else:
+                price = 0.0  # Default to 0 if price is invalid
+
+            # Create shopping history with float price
             shopping_history = [
                 {
-                    'amount': product_details['price'],
+                    'amount': price,  # Pass as float to promotions agent
                     'category': product_details.get('category', 'unknown'),
                     'timestamp': datetime.now().isoformat()
                 }
             ]
             personal_discount = await promotions_agent.create_personalized_discount(
-                self.user_id,
+                customer_email,
                 shopping_history
             )
             if personal_discount:
                 available_promotions.append({
-                    'type': 'personal',
+                    'id': 'personal',
                     'name': 'Personal Discount',
                     'discount_percentage': personal_discount['discount_percentage'],
                     'minimum_purchase': personal_discount['minimum_purchase'],
@@ -458,18 +579,26 @@ Do not return any explanation or summary, only the JSON object.""",
 
             # 2. Get active campaign promotions
             campaign_data = {
-                'name': 'Current Campaigns',
-                'description': 'Check active campaigns',
+                'name': 'Summer Sale',
+                'description': 'Special discounts on summer items',
                 'start_date': datetime.now().isoformat(),
-                'end_date': (datetime.now() + timedelta(days=30)).isoformat()
+                'end_date': (datetime.now() + timedelta(days=30)).isoformat(),
+                'discount_type': 'percentage',
+                'discount_value': 15,
+                'conditions': {
+                    'minimum_purchase': 50,
+                    'categories': ['summer', 'outdoor']
+                }
             }
+            
+            # Create a campaign promotion
             campaign = await promotions_agent.create_promotion_campaign(campaign_data)
             if campaign:
                 available_promotions.append({
-                    'type': 'campaign',
+                    'id': 'campaign',
                     'name': campaign['name'],
-                    'discount_percentage': campaign.get('discount_value', 0),
-                    'minimum_purchase': campaign.get('conditions', {}).get('minimum_purchase', 0),
+                    'discount_percentage': campaign['discount_value'],
+                    'minimum_purchase': campaign['conditions']['minimum_purchase'],
                     'valid_until': campaign['end_date']
                 })
 
@@ -485,39 +614,41 @@ Do not return any explanation or summary, only the JSON object.""",
                 # Let user select a promotion
                 while True:
                     try:
-                        selection = input(
-                            "\nSelect a promotion number (or 0 to skip): ")
+                        selection = input("\nSelect a promotion number (or 0 to skip): ")
                         if selection == '0':
                             print("\nNo promotion selected.")
-                            break
+                            return None
 
                         idx = int(selection) - 1
                         if 0 <= idx < len(available_promotions):
                             selected_promotion = available_promotions[idx]
-                            original_price = float(product_details['price'])
+                            # Convert price to float, handling both string and float inputs
+                            price = product_details['price']
+                            if isinstance(price, str):
+                                original_price = float(price.replace('$', '').replace(',', ''))
+                            elif isinstance(price, (int, float)):
+                                original_price = float(price)
+                            else:
+                                original_price = 0.0  # Default to 0 if price is invalid
 
                             # Check minimum purchase requirement
                             if original_price >= selected_promotion['minimum_purchase']:
                                 # Apply the selected promotion
-                                discount_amount = original_price * \
-                                    (selected_promotion['discount_percentage'] / 100)
+                                discount_amount = original_price * (selected_promotion['discount_percentage'] / 100)
                                 discounted_price = original_price - discount_amount
 
                                 # Update product details with discount
                                 product_details['original_price'] = original_price
-                                product_details['price'] = discounted_price
+                                product_details['price'] = discounted_price  # Store as float
                                 product_details['applied_promotion'] = selected_promotion
 
-                                print(
-                                    f"\nApplied {selected_promotion['name']}")
+                                print(f"\nApplied {selected_promotion['name']}")
                                 print(f"Original Price: ${original_price:.2f}")
-                                print(
-                                    f"Discount Amount: ${discount_amount:.2f}")
+                                print(f"Discount Amount: ${discount_amount:.2f}")
                                 print(f"Final Price: ${discounted_price:.2f}")
-                                break
+                                return selected_promotion
                             else:
-                                print(
-                                    f"\nMinimum purchase requirement (${selected_promotion['minimum_purchase']}) not met.")
+                                print(f"\nMinimum purchase requirement (${selected_promotion['minimum_purchase']}) not met.")
                                 continue
                         else:
                             print("\nInvalid selection. Please try again.")
@@ -525,81 +656,10 @@ Do not return any explanation or summary, only the JSON object.""",
                         print("\nPlease enter a valid number.")
             else:
                 print("\nNo promotions available at this time.")
-
-            # Initialize PayPal agent
-            paypal_agent = self.agents.paypal_agent()
-            await paypal_agent.initialize()
-
-            # Get access token using the payment tool
-            access_token = await paypal_agent.payment_tool.get_access_token()
-
-            # Create PayPal order with promotion information in description
-            description = product_details.get('description', '')
-            if product_details.get('applied_promotion'):
-                promo = product_details['applied_promotion']
-                description += f"\nApplied Promotion: {promo['name']} ({promo['discount_percentage']}% off)"
-
-            order_data = await paypal_agent.create_payment_order(
-                amount=product_details['price'],
-                currency="USD",
-                description=description,
-                payee_email=customer_email
-            )
-
-            print("\n[PayPal Order Created]")
-            if product_details.get('applied_promotion'):
-                promo = product_details['applied_promotion']
-                print(f"\nPromotion Applied: {promo['name']}")
-                print(
-                    f"Original Price: ${product_details['original_price']:.2f}")
-                print(f"Final Price: ${product_details['price']:.2f}")
-                print(
-                    f"You Save: ${product_details['original_price'] - product_details['price']:.2f}")
-            print(json.dumps(order_data, indent=2))
-
-            # Get the approval URL
-            approval_url = None
-            for link in order_data.get('links', []):
-                if link.get('rel') == 'approve':
-                    approval_url = link.get('href')
-                    break
-
-            if approval_url:
-                print(
-                    f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
-                print("\nInstructions:")
-                print("1. Open the above URL in your browser.")
-                print("2. Log in with your PayPal sandbox buyer account.")
-                print("3. Approve the payment to complete your order.")
-                print("\nAfter approval, the payment will be captured automatically.")
-
-                # Ask if user wants to proceed with capture now or later
-                capture_now = input(
-                    "\nDo you want to capture the payment now? (y/n): ").lower()
-                if capture_now == 'y':
-                    # Use order_data.id instead of paypal_order_id
-                    if order_data.get('id'):
-                        capture_result = await paypal_agent.capture_payment(order_data['id'])
-                        print("\n[PayPal Payment Capture]")
-                        print(json.dumps(capture_result, indent=2))
-
-                        # Check if there was an error with the capture
-                        if isinstance(capture_result, dict) and "error" in capture_result:
-                            print(
-                                "\nPayment capture failed. The order may need to be approved first.")
-                            print(f"Error: {capture_result.get('error')}")
-                            print(f"Status: {capture_result.get('status')}")
-                        else:
-                            print("\nPayment captured successfully!")
-                else:
-                    print("\nPayment will need to be captured after approval.")
-            else:
-                print("\nNo approval URL found. Cannot proceed with payment.")
-
-            return order_data
+                return None
 
         except Exception as e:
-            print(f"\nError processing payment: {str(e)}")
+            print(f"\nError selecting promotion: {str(e)}")
             return None
 
     async def analyze_user_shopping_history(self, user_id: str, history: List[Dict[str, Any]] = None):
@@ -675,14 +735,30 @@ Do not return any explanation or summary, only the JSON object.""",
             # Sort history by timestamp
             user_payment_history.sort(key=lambda x: x.get('timestamp', ''))
 
+            # Format amounts to ensure they are floats
+            formatted_history = []
+            for record in user_payment_history:
+                amount = record.get('amount', 0)
+                if isinstance(amount, str):
+                    # Remove any currency symbols and commas, then convert to float
+                    amount = float(amount.replace('$', '').replace(',', ''))
+                elif isinstance(amount, (int, float)):
+                    amount = float(amount)
+                else:
+                    amount = 0.0  # Default to 0 if amount is invalid
+                
+                formatted_record = record.copy()
+                formatted_record['amount'] = amount
+                formatted_history.append(formatted_record)
+
             # Initialize Promotions agent
             promotions_agent = self.agents.promotions_agent()
             await promotions_agent.initialize()
 
-            # Analyze shopping history
+            # Analyze shopping history with formatted amounts
             analysis_results = await promotions_agent.analyze_shopping_history(
                 user_id,
-                user_payment_history
+                formatted_history
             )
 
             # Add additional insights
@@ -733,18 +809,40 @@ Do not return any explanation or summary, only the JSON object.""",
 
     async def get_available_promotions(self, product_details: dict, customer_email: str):
         """
-        Return available promotions for the given product and customer.
+        Get available promotions for a product and customer.
+        
+        Args:
+            product_details: Dictionary containing product information
+            customer_email: Customer's email address
+            
+        Returns:
+            Dictionary containing:
+            - success: Boolean indicating if the operation was successful
+            - promotions: List of available promotions
+            - error: Error message if any
         """
         try:
+            # Initialize Promotions agent
             promotions_agent = self.agents.promotions_agent()
             await promotions_agent.initialize()
 
             available_promotions = []
 
             # 1. Get personalized discount
+            # Convert price to float, handling both string and float inputs
+            price = product_details.get('price', '0')
+            if isinstance(price, str):
+                # Remove any currency symbols and commas, then convert to float
+                price = float(price.replace('$', '').replace(',', ''))
+            elif isinstance(price, (int, float)):
+                price = float(price)
+            else:
+                price = 0.0  # Default to 0 if price is invalid
+
+            # Create shopping history with float price
             shopping_history = [
                 {
-                    'amount': product_details['price'],
+                    'amount': price,  # Pass as float to promotions agent
                     'category': product_details.get('category', 'unknown'),
                     'timestamp': datetime.now().isoformat()
                 }
@@ -764,26 +862,42 @@ Do not return any explanation or summary, only the JSON object.""",
 
             # 2. Get active campaign promotions
             campaign_data = {
-                'name': 'Current Campaigns',
-                'description': 'Check active campaigns',
+                'name': 'Summer Sale',
+                'description': 'Special discounts on summer items',
                 'start_date': datetime.now().isoformat(),
-                'end_date': (datetime.now() + timedelta(days=30)).isoformat()
+                'end_date': (datetime.now() + timedelta(days=30)).isoformat(),
+                'discount_type': 'percentage',
+                'discount_value': 15,
+                'conditions': {
+                    'minimum_purchase': 50,
+                    'categories': ['summer', 'outdoor']
+                }
             }
+            
+            # Create a campaign promotion
             campaign = await promotions_agent.create_promotion_campaign(campaign_data)
             if campaign:
                 available_promotions.append({
                     'id': 'campaign',
                     'name': campaign['name'],
-                    'discount_percentage': campaign.get('discount_value', 0),
-                    'minimum_purchase': campaign.get('conditions', {}).get('minimum_purchase', 0),
+                    'discount_percentage': campaign['discount_value'],
+                    'minimum_purchase': campaign['conditions']['minimum_purchase'],
                     'valid_until': campaign['end_date']
                 })
 
-            return available_promotions
+            return {
+                'success': True,
+                'promotions': available_promotions,
+                'error': None
+            }
 
         except Exception as e:
-            print(f"Error in get_available_promotions: {e}")
-            return []
+            print(f"Error getting promotions: {str(e)}")
+            return {
+                'success': False,
+                'promotions': [],
+                'error': str(e)
+            }
 
     async def capture_payment(self, order_id: str):
         """
@@ -808,6 +922,7 @@ Do not return any explanation or summary, only the JSON object.""",
         except Exception as e:
             print(f"Error in capture_payment: {e}")
             return {"error": str(e)}
+
     async def process_refund_request(self, order_details: Dict[str, Any]) -> Dict[str, Any]:
         """
         Process a refund request for an order
@@ -888,297 +1003,6 @@ Do not return any explanation or summary, only the JSON object.""",
             error_msg = f"Failed to create support ticket: {str(e)}"
             print(f"❌ {error_msg}")
             raise
-    
-    async def get_available_promotions(self, product_details: dict, customer_email: str):
-        """
-        Return available promotions for the given product and customer.
-        """
-        try:
-            promotions_agent = self.agents.promotions_agent()
-            await promotions_agent.initialize()
-
-            available_promotions = []
-
-            # 1. Get personalized discount
-            shopping_history = [
-                {
-                    'amount': product_details['price'],
-                    'category': product_details.get('category', 'unknown'),
-                    'timestamp': datetime.now().isoformat()
-                }
-            ]
-            personal_discount = await promotions_agent.create_personalized_discount(
-                customer_email,
-                shopping_history
-            )
-            if personal_discount:
-                available_promotions.append({
-                    'id': 'personal',
-                    'name': 'Personal Discount',
-                    'discount_percentage': personal_discount['discount_percentage'],
-                    'minimum_purchase': personal_discount['minimum_purchase'],
-                    'valid_until': personal_discount['valid_until']
-                })
-
-            # 2. Get active campaign promotions
-            campaign_data = {
-                'name': 'Current Campaigns',
-                'description': 'Check active campaigns',
-                'start_date': datetime.now().isoformat(),
-                'end_date': (datetime.now() + timedelta(days=30)).isoformat()
-            }
-            campaign = await promotions_agent.create_promotion_campaign(campaign_data)
-            if campaign:
-                available_promotions.append({
-                    'id': 'campaign',
-                    'name': campaign['name'],
-                    'discount_percentage': campaign.get('discount_value', 0),
-                    'minimum_purchase': campaign.get('conditions', {}).get('minimum_purchase', 0),
-                    'valid_until': campaign['end_date']
-                })
-
-            return available_promotions
-
-        except Exception as e:
-            print(f"Error in get_available_promotions: {e}")
-            return []
-
-    async def capture_payment(self, order_id: str):
-        """
-        Capture a PayPal payment for the given order ID.
-        """
-        try:
-            paypal_agent = self.agents.paypal_agent()
-            await paypal_agent.initialize()
-            # Capture the payment using the PayPal agent
-            capture_result = await paypal_agent.capture_payment(order_id)
-            # Optionally, extract approval_url if needed for UI
-            approval_url = None
-            if isinstance(capture_result, dict):
-                for link in capture_result.get('links', []):
-                    if link.get('rel') == 'approve':
-                        approval_url = link.get('href')
-                        break
-            return {
-                "capture_result": capture_result,
-                "approval_url": approval_url
-            }
-        except Exception as e:
-            print(f"Error in capture_payment: {e}")
-            return {"error": str(e)}
-
-    async def get_search_criteria(self) -> Dict[str, Any]:
-        """
-        Get search criteria from user input
-        Returns a dictionary with search criteria
-        """
-        try:
-            query = input("\nWhat would you like to search for? ")
-            
-            # Get maximum price
-            while True:
-                try:
-                    max_price_input = input("Maximum price (in USD): ")
-                    max_price = float(max_price_input)
-                    break
-                except ValueError:
-                    print("Please enter a valid number for the maximum price.")
-
-            # Get minimum rating
-            while True:
-                try:
-                    min_rating_input = input("Minimum rating (0-5): ")
-                    min_rating = float(min_rating_input)
-                    if 0 <= min_rating <= 5:
-                        break
-                    else:
-                        print("Rating must be between 0 and 5.")
-                except ValueError:
-                    print("Please enter a valid number for the minimum rating.")
-
-            return {
-                "query": query,
-                "max_price": max_price,
-                "min_rating": min_rating
-            }
-        except Exception as e:
-            print(f"Error getting search criteria: {str(e)}")
-            return {
-                "query": "",
-                "max_price": 1000,
-                "min_rating": 0
-            }
-
-    async def select_product(self, products: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Let user select a product from the list
-        Returns the selected product
-        """
-        try:
-            print("\nFound the following products:")
-            print("\n{:<40} {:<10} {:<10}".format("Product", "Price", "Rating"))
-            print("-" * 80)
-            
-            for idx, product in enumerate(products, 1):
-                name = product.get("name", product.get("title", "Unknown"))
-                price = product.get("price", "N/A")
-                rating = product.get("rating", "N/A")
-                print("{:<40} {:<10} {:<10}".format(
-                    name[:37] + "..." if len(name) > 37 else name,
-                    price,
-                    rating
-                ))
-
-            while True:
-                try:
-                    selection = input(f"\nEnter the number of the product you want to purchase (1-{len(products)}) or 0 to cancel: ")
-                    if selection == '0':
-                        return None
-
-                    idx = int(selection) - 1
-                    if 0 <= idx < len(products):
-                        return products[idx]
-                    else:
-                        print("\nInvalid selection. Please try again.")
-                except ValueError:
-                    print("\nPlease enter a valid number.")
-        except Exception as e:
-            print(f"Error selecting product: {str(e)}")
-            return None
-
-    async def get_payment_details(self) -> Dict[str, Any]:
-        """
-        Get payment details from user
-        Returns a dictionary with payment information
-        """
-        try:
-            payee_email = input("\nPlease enter the merchant/business PayPal email address to receive payment: ")
-            return {
-                "payee_email": payee_email
-            }
-        except Exception as e:
-            print(f"Error getting payment details: {str(e)}")
-            return None
-
-    async def confirm_payment(self, order_data: Dict[str, Any]) -> bool:
-        """
-        Confirm payment with user
-        Returns True if user confirms, False otherwise
-        """
-        try:
-            print("\nOrder Details:")
-            print(f"Order ID: {order_data.get('id')}")
-            
-            # Get approval URL from links
-            approval_url = None
-            for link in order_data.get('links', []):
-                if link.get('rel') == 'approve':
-                    approval_url = link.get('href')
-                    break
-
-            if approval_url:
-                print(f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
-                print("\nInstructions:")
-                print("1. Open the above URL in your browser.")
-                print("2. Log in with your PayPal sandbox buyer account.")
-                print("3. Approve the payment to complete your order.")
-
-                # Wait for user to complete payment
-                input("\nPress Enter after completing the payment in your browser...")
-                return True
-            else:
-                print("\nNo approval URL found. Cannot proceed with payment.")
-                return False
-        except Exception as e:
-            print(f"Error confirming payment: {str(e)}")
-            return False
-
-    async def get_refund_details(self) -> Dict[str, Any]:
-        """
-        Get refund details from user
-        Returns a dictionary with refund information
-        """
-        try:
-            transaction_id = input("\nEnter transaction ID: ")
-            reason = input("Enter refund reason: ")
-            amount = float(input("Enter refund amount: "))
-
-            return {
-                "transaction_id": transaction_id,
-                "reason": reason,
-                "amount": amount
-            }
-        except Exception as e:
-            print(f"Error getting refund details: {str(e)}")
-            return None
-
-    async def get_support_ticket_details(self) -> Dict[str, Any]:
-        """
-        Get support ticket details from user
-        Returns a dictionary with ticket information
-        """
-        try:
-            customer_id = input("\nEnter your customer ID: ")
-            issue_type = input("Enter issue type (Technical/Billing/General): ")
-            priority = input("Enter priority (Low/Medium/High): ")
-            description = input("Enter issue description: ")
-
-            return {
-                "customer_id": customer_id,
-                "issue_type": issue_type,
-                "priority": priority,
-                "description": description
-            }
-        except Exception as e:
-            print(f"Error getting support ticket details: {str(e)}")
-            return None
-
-    async def get_promotion_selection(self, available_promotions: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Let user select a promotion from available promotions
-        Returns the selected promotion
-        """
-        try:
-            if not available_promotions:
-                print("\nNo promotions available at this time.")
-                return None
-
-            print("\n[Available Promotions]")
-            for idx, promo in enumerate(available_promotions, 1):
-                print(f"\n{idx}. {promo['name']}")
-                print(f"   Discount: {promo['discount_percentage']}%")
-                print(f"   Minimum Purchase: ${promo['minimum_purchase']}")
-                print(f"   Valid Until: {promo['valid_until']}")
-
-            while True:
-                try:
-                    selection = input("\nSelect a promotion number (or 0 to skip): ")
-                    if selection == '0':
-                        print("\nNo promotion selected.")
-                        return None
-
-                    idx = int(selection) - 1
-                    if 0 <= idx < len(available_promotions):
-                        return available_promotions[idx]
-                    else:
-                        print("\nInvalid selection. Please try again.")
-                except ValueError:
-                    print("\nPlease enter a valid number.")
-        except Exception as e:
-            print(f"Error selecting promotion: {str(e)}")
-            return None
-
-    async def confirm_capture_payment(self) -> bool:
-        """
-        Ask user if they want to capture payment now
-        Returns True if user wants to capture now, False otherwise
-        """
-        try:
-            capture_now = input("\nDo you want to capture the payment now? (y/n): ").lower()
-            return capture_now == 'y'
-        except Exception as e:
-            print(f"Error confirming payment capture: {str(e)}")
-            return False
 
 
 def read_latest_payment_detail():
@@ -1323,13 +1147,110 @@ def main():
                             # Get FAQ query
                             query = input("\nWhat's your question? ")
 
+                            # Extract price from regex match
+                            price_match = re.search(r'(\$?\d+(?:\.\d{2})?)', query)
+                            max_price = float(price_match.group(1).replace(
+                                '$', '')) if price_match else None
+
+                            # Try to extract rating
+                            rating_match = re.search(
+                                r'rating.*?(\d+(?:\.\d)?)', query)
+                            min_rating = float(rating_match.group(
+                                1)) if rating_match else None
+
+                            # Extract the product query by removing criteria mentions
+                            product_query = query
+                            if max_price:
+                                product_query = re.sub(
+                                    r'\$?\d+(?:\.\d{2})?', '', product_query)
+                            if min_rating:
+                                product_query = re.sub(
+                                    r'rating.*?\d+(?:\.\d)?', '', product_query)
+
+                            # Clean up the query
+                            product_query = re.sub(
+                                r'\b(price|cost|under|above|rating|stars?)\b', '', product_query)
+                            product_query = ' '.join(product_query.split())
+
+                            # If criteria not found in query, ask user
+                            if max_price is None:
+                                while True:
+                                    try:
+                                        max_price_input = input(
+                                            "What's your maximum budget (in USD)? ")
+                                        max_price = float(max_price_input)
+                                        break
+                                    except ValueError:
+                                        print(
+                                            "Please enter a valid number.")
+
+                            if min_rating is None:
+                                while True:
+                                    try:
+                                        min_rating_input = input(
+                                            "What's your minimum rating requirement (0-5)? ")
+                                        min_rating = float(
+                                            min_rating_input)
+                                        if 0 <= min_rating <= 5:
+                                            break
+                                        else:
+                                            print(
+                                                "Rating must be between 0 and 5.")
+                                    except ValueError:
+                                        print(
+                                            "Please enter a valid number.")
+
+                            # Initialize ShopperAI with search criteria
+                            search_shopper = ShopperAI(
+                                product_query,
+                                {"max_price": max_price,
+                                    "min_rating": min_rating}
+                            )
+
+                            # Run research phase
+                            print("\nSearching for products...")
                             try:
-                                faq_result = await shopper.get_faq_answer(query)
-                                print("\n[FAQ Response]")
-                                print(json.dumps(faq_result, indent=2))
+                                research_results = await search_shopper.run_research()
+
+                                # Extract and display products
+                                if isinstance(research_results, dict):
+                                    best = research_results.get(
+                                        "best_match")
+                                    if best:
+                                        print("\nBest Match:")
+                                        print(
+                                            f"Name: {best.get('name', best.get('title', ''))}")
+                                        print(
+                                            f"Price: {best.get('price', '')}")
+                                        print(
+                                            f"Rating: {best.get('rating', '')}")
+
+                                        # Comment out price comparison functionality for now
+                                        """
+                                        # Ask if user wants to compare prices
+                                        compare_prices = input(
+                                            "\nWould you like to compare prices for similar products? (y/n): ").lower()
+                                        if compare_prices == 'y':
+                                            price_results = await search_shopper.run_price_comparison([best])
+                                            if price_results and isinstance(price_results, dict):
+                                                print("\nPrice Comparison Results:")
+                                                print(json.dumps(price_results, indent=2))
+                                        """
+
+                                        print(
+                                            "\nYou can proceed with the purchase by selecting option 1 from the main menu.")
+
                             except Exception as e:
                                 print(
-                                    f"\nError getting FAQ response: {str(e)}")
+                                    f"\nError searching for products: {str(e)}")
+                                # Fallback to FAQ response
+                                try:
+                                    faq_result = await shopper.get_faq_answer(query)
+                                    print("\n[FAQ Response]")
+                                    print(json.dumps(faq_result, indent=2))
+                                except Exception as faq_error:
+                                    print(
+                                        f"\nError getting FAQ response: {str(faq_error)}")
 
                         elif support_choice == "3":
                             # Get ticket details
@@ -1549,6 +1470,17 @@ async def search_and_buy_products():
                     **payment_details
                 }
 
+                # Ensure price is a float
+                price = product_details['price']
+                if isinstance(price, str):
+                    # Remove any currency symbols and commas, then convert to float
+                    price = float(price.replace('$', '').replace(',', ''))
+                elif isinstance(price, (int, float)):
+                    price = float(price)
+                else:
+                    price = 0.0  # Default to 0 if price is invalid
+                product_details['price'] = price
+
                 # Process the order with payment
                 payment_result = await shopper.process_order_with_payment(product_details, payment_details["payee_email"])
 
@@ -1610,6 +1542,17 @@ async def search_and_buy_products():
                         "description": selected_product.get('description', ''),
                         **payment_details
                     }
+
+                    # Ensure price is a float
+                    price = product_details['price']
+                    if isinstance(price, str):
+                        # Remove any currency symbols and commas, then convert to float
+                        price = float(price.replace('$', '').replace(',', ''))
+                    elif isinstance(price, (int, float)):
+                        price = float(price)
+                    else:
+                        price = 0.0  # Default to 0 if price is invalid
+                    product_details['price'] = price
 
                     # Process the order with payment
                     payment_result = await shopper.process_order_with_payment(product_details, payment_details["payee_email"])

@@ -1,108 +1,73 @@
 {
   "raw_products": [
     {
-      "name": "iPhone 16 Pro",
-      "price": 1599.99,
-      "rating": 4.5,
-      "features": [
-        "128GB Storage",
-        "Super Retina XDR Display",
-        "Triple Camera System"
-      ]
+      "name": "Rainbow Fidget Spinner",
+      "price": 4.99,
+      "rating": 4.2
     },
     {
-      "name": "iPhone 16",
-      "price": 1399.99,
-      "rating": 4.3,
-      "features": [
-        "64GB Storage",
-        "Liquid Retina Display",
-        "Dual Camera System"
-      ]
+      "name": "LED Light Fidget Spinner",
+      "price": 5.0,
+      "rating": 3.5
     },
     {
-      "name": "iPhone 16 Pro Max",
-      "price": 1899.99,
-      "rating": 4.7,
-      "features": [
-        "256GB Storage",
-        "Super Retina XDR Display",
-        "Quad Camera System"
-      ]
+      "name": "Wooden Fidget Spinner",
+      "price": 3.5,
+      "rating": 2.8
     },
     {
-      "name": "iPhone 16 Mini",
-      "price": 999.99,
-      "rating": 4.2,
-      "features": [
-        "64GB Storage",
-        "Liquid Retina Display",
-        "Dual Camera System"
-      ]
+      "name": "Standard White Fidget Spinner",
+      "price": 1.99,
+      "rating": 3.0
+    },
+    {
+      "name": "Metal Fidget Spinner",
+      "price": 4.75,
+      "rating": 4.0
     }
   ],
   "filtered_products": [
     {
-      "name": "iPhone 16 Pro",
-      "price": 1599.99,
-      "rating": 4.5,
-      "features": [
-        "128GB Storage",
-        "Super Retina XDR Display",
-        "Triple Camera System"
-      ]
+      "name": "Rainbow Fidget Spinner",
+      "price": 4.99,
+      "rating": 4.2
     },
     {
-      "name": "iPhone 16",
-      "price": 1399.99,
-      "rating": 4.3,
-      "features": [
-        "64GB Storage",
-        "Liquid Retina Display",
-        "Dual Camera System"
-      ]
+      "name": "LED Light Fidget Spinner",
+      "price": 5.0,
+      "rating": 3.5
     },
     {
-      "name": "iPhone 16 Pro Max",
-      "price": 1899.99,
-      "rating": 4.7,
-      "features": [
-        "256GB Storage",
-        "Super Retina XDR Display",
-        "Quad Camera System"
-      ]
+      "name": "Standard White Fidget Spinner",
+      "price": 1.99,
+      "rating": 3.0
+    },
+    {
+      "name": "Metal Fidget Spinner",
+      "price": 4.75,
+      "rating": 4.0
     }
   ],
   "top_products": [
     {
-      "name": "iPhone 16 Pro Max",
-      "price": 1899.99,
-      "rating": 4.7,
-      "features": [
-        "256GB Storage",
-        "Super Retina XDR Display",
-        "Quad Camera System"
-      ]
+      "name": "Rainbow Fidget Spinner",
+      "price": 4.99,
+      "rating": 4.2
     },
     {
-      "name": "iPhone 16 Pro",
-      "price": 1599.99,
-      "rating": 4.5,
-      "features": [
-        "128GB Storage",
-        "Super Retina XDR Display",
-        "Triple Camera System"
-      ]
+      "name": "LED Light Fidget Spinner",
+      "price": 5.0,
+      "rating": 3.5
+    },
+    {
+      "name": "Metal Fidget Spinner",
+      "price": 4.75,
+      "rating": 4.0
     }
   ],
   "best_match": {
-    "name": "iPhone 16 Pro Max",
-    "price": 1899.99,
-    "rating": 4.7,
-    "features": [
-      "256GB Storage",
-      "Super Retina XDR Display",
-      "Quad Camera System"
-    ]
+    "name": "Rainbow Fidget Spinner",
+    "price": 4.99,
+    "rating": 4.2
   }
 }

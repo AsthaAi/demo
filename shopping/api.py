@@ -153,42 +153,46 @@ async def process_order(request: OrderRequest):
             criteria={"max_price": 1000, "min_rating": 0}
         )
 
-        # Process the order with payment - properly await the async function
+        # Get available promotions first
+        promotions_result = await shopper.get_available_promotions(
+            product_details=request.product_details,
+            customer_email=request.customer_email
+        )
+
+        # Process the order with payment
         result = await shopper.process_order_with_payment(
             product_details=request.product_details,
             customer_email=request.customer_email
         )
-        print(f"Order processing results: {json.dumps(result, indent=2)}")  # Debug log
 
-        return {
-            "success": True,
-            "result": result
-        }
+        # Add promotions information to the result
+        result["available_promotions"] = promotions_result.get("promotions", [])
+        
+        return result
 
     except Exception as e:
-        print(f"Error in process_order: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing order: {str(e)}"
-        )
+        return {
+            "success": False,
+            "error": f"Error processing order: {str(e)}"
+        }
 
 @app.post("/api/get-promotions")
 async def get_promotions(request: PromotionRequest):
-    # Skipping promotions for now
-    # try:
-    #     shopper = ShopperAI(
-    #         query=request.product_details.get("name", ""),
-    #         criteria={"max_price": 1000, "min_rating": 0}
-    #     )
-    #     promotions = await shopper.get_available_promotions(
-    #         product_details=request.product_details,
-    #         customer_email=request.customer_email
-    #     )
-    #     return {"success": True, "promotions": promotions}
-    # except Exception as e:
-    #     print(f"Error getting promotions: {str(e)}")
-    #     raise HTTPException(status_code=500, detail=f"Error getting promotions: {str(e)}")
-    return {"success": True, "promotions": []}
+    try:
+        shopper = ShopperAI(
+            query=request.product_details.get("name", ""),
+            criteria={"max_price": 1000, "min_rating": 0}
+        )
+        # Use get_available_promotions instead of select_and_apply_promotion
+        result = await shopper.get_available_promotions(
+            product_details=request.product_details,
+            customer_email=request.customer_email
+        )
+        
+        return result
+    except Exception as e:
+        print(f"Error getting promotions: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting promotions: {str(e)}")
 
 @app.post("/api/capture-payment")
 async def capture_payment(request: CapturePaymentRequest):

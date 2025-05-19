@@ -1,5 +1,6 @@
 import { StarIcon, ShoppingCartIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/solid';
 import { Button } from 'flowbite-react';
+import TypeIt from 'typeit-react';
 
 interface Product {
   name: string;
@@ -258,7 +259,7 @@ export default function ChatMessage({
               <p className="text-gray-700 text-sm">{product.description}</p>
             )}
             <div className="flex items-center justify-between pt-2">
-              <p className="text-xl font-bold text-gray-800">{product.price}</p>
+              <p className="text-xl font-bold text-gray-800">${product.price}</p>
               <div className="flex space-x-2">
                 {/* {onComparePrices && (
                   <Button
@@ -312,7 +313,7 @@ export default function ChatMessage({
                     <p className="text-gray-700 text-sm mt-2">{p.description}</p>
                   )}
                   <div className="flex items-center justify-between pt-2">
-                    <p className="text-xl font-bold text-gray-800">{p.price}</p>
+                    <p className="text-xl font-bold text-gray-800">${p.price}</p>
                     <div className="flex space-x-2">
                       {/* {onComparePrices && (
                         <Button
@@ -355,10 +356,21 @@ export default function ChatMessage({
               )}
             </div>
           </div>
+        ) : type === 'assistant' ? (
+          <div className="whitespace-pre-wrap text-gray-800">
+            <TypeIt
+              options={{
+                speed: 35,
+                waitUntilVisible: true,
+                cursor: false,
+                lifeLike: true,
+              }}
+            >
+              {content}
+            </TypeIt>
+          </div>
         ) : (
-          <p className={`whitespace-pre-wrap ${type === 'user' ? 'text-white' : 'text-gray-800'}`}>
-            {content}
-          </p>
+          <p className="whitespace-pre-wrap text-white">{content}</p>
         )}
       </div>
     </div>
