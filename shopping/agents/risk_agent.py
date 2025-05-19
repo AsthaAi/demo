@@ -229,7 +229,18 @@ class RiskAgent(Agent):
                             device_risk, history_risk]
             overall_risk = self._calculate_overall_risk(risk_factors)
 
-            # If user explicitly rejected the risk, revoke PayPal agent
+            # Automatically block/revoke if risk is HIGH or CRITICAL
+            if paypal_agent_id and overall_risk in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
+                print(
+                    f"\n🛑 High-risk transaction detected. Automatically revoking PayPal agent and blocking transaction.")
+                await self._revoke_agent_identity(paypal_agent_id)
+                return {
+                    "status": "revoked",
+                    "message": "Transaction automatically cancelled - PayPal agent revoked due to high risk",
+                    "risk_level": overall_risk.value
+                }
+
+            # If user explicitly rejected the risk, revoke PayPal agent (kept for future use)
             if risk_rejected and paypal_agent_id and overall_risk in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
                 print(
                     f"\n🛑 User rejected high-risk transaction. Revoking PayPal agent...")

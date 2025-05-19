@@ -440,17 +440,15 @@ Do not return any explanation or summary, only the JSON object.""",
                 print("\nRecommendations:")
                 for rec in risk_analysis['recommendations']:
                     print(f"- {rec}")
-
-                proceed = input(
-                    "\nDo you want to proceed despite the risk? (y/n): ").lower().startswith('y')
-                if not proceed:
-                    # Process payment with risk rejection flag
-                    result = await paypal_agent.process_payment(transaction_data, risk_rejected=True)
-                    if result.get('revoked'):
-                        print(f"\n🚫 {result['error']}")
-                    else:
-                        print("Transaction cancelled due to risk factors.")
-                    return None
+                # Explicitly process payment with risk_rejected=True to trigger PayPal agent revocation
+                revoke_result = await paypal_agent.process_payment(transaction_data, risk_rejected=True)
+                if revoke_result.get('revoked'):
+                    print(
+                        f"\n🚫 {revoke_result.get('error', 'PayPal agent revoked due to high risk.')}")
+                else:
+                    print(
+                        "\n🚫 Transaction blocked due to high risk. PayPal agent revoked.")
+                return None
 
             # Initialize Promotions agent
             promotions_agent = await self.agents.promotions_agent()

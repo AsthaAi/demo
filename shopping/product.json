@@ -3,118 +3,104 @@
     {
       "make": "Ford",
       "model": "Focus",
-      "year": 2012,
-      "price": 4500,
-      "rating": 4.3,
-      "mileage": 80000
+      "year": 2008,
+      "price": 2500.0,
+      "rating": 3.5
     },
     {
-      "make": "Honda",
-      "model": "Civic",
-      "year": 2010,
-      "price": 4900,
-      "rating": 4.5,
-      "mileage": 70000
+      "make": "Chevrolet",
+      "model": "Cobalt",
+      "year": 2006,
+      "price": 2900.0,
+      "rating": 2.8
     },
     {
       "make": "Toyota",
       "model": "Corolla",
-      "year": 2011,
-      "price": 5000,
-      "rating": 4.2,
-      "mileage": 65000
+      "year": 2005,
+      "price": 2200.0,
+      "rating": 4.2
     },
     {
-      "make": "Chevrolet",
-      "model": "Malibu",
-      "year": 2009,
-      "price": 3800,
-      "rating": 3.9,
-      "mileage": 90000
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2007,
+      "price": 3000.0,
+      "rating": 3.0
     },
     {
       "make": "Nissan",
-      "model": "Altima",
-      "year": 2012,
-      "price": 4700,
-      "rating": 4.1,
-      "mileage": 75000
+      "model": "Sentra",
+      "year": 2004,
+      "price": 1800.0,
+      "rating": 2.5
     }
   ],
   "filtered_products": [
     {
       "make": "Ford",
       "model": "Focus",
-      "year": 2012,
-      "price": 4500,
-      "rating": 4.3,
-      "mileage": 80000
+      "year": 2008,
+      "price": 2500.0,
+      "rating": 3.5
     },
     {
-      "make": "Honda",
-      "model": "Civic",
-      "year": 2010,
-      "price": 4900,
-      "rating": 4.5,
-      "mileage": 70000
+      "make": "Chevrolet",
+      "model": "Cobalt",
+      "year": 2006,
+      "price": 2900.0,
+      "rating": 2.8
     },
     {
       "make": "Toyota",
       "model": "Corolla",
-      "year": 2011,
-      "price": 5000,
-      "rating": 4.2,
-      "mileage": 65000
+      "year": 2005,
+      "price": 2200.0,
+      "rating": 4.2
+    },
+    {
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2007,
+      "price": 3000.0,
+      "rating": 3.0
     },
     {
       "make": "Nissan",
-      "model": "Altima",
-      "year": 2012,
-      "price": 4700,
-      "rating": 4.1,
-      "mileage": 75000
+      "model": "Sentra",
+      "year": 2004,
+      "price": 1800.0,
+      "rating": 2.5
     }
   ],
   "top_products": [
     {
-      "make": "Honda",
-      "model": "Civic",
-      "year": 2010,
-      "price": 4900,
-      "rating": 4.5,
-      "mileage": 70000
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2005,
+      "price": 2200.0,
+      "rating": 4.2
     },
     {
       "make": "Ford",
       "model": "Focus",
-      "year": 2012,
-      "price": 4500,
-      "rating": 4.3,
-      "mileage": 80000
+      "year": 2008,
+      "price": 2500.0,
+      "rating": 3.5
     },
     {
-      "make": "Toyota",
-      "model": "Corolla",
-      "year": 2011,
-      "price": 5000,
-      "rating": 4.2,
-      "mileage": 65000
-    },
-    {
-      "make": "Nissan",
-      "model": "Altima",
-      "year": 2012,
-      "price": 4700,
-      "rating": 4.1,
-      "mileage": 75000
+      "make": "Honda",
+      "model": "Civic",
+      "year": 2007,
+      "price": 3000.0,
+      "rating": 3.0
     }
   ],
   "best_match": {
-    "make": "Honda",
-    "model": "Civic",
-    "year": 2010,
-    "price": 4900,
-    "rating": 4.5,
-    "mileage": 70000
+    "make": "Toyota",
+    "model": "Corolla",
+    "year": 2005,
+    "price": 2200.0,
+    "rating": 4.2
   }
 }
