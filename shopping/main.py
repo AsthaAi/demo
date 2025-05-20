@@ -881,6 +881,10 @@ Do not return any explanation or summary, only the JSON object.""",
             # Sort history by timestamp
             user_payment_history.sort(key=lambda x: x.get('timestamp', ''))
 
+            # Initialize promotions_agent before use
+            promotions_agent = await self.agents.promotions_agent()
+            await promotions_agent.initialize()
+
             # Analyze shopping history
             analysis_results = await promotions_agent.analyze_shopping_history(
                 user_id,
@@ -1202,7 +1206,7 @@ def main():
 
                     if analysis:
                         # Check for available personalized discounts
-                        promotions_agent = shopper.agents.promotions_agent()
+                        promotions_agent = await shopper.agents.promotions_agent()
                         await promotions_agent.initialize()
 
                         # Use the analyzed history to create a personalized discount
