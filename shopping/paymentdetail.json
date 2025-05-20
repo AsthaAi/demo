@@ -2913,5 +2913,69 @@
       ],
       "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=5GH132735U6554511"
     }
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "29L20666M7567102D",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=29L20666M7567102D",
+    "raw_response": {
+      "id": "29L20666M7567102D",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/29L20666M7567102D",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=29L20666M7567102D",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/29L20666M7567102D",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/29L20666M7567102D/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=29L20666M7567102D"
+    }
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "3J810174UF201801H",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=3J810174UF201801H",
+    "raw_response": {
+      "id": "3J810174UF201801H",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3J810174UF201801H",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=3J810174UF201801H",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3J810174UF201801H",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3J810174UF201801H/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=3J810174UF201801H"
+    }
   }
 ]

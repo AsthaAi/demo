@@ -50,9 +50,49 @@ export default function Promotions({ productDetails, customerEmail, onPromotionS
 
   useEffect(() => {
     if (productDetails && customerEmail) {
-      fetchPromotions();
+      if (selectedPromotion) {
+        // Always use the original price for calculations
+        const basePrice = productDetails.original_price
+          ? parseFloat(productDetails.original_price)
+          : parseFloat(productDetails.price);
+
+        const discountAmount = basePrice * (selectedPromotion.discount_percentage / 100);
+        const discountedPrice = basePrice - discountAmount;
+
+        // Create updated product details
+        const updatedDetails: Product = {
+          ...productDetails,
+          original_price: productDetails.original_price || productDetails.price,
+          price: discountedPrice.toFixed(2),
+          applied_promotion: {
+            name: selectedPromotion.name,
+            discount_percentage: selectedPromotion.discount_percentage,
+            minimum_purchase: selectedPromotion.minimum_purchase,
+            valid_until: selectedPromotion.valid_until
+          }
+        };
+
+        onPromotionSelected(updatedDetails);
+      } else {
+        fetchPromotions();
+      }
     }
-  }, [productDetails, customerEmail]);
+  }, [productDetails, customerEmail, selectedPromotion, onPromotionSelected]);
+
+  const handlePromotionSelect = async (promotion: Promotion) => {
+    setLoading(true);
+    setApplyingPromotion(promotion.id);
+    setError(null);
+    try {
+      setSelectedPromotion(promotion);
+    } catch (err) {
+      setError('Error applying promotion');
+      console.error('Error applying promotion:', err);
+    } finally {
+      setLoading(false);
+      setApplyingPromotion(null);
+    }
+  };
 
   const fetchPromotions = async () => {
     setLoading(true);
@@ -73,43 +113,6 @@ export default function Promotions({ productDetails, customerEmail, onPromotionS
       console.error('Error fetching promotions:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handlePromotionSelect = async (promotion: Promotion) => {
-    setLoading(true);
-    setApplyingPromotion(promotion.id);
-    setError(null);
-    try {
-      // Always use the original price for calculations
-      const basePrice = productDetails.original_price
-        ? parseFloat(productDetails.original_price)
-        : parseFloat(productDetails.price);
-
-      const discountAmount = basePrice * (promotion.discount_percentage / 100);
-      const discountedPrice = basePrice - discountAmount;
-
-      // Create updated product details
-      const updatedDetails: Product = {
-        ...productDetails,
-        original_price: productDetails.original_price || productDetails.price,
-        price: discountedPrice.toFixed(2),
-        applied_promotion: {
-          name: promotion.name,
-          discount_percentage: promotion.discount_percentage,
-          minimum_purchase: promotion.minimum_purchase,
-          valid_until: promotion.valid_until
-        }
-      };
-
-      setSelectedPromotion(promotion);
-      onPromotionSelected(updatedDetails);
-    } catch (err) {
-      setError('Error applying promotion');
-      console.error('Error applying promotion:', err);
-    } finally {
-      setLoading(false);
-      setApplyingPromotion(null);
     }
   };
 

@@ -1,86 +1,196 @@
 {
   "raw_products": [
     {
-      "name": "Colorful Fidget Spinner",
-      "price": 4.99,
-      "rating": 3.5,
-      "link": "http://example.com/product1"
-    },
-    {
-      "name": "LED Light Fidget Spinner",
-      "price": 4.5,
-      "rating": 2.0,
-      "link": "http://example.com/product2"
-    },
-    {
-      "name": "Classic Metal Fidget Spinner",
-      "price": 5.0,
-      "rating": 4.2,
-      "link": "http://example.com/product3"
-    },
-    {
-      "name": "Wooden Fidget Spinner",
-      "price": 3.5,
+      "name": "Samsung Galaxy Watch FE",
+      "price": 2499.99,
       "rating": 4.5,
-      "link": "http://example.com/product4"
+      "features": {
+        "display": "1.4 inches",
+        "battery_life": "40 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate",
+          "Sleep tracking",
+          "Stress monitoring"
+        ]
+      },
+      "url": "https://example.com/product/1"
     },
     {
-      "name": "Plastic Fidget Spinner",
-      "price": 2.99,
+      "name": "Samsung Galaxy Watch FE",
+      "price": 1999.99,
       "rating": 3.0,
-      "link": "http://example.com/product5"
+      "features": {
+        "display": "1.2 inches",
+        "battery_life": "36 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate",
+          "Sleep tracking"
+        ]
+      },
+      "url": "https://example.com/product/2"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE",
+      "price": 2200.0,
+      "rating": 4.8,
+      "features": {
+        "display": "1.5 inches",
+        "battery_life": "48 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate",
+          "Sleep tracking",
+          "ECG",
+          "Blood oxygen"
+        ]
+      },
+      "url": "https://example.com/product/3"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE",
+      "price": 2300.0,
+      "rating": 2.5,
+      "features": {
+        "display": "1.4 inches",
+        "battery_life": "45 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate"
+        ]
+      },
+      "url": "https://example.com/product/4"
     }
   ],
   "filtered_products": [
     {
-      "name": "Colorful Fidget Spinner",
-      "price": 4.99,
-      "rating": 3.5,
-      "link": "http://example.com/product1"
-    },
-    {
-      "name": "Classic Metal Fidget Spinner",
-      "price": 5.0,
-      "rating": 4.2,
-      "link": "http://example.com/product3"
-    },
-    {
-      "name": "Wooden Fidget Spinner",
-      "price": 3.5,
+      "name": "Samsung Galaxy Watch FE",
+      "price": 2499.99,
       "rating": 4.5,
-      "link": "http://example.com/product4"
+      "features": {
+        "display": "1.4 inches",
+        "battery_life": "40 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate",
+          "Sleep tracking",
+          "Stress monitoring"
+        ]
+      },
+      "url": "https://example.com/product/1"
     },
     {
-      "name": "Plastic Fidget Spinner",
-      "price": 2.99,
+      "name": "Samsung Galaxy Watch FE",
+      "price": 1999.99,
       "rating": 3.0,
-      "link": "http://example.com/product5"
+      "features": {
+        "display": "1.2 inches",
+        "battery_life": "36 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate",
+          "Sleep tracking"
+        ]
+      },
+      "url": "https://example.com/product/2"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE",
+      "price": 2200.0,
+      "rating": 4.8,
+      "features": {
+        "display": "1.5 inches",
+        "battery_life": "48 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate",
+          "Sleep tracking",
+          "ECG",
+          "Blood oxygen"
+        ]
+      },
+      "url": "https://example.com/product/3"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE",
+      "price": 2300.0,
+      "rating": 2.5,
+      "features": {
+        "display": "1.4 inches",
+        "battery_life": "45 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate"
+        ]
+      },
+      "url": "https://example.com/product/4"
     }
   ],
   "top_products": [
     {
-      "name": "Wooden Fidget Spinner",
-      "price": 3.5,
+      "name": "Samsung Galaxy Watch FE",
+      "price": 2200.0,
+      "rating": 4.8,
+      "features": {
+        "display": "1.5 inches",
+        "battery_life": "48 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate",
+          "Sleep tracking",
+          "ECG",
+          "Blood oxygen"
+        ]
+      },
+      "url": "https://example.com/product/3"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE",
+      "price": 2499.99,
       "rating": 4.5,
-      "link": "http://example.com/product4"
+      "features": {
+        "display": "1.4 inches",
+        "battery_life": "40 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate",
+          "Sleep tracking",
+          "Stress monitoring"
+        ]
+      },
+      "url": "https://example.com/product/1"
     },
     {
-      "name": "Classic Metal Fidget Spinner",
-      "price": 5.0,
-      "rating": 4.2,
-      "link": "http://example.com/product3"
-    },
-    {
-      "name": "Colorful Fidget Spinner",
-      "price": 4.99,
-      "rating": 3.5,
-      "link": "http://example.com/product1"
+      "name": "Samsung Galaxy Watch FE",
+      "price": 2300.0,
+      "rating": 2.5,
+      "features": {
+        "display": "1.4 inches",
+        "battery_life": "45 hours",
+        "water_resistant": "Yes",
+        "health_tracking": [
+          "Heart rate"
+        ]
+      },
+      "url": "https://example.com/product/4"
     }
   ],
   "best_match": {
-    "name": "Wooden Fidget Spinner",
-    "price": 3.5,
-    "rating": 4.5,
-    "link": "http://example.com/product4"
+    "name": "Samsung Galaxy Watch FE",
+    "price": 2200.0,
+    "rating": 4.8,
+    "features": {
+      "display": "1.5 inches",
+      "battery_life": "48 hours",
+      "water_resistant": "Yes",
+      "health_tracking": [
+        "Heart rate",
+        "Sleep tracking",
+        "ECG",
+        "Blood oxygen"
+      ]
+    },
+    "url": "https://example.com/product/3"
   }
 }
