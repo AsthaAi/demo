@@ -1,93 +1,58 @@
 {
   "raw_products": [
     {
-      "name": "Catnip Toy",
-      "price": 15.99,
+      "name": "Andersen 400 Series Casement Window",
+      "price": 299.99,
       "rating": 4.5
     },
     {
-      "name": "Scratching Post",
-      "price": 39.99,
-      "rating": 3.8
-    },
-    {
-      "name": "Cat Bed",
-      "price": 29.99,
+      "name": "Pella 250 Series Double-Hung Window",
+      "price": 320.0,
       "rating": 4.0
     },
     {
-      "name": "Cat Bowl",
-      "price": 10.49,
-      "rating": 2.9
-    },
-    {
-      "name": "Laser Pointer",
-      "price": 8.99,
-      "rating": 4.1
-    },
-    {
-      "name": "Automatic Feeder",
-      "price": 44.99,
-      "rating": 5.0
-    },
-    {
-      "name": "Cat Leash",
-      "price": 25.0,
+      "name": "Milgard Tuscany Vinyl Window",
+      "price": 315.0,
       "rating": 3.5
+    },
+    {
+      "name": "Simonton Madeira Slider Window",
+      "price": 250.0,
+      "rating": 2.9
     }
   ],
   "filtered_products": [
     {
-      "name": "Catnip Toy",
-      "price": 15.99,
+      "name": "Andersen 400 Series Casement Window",
+      "price": 299.99,
       "rating": 4.5
     },
     {
-      "name": "Scratching Post",
-      "price": 39.99,
-      "rating": 3.8
-    },
-    {
-      "name": "Cat Bed",
-      "price": 29.99,
+      "name": "Pella 250 Series Double-Hung Window",
+      "price": 320.0,
       "rating": 4.0
     },
     {
-      "name": "Laser Pointer",
-      "price": 8.99,
-      "rating": 4.1
-    },
-    {
-      "name": "Automatic Feeder",
-      "price": 44.99,
-      "rating": 5.0
-    },
-    {
-      "name": "Cat Leash",
-      "price": 25.0,
+      "name": "Milgard Tuscany Vinyl Window",
+      "price": 315.0,
       "rating": 3.5
     }
   ],
   "top_products": [
     {
-      "name": "Automatic Feeder",
-      "price": 44.99,
-      "rating": 5.0
-    },
-    {
-      "name": "Catnip Toy",
-      "price": 15.99,
+      "name": "Andersen 400 Series Casement Window",
+      "price": 299.99,
       "rating": 4.5
     },
     {
-      "name": "Cat Bed",
-      "price": 29.99,
+      "name": "Pella 250 Series Double-Hung Window",
+      "price": 320.0,
       "rating": 4.0
     }
   ],
   "best_match": {
-    "name": "Automatic Feeder",
-    "price": 44.99,
-    "rating": 5.0
+    "name": "Andersen 400 Series Casement Window",
+    "price": 299.99,
+    "rating": 4.5
   }
 }

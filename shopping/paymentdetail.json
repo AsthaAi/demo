@@ -2649,5 +2649,141 @@
     "error": "Order status is COMPLETED, not APPROVED",
     "status": "COMPLETED",
     "paypal_order_id": "65K36477VH3305620"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "75C28381X9141315P",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=75C28381X9141315P",
+    "raw_response": {
+      "id": "75C28381X9141315P",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/75C28381X9141315P",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=75C28381X9141315P",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/75C28381X9141315P",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/75C28381X9141315P/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=75C28381X9141315P"
+    }
+  },
+  {
+    "action": "capture_payment",
+    "capture_result": {
+      "id": "75C28381X9141315P",
+      "status": "COMPLETED",
+      "payment_source": {
+        "paypal": {
+          "email_address": "somit.shrestha-buyer@gmail.com",
+          "account_id": "J9USWEQHQTPHW",
+          "account_status": "VERIFIED",
+          "name": {
+            "given_name": "test",
+            "surname": "buyer"
+          },
+          "address": {
+            "country_code": "US"
+          }
+        }
+      },
+      "purchase_units": [
+        {
+          "reference_id": "ORDER_1747719225_0cac8315",
+          "payments": {
+            "captures": [
+              {
+                "id": "5E663497KN4389832",
+                "status": "COMPLETED",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "2800.00"
+                },
+                "final_capture": true,
+                "seller_protection": {
+                  "status": "ELIGIBLE",
+                  "dispute_categories": [
+                    "ITEM_NOT_RECEIVED",
+                    "UNAUTHORIZED_TRANSACTION"
+                  ]
+                },
+                "seller_receivable_breakdown": {
+                  "gross_amount": {
+                    "currency_code": "USD",
+                    "value": "2800.00"
+                  },
+                  "paypal_fee": {
+                    "currency_code": "USD",
+                    "value": "98.21"
+                  },
+                  "net_amount": {
+                    "currency_code": "USD",
+                    "value": "2701.79"
+                  }
+                },
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/5E663497KN4389832",
+                    "rel": "self",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/5E663497KN4389832/refund",
+                    "rel": "refund",
+                    "method": "POST"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/75C28381X9141315P",
+                    "rel": "up",
+                    "method": "GET"
+                  }
+                ],
+                "create_time": "2025-05-20T05:34:57Z",
+                "update_time": "2025-05-20T05:34:57Z"
+              }
+            ]
+          }
+        }
+      ],
+      "payer": {
+        "name": {
+          "given_name": "test",
+          "surname": "buyer"
+        },
+        "email_address": "somit.shrestha-buyer@gmail.com",
+        "payer_id": "J9USWEQHQTPHW",
+        "address": {
+          "country_code": "US"
+        }
+      },
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/75C28381X9141315P",
+          "rel": "self",
+          "method": "GET"
+        }
+      ]
+    },
+    "paypal_order_id": "75C28381X9141315P"
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is COMPLETED, not APPROVED",
+    "status": "COMPLETED",
+    "paypal_order_id": "75C28381X9141315P"
   }
 ]

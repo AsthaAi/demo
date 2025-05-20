@@ -213,7 +213,8 @@ class PayPalAgent(Agent):
                     print(f"✅ Extracted AZTP ID: {self.aztp.aztp_id}")
             else:
                 raise ValueError(
-                    "Failed to verify identity for agent: PayPal Agent")
+                    "Failed to verify identity for agent: PayPal Agent\nAZTP-ID-E-001 - Identity has been revoked"
+                )
 
             # Verify payment processing access before proceeding
             print(
