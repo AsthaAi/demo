@@ -10,6 +10,7 @@ import SearchForm from '@/components/SearchForm';
 import SearchResults from '@/components/SearchResults';
 import Promotions from '../components/Promotions';
 import PaymentModal from '../components/PaymentModal';
+import Link from 'next/link';
 
 interface Product {
   name: string;
@@ -622,7 +623,7 @@ export default function Home() {
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-700">
               <SparklesIcon className="h-5 w-5 text-yellow-400" />
-              <span>Powered by astha.ai</span>
+              <span>Powered by <Link href="https://astha.ai" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">astha.ai</Link></span>
             </div>
           </div>
         </div>

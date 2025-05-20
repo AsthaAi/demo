@@ -1,73 +1,138 @@
 {
   "raw_products": [
     {
-      "name": "Rainbow Fidget Spinner",
-      "price": 4.99,
-      "rating": 4.2
+      "name": "Samsung Galaxy Watch FE",
+      "price": 1999.99,
+      "rating": 4.5,
+      "features": [
+        "Heart Rate Monitor",
+        "GPS",
+        "Water Resistant"
+      ]
     },
     {
-      "name": "LED Light Fidget Spinner",
-      "price": 5.0,
-      "rating": 3.5
+      "name": "Samsung Galaxy Watch FE - Sports Edition",
+      "price": 1599.99,
+      "rating": 4.3,
+      "features": [
+        "Fitness Tracking",
+        "Bluetooth",
+        "Customizable Watch Faces"
+      ]
     },
     {
-      "name": "Wooden Fidget Spinner",
-      "price": 3.5,
-      "rating": 2.8
+      "name": "Samsung Galaxy Watch FE - Classic",
+      "price": 1800.0,
+      "rating": 4.0,
+      "features": [
+        "Stylish Design",
+        "Long Battery Life",
+        "Sleep Tracking"
+      ]
     },
     {
-      "name": "Standard White Fidget Spinner",
-      "price": 1.99,
-      "rating": 3.0
+      "name": "Samsung Galaxy Watch FE - Kids Edition",
+      "price": 1200.0,
+      "rating": 3.5,
+      "features": [
+        "Parental Controls",
+        "Location Tracking",
+        "Colorful Bands"
+      ]
     },
     {
-      "name": "Metal Fidget Spinner",
-      "price": 4.75,
-      "rating": 4.0
+      "name": "Samsung Galaxy Watch FE - Limited Edition",
+      "price": 2100.0,
+      "rating": 4.8,
+      "features": [
+        "Luxury Design",
+        "Exclusive Features",
+        "Premium Materials"
+      ]
     }
   ],
   "filtered_products": [
     {
-      "name": "Rainbow Fidget Spinner",
-      "price": 4.99,
-      "rating": 4.2
+      "name": "Samsung Galaxy Watch FE",
+      "price": 1999.99,
+      "rating": 4.5,
+      "features": [
+        "Heart Rate Monitor",
+        "GPS",
+        "Water Resistant"
+      ]
     },
     {
-      "name": "LED Light Fidget Spinner",
-      "price": 5.0,
-      "rating": 3.5
+      "name": "Samsung Galaxy Watch FE - Sports Edition",
+      "price": 1599.99,
+      "rating": 4.3,
+      "features": [
+        "Fitness Tracking",
+        "Bluetooth",
+        "Customizable Watch Faces"
+      ]
     },
     {
-      "name": "Standard White Fidget Spinner",
-      "price": 1.99,
-      "rating": 3.0
+      "name": "Samsung Galaxy Watch FE - Classic",
+      "price": 1800.0,
+      "rating": 4.0,
+      "features": [
+        "Stylish Design",
+        "Long Battery Life",
+        "Sleep Tracking"
+      ]
     },
     {
-      "name": "Metal Fidget Spinner",
-      "price": 4.75,
-      "rating": 4.0
+      "name": "Samsung Galaxy Watch FE - Kids Edition",
+      "price": 1200.0,
+      "rating": 3.5,
+      "features": [
+        "Parental Controls",
+        "Location Tracking",
+        "Colorful Bands"
+      ]
     }
   ],
   "top_products": [
     {
-      "name": "Rainbow Fidget Spinner",
-      "price": 4.99,
-      "rating": 4.2
+      "name": "Samsung Galaxy Watch FE",
+      "price": 1999.99,
+      "rating": 4.5,
+      "features": [
+        "Heart Rate Monitor",
+        "GPS",
+        "Water Resistant"
+      ]
     },
     {
-      "name": "LED Light Fidget Spinner",
-      "price": 5.0,
-      "rating": 3.5
+      "name": "Samsung Galaxy Watch FE - Sports Edition",
+      "price": 1599.99,
+      "rating": 4.3,
+      "features": [
+        "Fitness Tracking",
+        "Bluetooth",
+        "Customizable Watch Faces"
+      ]
     },
     {
-      "name": "Metal Fidget Spinner",
-      "price": 4.75,
-      "rating": 4.0
+      "name": "Samsung Galaxy Watch FE - Classic",
+      "price": 1800.0,
+      "rating": 4.0,
+      "features": [
+        "Stylish Design",
+        "Long Battery Life",
+        "Sleep Tracking"
+      ]
     }
   ],
   "best_match": {
-    "name": "Rainbow Fidget Spinner",
-    "price": 4.99,
-    "rating": 4.2
+    "name": "Samsung Galaxy Watch FE",
+    "price": 1999.99,
+    "rating": 4.5,
+    "features": [
+      "Heart Rate Monitor",
+      "GPS",
+      "Water Resistant"
+    ]
   }
 }
