@@ -1472,8 +1472,253 @@ def main():
     # Run the async main function
     asyncio.run(run_async())
 
-
 async def search_and_buy_products():
+    """Handle the product search and purchase flow"""
+    # Get search criteria from user
+    query = input("\nWhat would you like to search for? ")
+
+    # Ask for maximum price separately
+    while True:
+        try:
+            max_price_input = input("Maximum price (in USD): ")
+            max_price = float(max_price_input)
+            break
+        except ValueError:
+            print("Please enter a valid number for the maximum price.")
+
+    # Ask for minimum rating separately
+    while True:
+        try:
+            min_rating_input = input("Minimum rating (0-5): ")
+            min_rating = float(min_rating_input)
+            if 0 <= min_rating <= 5:
+                break
+            else:
+                print("Rating must be between 0 and 5.")
+        except ValueError:
+            print("Please enter a valid number for the minimum rating.")
+
+    # Initialize ShopperAI
+    shopper = ShopperAI(
+        query, {"max_price": max_price, "min_rating": min_rating})
+
+    # Run research phase
+    print("\nSearching for products...")
+    research_results = await shopper.run_research()
+
+    # Extract and display products
+    products = []
+    best = None
+    if isinstance(research_results, dict):
+        if research_results.get("best_match") and research_results["best_match"]:
+            best = research_results["best_match"]
+            products = [best]
+        elif research_results.get("top_products") and research_results["top_products"]:
+            products = research_results["top_products"]
+        elif research_results.get("filtered_products") and research_results["filtered_products"]:
+            products = research_results["filtered_products"]
+        elif research_results.get("raw_products") and research_results["raw_products"]:
+            products = research_results["raw_products"]
+
+    if best:
+        print("\nBest Match:")
+        print(f"Name: {best.get('name', best.get('title', ''))}")
+        print(f"Price: {best.get('price', '')}")
+        print(f"Rating: {best.get('rating', '')}")
+
+        # Ask if user wants to proceed with payment
+        proceed_payment = input(
+            "\nWould you like to proceed with payment? (y/n): ").lower()
+        if proceed_payment == 'y':
+            # Get merchant/business email
+            payee_email = input(
+                "\nPlease enter the merchant/business PayPal email address to receive payment: ")
+
+            # Process order with payment
+            print("\nProcessing order with PayPal...")
+            try:
+                # Prepare product details for payment
+                product_details = {
+                    "name": best.get('name', best.get('title', 'Unknown Product')),
+                    "price": best.get('price', '0.00'),
+                    "quantity": 1,
+                    "description": best.get('description', ''),
+                    "payee_email": payee_email
+                }
+
+                # Process the order with payment
+                payment_result = await shopper.process_order_with_payment(product_details, payee_email)
+
+                # Only show real PayPal order ID and approval URL
+                if isinstance(payment_result, dict):
+                    paypal_order_id = payment_result.get("id")
+
+                    # Get approval URL from links
+                    approval_url = None
+                    for link in payment_result.get('links', []):
+                        if link.get('rel') == 'approve':
+                            approval_url = link.get('href')
+                            break
+
+                    if paypal_order_id:
+                        print(f"\nOrder ID: {paypal_order_id}")
+                    if approval_url:
+                        print(
+                            f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
+                        print("\nInstructions:")
+                        print("1. Open the above URL in your browser.")
+                        print("2. Log in with your PayPal sandbox buyer account.")
+                        print("3. Approve the payment to complete your order.")
+
+                    # Wait for user to complete payment
+                    input(
+                        "\nPress Enter after completing the payment in your browser...")
+
+                    # Capture the payment
+                    if paypal_order_id:
+                        try:
+                            # Initialize a new PayPal agent for capture
+                            paypal_agent = await shopper.agents.paypal_agent()
+                            await paypal_agent.initialize()
+                            capture_result = await paypal_agent.capture_payment(paypal_order_id)
+                            if capture_result:
+                                if capture_result.get('status') == 'COMPLETED':
+                                    print(
+                                        "\nPayment captured successfully!")
+                                    print(
+                                        f"Transaction ID: {capture_result.get('id')}")
+                                    print(
+                                        f"Status: {capture_result.get('status')}")
+                                else:
+                                    print(
+                                        "\nPayment capture failed or is incomplete.")
+                                    print(
+                                        f"Status: {capture_result.get('status')}")
+                        except Exception as e:
+                            print(f"\nError capturing payment: {str(e)}")
+                else:
+                    print(f"\nOrder processing failed: {payment_result}")
+            except Exception as e:
+                print(f"\nError processing payment: {str(e)}")
+
+    elif products:
+        print("\nFound the following products:")
+        print("\n{:<40} {:<10} {:<10}".format(
+            "Product", "Price", "Rating"))
+        print("-" * 80)
+        for product in products:
+            name = product.get("name", product.get("title", "Unknown"))
+            price = product.get("price", "N/A")
+            rating = product.get("rating", "N/A")
+            print("{:<40} {:<10} {:<10}".format(
+                name[:37] + "..." if len(name) > 37 else name,
+                price,
+                rating
+            ))
+
+        # Ask user to select a product for purchase
+        while True:
+            try:
+                selection = input(
+                    "\nEnter the number of the product you want to purchase (1-{}) or 0 to cancel: ".format(len(products)))
+                if selection == '0':
+                    break
+
+                idx = int(selection) - 1
+                if 0 <= idx < len(products):
+                    selected_product = products[idx]
+
+                    # Ask if user wants to proceed with payment
+                    proceed_payment = input(
+                        "\nWould you like to proceed with payment? (y/n): ").lower()
+                    if proceed_payment == 'y':
+                        # Get merchant/business email
+                        payee_email = input(
+                            "\nPlease enter the merchant/business PayPal email address to receive payment: ")
+
+                        # Process order with payment
+                        print("\nProcessing order with PayPal...")
+                        try:
+                            # Prepare product details for payment
+                            product_details = {
+                                "name": selected_product.get('name', selected_product.get('title', 'Unknown Product')),
+                                "price": selected_product.get('price', '0.00'),
+                                "quantity": 1,
+                                "description": selected_product.get('description', ''),
+                                "payee_email": payee_email
+                            }
+
+                            # Process the order with payment
+                            payment_result = await shopper.process_order_with_payment(product_details, payee_email)
+
+                            # Only show real PayPal order ID and approval URL
+                            if isinstance(payment_result, dict):
+                                paypal_order_id = payment_result.get("id")
+
+                                # Get approval URL from links
+                                approval_url = None
+                                for link in payment_result.get('links', []):
+                                    if link.get('rel') == 'approve':
+                                        approval_url = link.get('href')
+                                        break
+
+                                if paypal_order_id:
+                                    print(f"\nOrder ID: {paypal_order_id}")
+                                if approval_url:
+                                    print(
+                                        f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
+                                    print("\nInstructions:")
+                                    print(
+                                        "1. Open the above URL in your browser.")
+                                    print(
+                                        "2. Log in with your PayPal sandbox buyer account.")
+                                    print(
+                                        "3. Approve the payment to complete your order.")
+
+                                # Wait for user to complete payment
+                                input(
+                                    "\nPress Enter after completing the payment in your browser...")
+
+                                # Capture the payment
+                                if paypal_order_id:
+                                    try:
+                                        # Initialize a new PayPal agent for capture
+                                        paypal_agent = await shopper.agents.paypal_agent()
+                                        await paypal_agent.initialize()
+                                        capture_result = await paypal_agent.capture_payment(paypal_order_id)
+                                        if capture_result:
+                                            if capture_result.get('status') == 'COMPLETED':
+                                                print(
+                                                    "\nPayment captured successfully!")
+                                                print(
+                                                    f"Transaction ID: {capture_result.get('id')}")
+                                                print(
+                                                    f"Status: {capture_result.get('status')}")
+                                            else:
+                                                print(
+                                                    "\nPayment capture failed or is incomplete.")
+                                                print(
+                                                    f"Status: {capture_result.get('status')}")
+                                    except Exception as e:
+                                        print(
+                                            f"\nError capturing payment: {str(e)}")
+                            else:
+                                print(
+                                    f"\nOrder processing failed: {payment_result}")
+                        except Exception as e:
+                            print(f"\nError processing payment: {str(e)}")
+                    break
+                else:
+                    print("\nInvalid selection. Please try again.")
+            except ValueError:
+                print("\nPlease enter a valid number.")
+
+    # After payment processing
+    read_latest_payment_detail()
+    print("\nThank you for using ShopperAI!")
+
+
+async def search_and_buy_products_api():
     """Handle the product search and purchase flow"""
     # Get search criteria from user
     shopper = ShopperAI("", {})

@@ -2785,5 +2785,69 @@
     "error": "Order status is COMPLETED, not APPROVED",
     "status": "COMPLETED",
     "paypal_order_id": "75C28381X9141315P"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "7F965867EW198792S",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=7F965867EW198792S",
+    "raw_response": {
+      "id": "7F965867EW198792S",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/7F965867EW198792S",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=7F965867EW198792S",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/7F965867EW198792S",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/7F965867EW198792S/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=7F965867EW198792S"
+    }
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "878266056N8670125",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=878266056N8670125",
+    "raw_response": {
+      "id": "878266056N8670125",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/878266056N8670125",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=878266056N8670125",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/878266056N8670125",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/878266056N8670125/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=878266056N8670125"
+    }
   }
 ]

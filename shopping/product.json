@@ -1,6 +1,140 @@
 {
-  "raw_products": [],
-  "filtered_products": [],
-  "top_products": [],
-  "best_match": null
+  "raw_products": [
+    {
+      "name": "Samsung Galaxy Watch FE",
+      "price": 1999.99,
+      "rating": 4.5,
+      "features": [
+        "Fitness tracking",
+        "Heart rate monitor",
+        "GPS"
+      ],
+      "availability": "In Stock"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE 40mm",
+      "price": 1899.99,
+      "rating": 4.1,
+      "features": [
+        "Sleep tracking",
+        "Hands-free calling",
+        "Water resistant"
+      ],
+      "availability": "In Stock"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE 44mm",
+      "price": 1999.0,
+      "rating": 4.3,
+      "features": [
+        "Long battery life",
+        "Customizable watch faces",
+        "Notifications"
+      ],
+      "availability": "Limited Stock"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE Bluetooth",
+      "price": 1799.99,
+      "rating": 4.0,
+      "features": [
+        "Bluetooth connectivity",
+        "Voice assistant",
+        "Fitness coaching"
+      ],
+      "availability": "In Stock"
+    }
+  ],
+  "filtered_products": [
+    {
+      "name": "Samsung Galaxy Watch FE",
+      "price": 1999.99,
+      "rating": 4.5,
+      "features": [
+        "Fitness tracking",
+        "Heart rate monitor",
+        "GPS"
+      ],
+      "availability": "In Stock"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE 40mm",
+      "price": 1899.99,
+      "rating": 4.1,
+      "features": [
+        "Sleep tracking",
+        "Hands-free calling",
+        "Water resistant"
+      ],
+      "availability": "In Stock"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE 44mm",
+      "price": 1999.0,
+      "rating": 4.3,
+      "features": [
+        "Long battery life",
+        "Customizable watch faces",
+        "Notifications"
+      ],
+      "availability": "Limited Stock"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE Bluetooth",
+      "price": 1799.99,
+      "rating": 4.0,
+      "features": [
+        "Bluetooth connectivity",
+        "Voice assistant",
+        "Fitness coaching"
+      ],
+      "availability": "In Stock"
+    }
+  ],
+  "top_products": [
+    {
+      "name": "Samsung Galaxy Watch FE",
+      "price": 1999.99,
+      "rating": 4.5,
+      "features": [
+        "Fitness tracking",
+        "Heart rate monitor",
+        "GPS"
+      ],
+      "availability": "In Stock"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE 44mm",
+      "price": 1999.0,
+      "rating": 4.3,
+      "features": [
+        "Long battery life",
+        "Customizable watch faces",
+        "Notifications"
+      ],
+      "availability": "Limited Stock"
+    },
+    {
+      "name": "Samsung Galaxy Watch FE 40mm",
+      "price": 1899.99,
+      "rating": 4.1,
+      "features": [
+        "Sleep tracking",
+        "Hands-free calling",
+        "Water resistant"
+      ],
+      "availability": "In Stock"
+    }
+  ],
+  "best_match": {
+    "name": "Samsung Galaxy Watch FE",
+    "price": 1999.99,
+    "rating": 4.5,
+    "features": [
+      "Fitness tracking",
+      "Heart rate monitor",
+      "GPS"
+    ],
+    "availability": "In Stock"
+  }
 }
