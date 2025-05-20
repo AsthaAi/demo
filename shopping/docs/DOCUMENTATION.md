@@ -9,7 +9,7 @@ ShopperAI is an intelligent shopping assistant that helps users find and analyze
 1. **Search and Buy Products**
 
    - Search for products with specific criteria
-   - Compare prices and features
+   - Compare prices and features _(currently disabled)_
    - Apply available promotions
    - Complete purchase with PayPal integration
 
@@ -31,7 +31,7 @@ ShopperAI is an intelligent shopping assistant that helps users find and analyze
    - Request refunds
    - Access FAQ help
    - Create support tickets
-   - Track support requests
+   - _Note: Tracking support tickets by ID is not yet available. Users receive a confirmation ID when creating a ticket._
 
 ## Customer Support Options
 
@@ -69,6 +69,7 @@ Process:
 - Choose priority level (Low/Medium/High)
 - Provide detailed description
 - Receive ticket confirmation with tracking number
+- _Note: There is currently no feature to track ticket status by ID. Please keep your confirmation for reference._
 
 ## Product Search and Purchase Flow
 
@@ -87,10 +88,7 @@ Process:
 
 3. **Price Comparison**
 
-   - Compare prices across products
-   - View shipping costs
-   - See total cost calculations
-   - Check available discounts
+   - _Currently disabled/not available in the CLI._
 
 4. **Promotions**
 
@@ -153,6 +151,7 @@ Process:
 ### Customer Support
 
 - Refunds, FAQ, and support tickets are handled by CustomerSupportAgent, with secure identity and access checks.
+- _Tracking support tickets by ID is not yet available._
 
 ## Security and Compliance
 
@@ -189,6 +188,7 @@ Process:
 - **Dynamic Promotions:** Users see available promotions and can select one before payment.
 - **Risk Warnings:** Users are warned of high-risk transactions and can choose to proceed or cancel.
 - **Support:** Users can request refunds, get FAQ help, or create support tickets, all handled securely.
+- _Support ticket tracking is not available yet; keep your confirmation ID for reference._
 
 ### Example CLI Flow
 
