@@ -1,140 +1,86 @@
 {
   "raw_products": [
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 1999.99,
+      "name": "Colorful Fidget Spinner",
+      "price": 4.99,
+      "rating": 3.5,
+      "link": "http://example.com/product1"
+    },
+    {
+      "name": "LED Light Fidget Spinner",
+      "price": 4.5,
+      "rating": 2.0,
+      "link": "http://example.com/product2"
+    },
+    {
+      "name": "Classic Metal Fidget Spinner",
+      "price": 5.0,
+      "rating": 4.2,
+      "link": "http://example.com/product3"
+    },
+    {
+      "name": "Wooden Fidget Spinner",
+      "price": 3.5,
       "rating": 4.5,
-      "features": [
-        "Fitness tracking",
-        "Heart rate monitor",
-        "GPS"
-      ],
-      "availability": "In Stock"
+      "link": "http://example.com/product4"
     },
     {
-      "name": "Samsung Galaxy Watch FE 40mm",
-      "price": 1899.99,
-      "rating": 4.1,
-      "features": [
-        "Sleep tracking",
-        "Hands-free calling",
-        "Water resistant"
-      ],
-      "availability": "In Stock"
-    },
-    {
-      "name": "Samsung Galaxy Watch FE 44mm",
-      "price": 1999.0,
-      "rating": 4.3,
-      "features": [
-        "Long battery life",
-        "Customizable watch faces",
-        "Notifications"
-      ],
-      "availability": "Limited Stock"
-    },
-    {
-      "name": "Samsung Galaxy Watch FE Bluetooth",
-      "price": 1799.99,
-      "rating": 4.0,
-      "features": [
-        "Bluetooth connectivity",
-        "Voice assistant",
-        "Fitness coaching"
-      ],
-      "availability": "In Stock"
+      "name": "Plastic Fidget Spinner",
+      "price": 2.99,
+      "rating": 3.0,
+      "link": "http://example.com/product5"
     }
   ],
   "filtered_products": [
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 1999.99,
+      "name": "Colorful Fidget Spinner",
+      "price": 4.99,
+      "rating": 3.5,
+      "link": "http://example.com/product1"
+    },
+    {
+      "name": "Classic Metal Fidget Spinner",
+      "price": 5.0,
+      "rating": 4.2,
+      "link": "http://example.com/product3"
+    },
+    {
+      "name": "Wooden Fidget Spinner",
+      "price": 3.5,
       "rating": 4.5,
-      "features": [
-        "Fitness tracking",
-        "Heart rate monitor",
-        "GPS"
-      ],
-      "availability": "In Stock"
+      "link": "http://example.com/product4"
     },
     {
-      "name": "Samsung Galaxy Watch FE 40mm",
-      "price": 1899.99,
-      "rating": 4.1,
-      "features": [
-        "Sleep tracking",
-        "Hands-free calling",
-        "Water resistant"
-      ],
-      "availability": "In Stock"
-    },
-    {
-      "name": "Samsung Galaxy Watch FE 44mm",
-      "price": 1999.0,
-      "rating": 4.3,
-      "features": [
-        "Long battery life",
-        "Customizable watch faces",
-        "Notifications"
-      ],
-      "availability": "Limited Stock"
-    },
-    {
-      "name": "Samsung Galaxy Watch FE Bluetooth",
-      "price": 1799.99,
-      "rating": 4.0,
-      "features": [
-        "Bluetooth connectivity",
-        "Voice assistant",
-        "Fitness coaching"
-      ],
-      "availability": "In Stock"
+      "name": "Plastic Fidget Spinner",
+      "price": 2.99,
+      "rating": 3.0,
+      "link": "http://example.com/product5"
     }
   ],
   "top_products": [
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 1999.99,
+      "name": "Wooden Fidget Spinner",
+      "price": 3.5,
       "rating": 4.5,
-      "features": [
-        "Fitness tracking",
-        "Heart rate monitor",
-        "GPS"
-      ],
-      "availability": "In Stock"
+      "link": "http://example.com/product4"
     },
     {
-      "name": "Samsung Galaxy Watch FE 44mm",
-      "price": 1999.0,
-      "rating": 4.3,
-      "features": [
-        "Long battery life",
-        "Customizable watch faces",
-        "Notifications"
-      ],
-      "availability": "Limited Stock"
+      "name": "Classic Metal Fidget Spinner",
+      "price": 5.0,
+      "rating": 4.2,
+      "link": "http://example.com/product3"
     },
     {
-      "name": "Samsung Galaxy Watch FE 40mm",
-      "price": 1899.99,
-      "rating": 4.1,
-      "features": [
-        "Sleep tracking",
-        "Hands-free calling",
-        "Water resistant"
-      ],
-      "availability": "In Stock"
+      "name": "Colorful Fidget Spinner",
+      "price": 4.99,
+      "rating": 3.5,
+      "link": "http://example.com/product1"
     }
   ],
   "best_match": {
-    "name": "Samsung Galaxy Watch FE",
-    "price": 1999.99,
+    "name": "Wooden Fidget Spinner",
+    "price": 3.5,
     "rating": 4.5,
-    "features": [
-      "Fitness tracking",
-      "Heart rate monitor",
-      "GPS"
-    ],
-    "availability": "In Stock"
+    "link": "http://example.com/product4"
   }
 }

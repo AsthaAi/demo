@@ -609,6 +609,16 @@ Do not return any explanation or summary, only the JSON object.""",
                     break
 
             if approval_url:
+                if order_data.get('id'):
+                    print("\nPayment captured successfully!")
+                    set_demo_tracker_default_false()
+                else:
+                    print("\nPayment failed. Please try again.")
+                    return {
+                        "success": False,
+                        "error": "Payment failed. Please try again."
+                    }
+                    
                 return {
                     "success": True,
                     "order_data": order_data,
