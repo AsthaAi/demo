@@ -1,6 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Button, Spinner } from 'flowbite-react';
-import { TagIcon } from '@heroicons/react/24/outline';
+import { 
+  TagIcon, 
+  ExclamationCircleIcon, 
+  CheckCircleIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
+  InformationCircleIcon
+} from '@heroicons/react/24/outline';
 import axios from 'axios';
 
 interface Promotion {
@@ -36,6 +43,7 @@ interface PromotionsProps {
 
 export default function Promotions({ productDetails, customerEmail, onPromotionSelected }: PromotionsProps) {
   const [loading, setLoading] = useState(false);
+  const [applyingPromotion, setApplyingPromotion] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [availablePromotions, setAvailablePromotions] = useState<Promotion[]>([]);
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
@@ -70,6 +78,7 @@ export default function Promotions({ productDetails, customerEmail, onPromotionS
 
   const handlePromotionSelect = async (promotion: Promotion) => {
     setLoading(true);
+    setApplyingPromotion(promotion.id);
     setError(null);
     try {
       // Always use the original price for calculations
@@ -100,10 +109,11 @@ export default function Promotions({ productDetails, customerEmail, onPromotionS
       console.error('Error applying promotion:', err);
     } finally {
       setLoading(false);
+      setApplyingPromotion(null);
     }
   };
 
-  if (loading) {
+  if (loading && !applyingPromotion) {
     return (
       <div className="flex items-center justify-center p-4">
         <Spinner size="sm" />
@@ -114,8 +124,9 @@ export default function Promotions({ productDetails, customerEmail, onPromotionS
 
   if (error) {
     return (
-      <div className="p-4 text-red-600 bg-red-50 rounded-lg">
-        {error}
+      <div className="p-4 text-red-600 bg-red-50 rounded-lg flex items-start">
+        <ExclamationCircleIcon className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+        <div className="whitespace-pre-line">{error}</div>
       </div>
     );
   }
@@ -130,7 +141,6 @@ export default function Promotions({ productDetails, customerEmail, onPromotionS
       {availablePromotions.length > 0 ? (
         <div className="space-y-3">
           {availablePromotions.map((promotion) => {
-            // Use original_price if available, otherwise fallback to price
             const basePrice = productDetails.original_price
               ? parseFloat(productDetails.original_price)
               : parseFloat(productDetails.price);
@@ -144,20 +154,26 @@ export default function Promotions({ productDetails, customerEmail, onPromotionS
                 <div className="flex justify-between items-start">
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900">{promotion.name}</h4>
-                    <p className="text-green-600 font-medium">
-                      {promotion.discount_percentage}% off
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Minimum purchase: ${promotion.minimum_purchase}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Valid until: {new Date(promotion.valid_until).toLocaleDateString()}
-                    </p>
-                    {isEligible && (
-                      <p className="text-sm text-green-600 mt-2">
-                        You save: ${discountAmount.toFixed(2)} (New price: ${discountedPrice.toFixed(2)})
+                    <div className="space-y-1 mt-2">
+                      <p className="text-green-600 font-medium flex items-center">
+                        <CurrencyDollarIcon className="w-4 h-4 mr-1" />
+                        {promotion.discount_percentage}% off
                       </p>
-                    )}
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <CurrencyDollarIcon className="w-4 h-4 mr-1" />
+                        Minimum purchase: ${promotion.minimum_purchase}
+                      </p>
+                      <p className="text-sm text-gray-600 flex items-center">
+                        <ClockIcon className="w-4 h-4 mr-1" />
+                        Valid until: {new Date(promotion.valid_until).toLocaleDateString()}
+                      </p>
+                      {isEligible && (
+                        <p className="text-sm text-green-600 mt-2 flex items-center">
+                          <CurrencyDollarIcon className="w-4 h-4 mr-1" />
+                          You save: ${discountAmount.toFixed(2)} (New price: ${discountedPrice.toFixed(2)})
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <Button
                     size="sm"
@@ -167,14 +183,27 @@ export default function Promotions({ productDetails, customerEmail, onPromotionS
                       selectedPromotion?.id === promotion.id
                         ? 'bg-green-500 hover:bg-green-600'
                         : 'bg-blue-500 hover:bg-blue-600'
-                    }`}
+                    } min-w-[100px]`}
                   >
-                    {selectedPromotion?.id === promotion.id ? 'Applied' : 'Apply'}
+                    {applyingPromotion === promotion.id ? (
+                      <>
+                        <Spinner size="sm" className="mr-2" />
+                        Applying...
+                      </>
+                    ) : selectedPromotion?.id === promotion.id ? (
+                      <>
+                        <CheckCircleIcon className="w-4 h-4 mr-1" />
+                        Applied
+                      </>
+                    ) : (
+                      'Apply'
+                    )}
                   </Button>
                 </div>
                 {!isEligible && (
-                  <p className="text-sm text-red-600 mt-2">
-                    Minimum purchase requirement not met
+                  <p className="text-sm text-red-700 mt-2 flex items-center bg-red-100 rounded-lg p-2">
+                    <InformationCircleIcon className="w-4 h-4 mr-1" />
+                    Minimum purchase requirement not met.
                   </p>
                 )}
               </Card>
@@ -182,21 +211,28 @@ export default function Promotions({ productDetails, customerEmail, onPromotionS
           })}
         </div>
       ) : (
-        <p className="text-gray-600">No promotions available at this time.</p>
+        <p className="text-gray-600 flex items-center">
+          <InformationCircleIcon className="w-5 h-5 mr-2" />
+          No promotions available at this time.
+        </p>
       )}
 
       {selectedPromotion && (
-        <div className="mt-4 p-4 bg-green-50 rounded-lg">
-          <h4 className="text-green-800 font-semibold">Applied Promotion</h4>
-          <p className="text-green-700">{selectedPromotion.name}</p>
-          <p className="text-green-700">
-            You save: {(() => {
-              const basePrice = productDetails.original_price
-                ? parseFloat(productDetails.original_price)
-                : parseFloat(productDetails.price);
-              return `$${(basePrice * (selectedPromotion.discount_percentage / 100)).toFixed(2)}`;
-            })()}
-          </p>
+        <div className="mt-4 p-4 bg-green-50 rounded-lg flex items-start">
+          <CheckCircleIcon className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5 text-green-600" />
+          <div>
+            <h4 className="text-green-800 font-semibold">Applied Promotion</h4>
+            <p className="text-green-700">{selectedPromotion.name}</p>
+            <p className="text-green-700 flex items-center">
+              <CurrencyDollarIcon className="w-4 h-4 mr-1" />
+              You save: {(() => {
+                const basePrice = productDetails.original_price
+                  ? parseFloat(productDetails.original_price)
+                  : parseFloat(productDetails.price);
+                return `$${(basePrice * (selectedPromotion.discount_percentage / 100)).toFixed(2)}`;
+              })()}
+            </p>
+          </div>
         </div>
       )}
     </div>

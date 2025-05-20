@@ -143,19 +143,10 @@ class PromotionsAgent(Agent):
             )
 
             # Analyze shopping patterns
-            total_spent = 0
-            for item in shopping_history:
-                amount = item.get('amount', 0)
-                if isinstance(amount, str):
-                    # Remove any currency symbols and commas, then convert to float
-                    amount = float(amount.replace('$', '').replace(',', ''))
-                elif isinstance(amount, (int, float)):
-                    amount = float(amount)
-                else:
-                    amount = 0.0
-                total_spent += amount
-
-            purchase_frequency = len(shopping_history) / 30  # purchases per month
+            total_spent = sum(item.get('amount', 0)
+                              for item in shopping_history)
+            purchase_frequency = len(shopping_history) / \
+                30  # purchases per month
 
             # Calculate discount percentage based on user behavior
             base_discount = 5  # Base discount percentage
@@ -277,18 +268,7 @@ class PromotionsAgent(Agent):
 
             # Analyze purchase patterns
             total_purchases = len(history)
-            total_spent = 0
-            for item in history:
-                amount = item.get('amount', 0)
-                if isinstance(amount, str):
-                    # Remove any currency symbols and commas, then convert to float
-                    amount = float(amount.replace('$', '').replace(',', ''))
-                elif isinstance(amount, (int, float)):
-                    amount = float(amount)
-                else:
-                    amount = 0.0
-                total_spent += amount
-
+            total_spent = sum(item.get('amount', 0) for item in history)
             avg_purchase = total_spent / total_purchases if total_purchases > 0 else 0
 
             # Category analysis

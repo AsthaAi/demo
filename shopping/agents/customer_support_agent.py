@@ -60,6 +60,17 @@ class FAQResponse(BaseModel):
     message: Optional[str] = None
 
 
+class AztpConnection(BaseModel):
+    """AZTP connection state"""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    client: Optional[Aztp] = None
+    connection: Optional[SecureConnection] = None
+    aztp_id: str = ""
+    is_valid: bool = False
+    is_initialized: bool = False
+
+
 class CustomerSupportAgent(Agent):
     """Agent responsible for handling customer support operations"""
 
@@ -68,13 +79,11 @@ class CustomerSupportAgent(Agent):
 
     # Define the fields using Pydantic's Field
     aztpClient: Aztp = Field(default=None, exclude=True)
-    supportAgent: SecureConnection = Field(
-        default=None, exclude=True, alias="secured_connection")
+    aztp: AztpConnection = Field(default_factory=AztpConnection)
     is_valid: bool = Field(default=False, exclude=True)
     identity: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     identity_access_policy: Optional[Dict[str, Any]] = Field(
         default=None, exclude=True)
-    aztp_id: str = Field(default="", exclude=True)
     iam_utils: IAMUtils = Field(default=None, exclude=True)
     is_initialized: bool = Field(default=False, exclude=True)
     faq_data: Dict = Field(default={}, exclude=True)
@@ -95,7 +104,7 @@ class CustomerSupportAgent(Agent):
         )
 
         try:
-            # Initialize the client with API key from environment
+            # Initialize AZTP connection
             api_key = os.getenv("AZTP_API_KEY")
             if not api_key:
                 raise ValueError("AZTP_API_KEY is not set")
@@ -105,8 +114,10 @@ class CustomerSupportAgent(Agent):
                 raise ValueError("OPENAI_API_KEY is not set")
 
             self.aztpClient = Aztp(api_key=api_key)
+            self.aztp = AztpConnection(
+                client=Aztp(api_key=api_key)
+            )
             self.iam_utils = IAMUtils()
-            self.aztp_id = ""
             self.openai_client = openai.OpenAI(api_key=openai_api_key)
             self._load_faq_database()  # Load FAQ database during initialization
 
@@ -116,60 +127,47 @@ class CustomerSupportAgent(Agent):
 
     async def initialize(self):
         """Initialize the agent asynchronously"""
-        if self.is_initialized:
-            return
+        if not self.is_initialized:
+            print("\nInitializing Customer Support Agent...")
+            try:
+                # Establish secure connection
+                self.aztp.connection = await self.aztpClient.secure_connect(
+                    self,
+                    "customer-support-agent",
+                    {
+                        "isGlobalIdentity": False,
+                        "trustLevel": "high",
+                        "department": "CustomerSupport"
+                    }
+                )
 
-        await self._initialize_identity()
-        self.is_initialized = True
+                # Store AZTP ID
+                if self.aztp.connection and hasattr(self.aztp.connection, 'identity'):
+                    self.aztp.aztp_id = self.aztp.connection.identity.aztp_id
+                    print(
+                        f"✅ Secured connection established. AZTP ID: {self.aztp.aztp_id}")
 
-    async def _initialize_identity(self):
-        """Initialize the agent's identity asynchronously"""
-        try:
-            print(f"1. Issuing identity for agent: Customer Support Agent")
-            self.supportAgent = await self.aztpClient.secure_connect(
-                self,
-                "customer-support-agent",
-                {
-                    "isGlobalIdentity": False
-                }
-            )
-            print("AZTP ID:", self.supportAgent.identity.aztp_id)
+                # Verify identity
+                self.aztp.is_valid = await self.aztpClient.verify_identity(self.aztp.connection)
+                if not self.aztp.is_valid:
+                    raise ValueError(
+                        "Failed to verify identity for Customer Support Agent")
 
-            print(f"\n2. Verifying identity for agent: Customer Support Agent")
-            self.is_valid = await self.aztpClient.verify_identity(
-                self.supportAgent
-            )
-            print("Verified Agent:", self.is_valid)
+                # Verify customer support access
+                await self.iam_utils.verify_access_or_raise(
+                    agent_id=self.aztp.aztp_id,
+                    action="customer_support",
+                    policy_code="policy:9e9834d8cbea",
+                    operation_name="Customer Support Operations"
+                )
 
-            if self.is_valid:
-                if self.supportAgent and hasattr(self.supportAgent, 'identity'):
-                    self.aztp_id = self.supportAgent.identity.aztp_id
-                    print(f"✅ Extracted AZTP ID: {self.aztp_id}")
-            else:
-                raise ValueError(
-                    "Failed to verify identity for agent: Customer Support Agent")
+                self.aztp.is_initialized = True
+                self.is_initialized = True
+                print("✅ Customer Support Agent initialized successfully")
 
-            # Verify customer support access before proceeding
-            print(
-                f"\n3. Verifying access permissions for Customer Support Agent {self.aztp_id}")
-            await self.iam_utils.verify_access_or_raise(
-                agent_id=self.aztp_id,
-                action="customer_support",
-                policy_code="policy:9e9834d8cbea",
-                operation_name="Customer Support Operations"
-            )
-
-            print("\n✅ Customer Support agent initialized successfully")
-
-        except PolicyVerificationError as e:
-            error_msg = str(e)
-            print(f"❌ Policy verification failed: {error_msg}")
-            raise  # Re-raise the exception to stop execution
-
-        except Exception as e:
-            error_msg = f"Failed to initialize customer support agent: {str(e)}"
-            print(f"❌ {error_msg}")
-            raise  # Re-raise the exception to stop execution
+            except Exception as e:
+                print(f"❌ Error initializing Customer Support Agent: {str(e)}")
+                raise
 
     def _generate_ticket_id(self) -> str:
         """
@@ -200,7 +198,7 @@ class CustomerSupportAgent(Agent):
         try:
             # Verify refund processing access before proceeding
             await self.iam_utils.verify_access_or_raise(
-                agent_id=self.aztp_id,
+                agent_id=self.aztp.aztp_id,
                 action="process_refund",
                 policy_code="policy:9e9834d8cbea",
                 operation_name="Refund Processing"
@@ -250,7 +248,7 @@ class CustomerSupportAgent(Agent):
 
             # Verify FAQ access
             await self.iam_utils.verify_access_or_raise(
-                agent_id=self.aztp_id,
+                agent_id=self.aztp.aztp_id,
                 action="read_faq",
                 policy_code="policy:9e9834d8cbea",
                 operation_name="FAQ Access"
@@ -304,7 +302,7 @@ class CustomerSupportAgent(Agent):
         try:
             # Verify ticket creation access before proceeding
             await self.iam_utils.verify_access_or_raise(
-                agent_id=self.aztp_id,
+                agent_id=self.aztp.aztp_id,
                 action="ticket_creation",
                 policy_code="policy:9e9834d8cbea",
                 operation_name="Ticket Creation"

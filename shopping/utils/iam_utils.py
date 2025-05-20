@@ -145,7 +145,7 @@ class IAMUtils:
 
             # For demo purposes, always return True
             # In a real implementation, this would check against actual policies
-            print("\n✅ Access granted for demo purposes")
+            print("\n✅ Risk Agent: Access granted for demo purposes")
             return True
 
         except Exception as e:

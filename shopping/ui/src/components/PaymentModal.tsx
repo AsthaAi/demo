@@ -1,7 +1,8 @@
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button, Modal, Spinner, TextInput } from 'flowbite-react';
-import { useState } from 'react';
 import Promotions from './Promotions';
+import { ExclamationCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 interface Product {
   name: string;
@@ -33,6 +34,15 @@ export default function PaymentModal({ show, onClose, product, onOrderComplete }
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product>(product);
   const [emailConfirmed, setEmailConfirmed] = useState(false);
+
+  useEffect(() => {
+    if (show) {
+      setEmail('');
+      setError(null);
+      setEmailConfirmed(false);
+      setSelectedProduct(product);
+    }
+  }, [show, product]);
 
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -141,8 +151,27 @@ export default function PaymentModal({ show, onClose, product, onOrderComplete }
 
           {/* Error Message */}
           {error && (
-            <div className="text-red-600 bg-red-50 p-3 rounded-lg">
-              {error}
+            <div className="text-red-600 bg-red-50 p-3 rounded-lg flex items-start">
+              <ExclamationCircleIcon className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+              <div className="whitespace-pre-line">{error}</div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {selectedProduct.applied_promotion && (
+            <div className="text-green-600 bg-green-50 p-3 rounded-lg flex items-start">
+              <CheckCircleIcon className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+              <div>
+                Applied promotion: {selectedProduct.applied_promotion.name}
+                <div className="text-sm text-green-700">
+                  You save: {(() => {
+                    const basePrice = selectedProduct.original_price
+                      ? parseFloat(selectedProduct.original_price)
+                      : parseFloat(selectedProduct.price);
+                    return `$${(basePrice * (selectedProduct.applied_promotion.discount_percentage / 100)).toFixed(2)}`;
+                  })()}
+                </div>
+              </div>
             </div>
           )}
         </div>

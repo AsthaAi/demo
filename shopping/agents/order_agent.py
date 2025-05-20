@@ -10,12 +10,23 @@ from dotenv import load_dotenv
 from utils.iam_utils import IAMUtils
 from utils.exceptions import PolicyVerificationError
 import os
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, BaseModel
 import asyncio
 import uuid
 import datetime
 
 load_dotenv()
+
+
+class AztpConnection(BaseModel):
+    """AZTP connection state"""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    client: Optional[Aztp] = None
+    connection: Optional[SecureConnection] = None
+    aztp_id: str = ""
+    is_valid: bool = False
+    is_initialized: bool = False
 
 
 class OrderAgent(Agent):
@@ -26,14 +37,13 @@ class OrderAgent(Agent):
 
     # Define the fields using Pydantic's Field
     aztpClient: Aztp = Field(default=None, exclude=True)
-    orderAgent: SecureConnection = Field(
-        default=None, exclude=True, alias="secured_connection")
+    aztp: AztpConnection = Field(default_factory=AztpConnection)
     is_valid: bool = Field(default=False, exclude=True)
     identity: Optional[Dict[str, Any]] = Field(default=None, exclude=True)
     identity_access_policy: Optional[Dict[str, Any]] = Field(
         default=None, exclude=True)
-    aztp_id: str = Field(default="", exclude=True)
     iam_utils: IAMUtils = Field(default=None, exclude=True)
+    is_initialized: bool = Field(default=False, exclude=True)
 
     def __init__(self):
         """Initialize the order agent with necessary tools"""
@@ -46,66 +56,60 @@ class OrderAgent(Agent):
             verbose=True
         )
 
-        # Initialize the client with API key from environment
+        # Initialize AZTP connection
         api_key = os.getenv("AZTP_API_KEY")
         if not api_key:
             raise ValueError("AZTP_API_KEY is not set")
 
         self.aztpClient = Aztp(api_key=api_key)
-        self.iam_utils = IAMUtils()  # Initialize IAM utilities
-        self.aztp_id = ""  # Initialize as empty string
+        self.aztp = AztpConnection(
+            client=Aztp(api_key=api_key)
+        )
+        self.iam_utils = IAMUtils()
 
-        # Run the async initialization
-        asyncio.run(self._initialize_identity())
+    async def initialize(self):
+        """Initialize the agent asynchronously"""
+        if not self.is_initialized:
+            print("\nInitializing Order Agent...")
+            try:
+                # Establish secure connection
+                self.aztp.connection = await self.aztpClient.secure_connect(
+                    self,
+                    "order-agent",
+                    {
+                        "isGlobalIdentity": False,
+                        "trustLevel": "high",
+                        "department": "Order"
+                    }
+                )
 
-    async def _initialize_identity(self):
-        """Initialize the agent's identity asynchronously"""
-        try:
-            print(f"1. Issuing identity for agent: Order Agent")
-            self.orderAgent = await self.aztpClient.secure_connect(
-                self,
-                "order-agent",
-                {
-                    "isGlobalIdentity": False
-                }
-            )
-            print("AZTP ID:", self.orderAgent.identity.aztp_id)
+                # Store AZTP ID
+                if self.aztp.connection and hasattr(self.aztp.connection, 'identity'):
+                    self.aztp.aztp_id = self.aztp.connection.identity.aztp_id
+                    print(
+                        f"✅ Secured connection established. AZTP ID: {self.aztp.aztp_id}")
 
-            print(f"\n2. Verifying identity for agent: Order Agent")
-            self.is_valid = await self.aztpClient.verify_identity(
-                self.orderAgent
-            )
-            print("Verified Agent:", self.is_valid)
+                # Verify identity
+                self.aztp.is_valid = await self.aztpClient.verify_identity(self.aztp.connection)
+                if not self.aztp.is_valid:
+                    raise ValueError(
+                        "Failed to verify identity for Order Agent")
 
-            if self.is_valid:
-                if self.orderAgent and hasattr(self.orderAgent, 'identity'):
-                    self.aztp_id = self.orderAgent.identity.aztp_id
-                    print(f"✅ Extracted AZTP ID: {self.aztp_id}")
-            else:
-                raise ValueError(
-                    "Failed to verify identity for agent: Order Agent")
+                # Verify order processing access
+                await self.iam_utils.verify_access_or_raise(
+                    agent_id=self.aztp.aztp_id,
+                    action="order_processing",
+                    policy_code="policy:8d4e29f7a3b5",
+                    operation_name="Order Processing"
+                )
 
-            # Verify order processing access before proceeding
-            print(
-                f"\n3. Verifying access permissions for Order Agent {self.aztp_id}")
-            await self.iam_utils.verify_access_or_raise(
-                agent_id=self.aztp_id,
-                action="process_orders",
-                policy_code="policy:226e90937935",
-                operation_name="Order Processing"
-            )
+                self.aztp.is_initialized = True
+                self.is_initialized = True
+                print("✅ Order Agent initialized successfully")
 
-            print("\n✅ Order agent initialized successfully")
-
-        except PolicyVerificationError as e:
-            error_msg = str(e)
-            print(f"❌ Policy verification failed: {error_msg}")
-            raise  # Re-raise the exception to stop execution
-
-        except Exception as e:
-            error_msg = f"Failed to initialize order agent: {str(e)}"
-            print(f"❌ {error_msg}")
-            raise  # Re-raise the exception to stop execution
+            except Exception as e:
+                print(f"❌ Error initializing Order Agent: {str(e)}")
+                raise
 
     def _generate_transaction_id(self) -> str:
         """
@@ -133,7 +137,7 @@ class OrderAgent(Agent):
         try:
             # Verify order processing access before proceeding
             await self.iam_utils.verify_access_or_raise(
-                agent_id=self.aztp_id,
+                agent_id=self.aztp.aztp_id,
                 action="process_orders",
                 policy_code="policy:226e90937935",
                 operation_name="Order Processing"

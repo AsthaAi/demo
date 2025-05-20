@@ -10,7 +10,9 @@ from agents.order_agent import OrderAgent
 from agents.paypal_agent import PayPalAgent
 from agents.promotions_agent import PromotionsAgent
 from agents.customer_support_agent import CustomerSupportAgent
+from agents.risk_agent import RiskAgent
 from agents.tasks import ResearchTasks
+from utils.agent_middleware import agent_middleware
 from dotenv import load_dotenv
 from crewai import Crew, Task
 from textwrap import dedent
@@ -18,6 +20,8 @@ import json
 import asyncio
 from datetime import datetime, timedelta
 import re
+import uuid
+import platform
 
 load_dotenv()
 
@@ -25,30 +29,58 @@ load_dotenv()
 class ShopperAgents:
     """Class to create and manage all ShopperAI agents"""
 
-    def research_agent(self):
+    def __init__(self):
+        """Initialize ShopperAgents with middleware"""
+        self._initialized = False
+        self._agents = {}
+
+    async def initialize(self):
+        """Initialize the middleware and prepare agents"""
+        if not self._initialized:
+            # Initialize the middleware first
+            await agent_middleware.initialize()
+            self._initialized = True
+            print("✅ ShopperAgents initialized with security middleware")
+
+    async def _get_agent(self, agent_type: str, create_func):
+        """Get or create an agent of the specified type"""
+        if not self._initialized:
+            await self.initialize()
+
+        if agent_type not in self._agents:
+            agent = create_func()
+            await agent.initialize()  # This will now use the secure initialization
+            self._agents[agent_type] = agent
+
+        return self._agents[agent_type]
+
+    async def research_agent(self):
         """Create and return the research agent"""
-        return ResearchAgent()
+        return await self._get_agent('research', ResearchAgent)
 
-    # Price comparison functionality has been temporarily disabled
-    # def price_comparison_agent(self):
-    #     """Create and return the price comparison agent"""
-    #     return PriceComparisonAgent()
-
-    def order_agent(self):
+    async def order_agent(self):
         """Create and return the order agent"""
-        return OrderAgent()
+        return await self._get_agent('order', OrderAgent)
 
-    def paypal_agent(self):
+    async def paypal_agent(self):
         """Create and return the PayPal agent"""
-        return PayPalAgent()
+        return await self._get_agent('paypal', PayPalAgent)
 
-    def promotions_agent(self):
+    async def promotions_agent(self):
         """Create and return the promotions agent"""
-        return PromotionsAgent()
+        return await self._get_agent('promotions', PromotionsAgent)
 
-    def customer_support_agent(self):
+    async def customer_support_agent(self):
         """Create and return the customer support agent"""
-        return CustomerSupportAgent()
+        return await self._get_agent('customer_support', CustomerSupportAgent)
+
+    async def risk_agent(self):
+        """Create and return the risk agent"""
+        return await self._get_agent('risk', RiskAgent)
+
+    # def customer_support_agent(self):
+    #     """Create and return the customer support agent"""
+    #     return CustomerSupportAgent()
 
 
 class ShopperAI:
@@ -125,9 +157,7 @@ class ShopperAI:
         # Initialize research agent
         print("\n=== Initializing Research Agent ===")
         try:
-            research_agent = self.agents.research_agent()
-            # Properly await initialization
-            await research_agent.initialize()
+            research_agent = await self.agents.research_agent()
             print("Research agent initialized successfully")
         except ValueError as e:
             if "SERPAPI_API_KEY" in str(e):
@@ -365,81 +395,185 @@ Do not return any explanation or summary, only the JSON object.""",
                 "best_match": None
             }
 
-    async def run_price_comparison(self, products: List[Dict[str, Any]] = None):
-        """
-        Run the price comparison phase for given products.
-        Returns a dictionary with price comparison results.
-        """
-        try:
-            if not products:
-                return {"error": "No products provided for comparison"}
+    # Price comparison functionality has been temporarily disabled
+    # The following method will be re-enabled in a future update:
+    #
+    # async def run_price_comparison(self, products: List[Dict[str, Any]] = None):
+    #     """Run the price comparison phase"""
+    #     pass
+    # async def run_price_comparison(self, products: List[Dict[str, Any]] = None):
+    #     """
+    #     Run the price comparison phase for given products.
+    #     Returns a dictionary with price comparison results.
+    #     """
+    #     try:
+    #         if not products:
+    #             return {"error": "No products provided for comparison"}
 
-            comparison_results = {
-                "products": [],
-                "best_deal": None,
-                "price_range": {
-                    "lowest": float('inf'),
-                    "highest": 0
-                }
-            }
+    #         comparison_results = {
+    #             "products": [],
+    #             "best_deal": None,
+    #             "price_range": {
+    #                 "lowest": float('inf'),
+    #                 "highest": 0
+    #             }
+    #         }
 
-            for product in products:
-                # Extract price as float, handling both string and float inputs
-                price = product.get('price', '0')
-                if isinstance(price, str):
-                    price = float(price.replace('$', '').replace(',', ''))
-                elif isinstance(price, (int, float)):
-                    price = float(price)
-                else:
-                    price = 0.0  # Default to 0 if price is invalid
+    #         for product in products:
+    #             # Extract price as float, handling both string and float inputs
+    #             price = product.get('price', '0')
+    #             if isinstance(price, str):
+    #                 price = float(price.replace('$', '').replace(',', ''))
+    #             elif isinstance(price, (int, float)):
+    #                 price = float(price)
+    #             else:
+    #                 price = 0.0  # Default to 0 if price is invalid
 
-                try:
-                    comparison_results["products"].append({
-                        "name": product.get('name', 'Unknown'),
-                        "price": price,
-                        "rating": product.get('rating', '0'),
-                        "brand": product.get('brand', 'Unknown'),
-                        "description": product.get('description', '')
-                    })
+    #             try:
+    #                 comparison_results["products"].append({
+    #                     "name": product.get('name', 'Unknown'),
+    #                     "price": price,
+    #                     "rating": product.get('rating', '0'),
+    #                     "brand": product.get('brand', 'Unknown'),
+    #                     "description": product.get('description', '')
+    #                 })
                     
-                    # Update price range
-                    comparison_results["price_range"]["lowest"] = min(comparison_results["price_range"]["lowest"], price)
-                    comparison_results["price_range"]["highest"] = max(comparison_results["price_range"]["highest"], price)
-                except ValueError:
-                    continue
+    #                 # Update price range
+    #                 comparison_results["price_range"]["lowest"] = min(comparison_results["price_range"]["lowest"], price)
+    #                 comparison_results["price_range"]["highest"] = max(comparison_results["price_range"]["highest"], price)
+    #             except ValueError:
+    #                 continue
 
-            # Find best deal (lowest price with good rating)
-            if comparison_results["products"]:
-                best_deal = min(
-                    comparison_results["products"],
-                    key=lambda x: (float(x["price"]), -float(x["rating"]))
-                )
-                comparison_results["best_deal"] = best_deal
+    #         # Find best deal (lowest price with good rating)
+    #         if comparison_results["products"]:
+    #             best_deal = min(
+    #                 comparison_results["products"],
+    #                 key=lambda x: (float(x["price"]), -float(x["rating"]))
+    #             )
+    #             comparison_results["best_deal"] = best_deal
 
-            return comparison_results
+    #         return comparison_results
 
-        except Exception as e:
-            print(f"Error in price comparison: {e}")
-            return {"error": str(e)}
+    #     except Exception as e:
+    #         print(f"Error in price comparison: {e}")
+    #         return {"error": str(e)}
+
 
     async def process_order_with_payment(self, product_details: dict, customer_email: str):
-        """
-        Process an order with PayPal payment integration
-
-        Args:
-            product_details: Dictionary containing product information
-            customer_email: Customer's email address
-        """
+        """Process an order with payment"""
         try:
             # Set user_id based on email for promotions
             self.user_id = customer_email
 
+            # Initialize Risk agent for transaction analysis
+            risk_agent = await self.agents.risk_agent()
+            await risk_agent.initialize()
+
+            # Initialize PayPal agent and set risk agent
+            paypal_agent = await self.agents.paypal_agent()
+            paypal_agent.risk_agent = risk_agent
+            await paypal_agent.initialize()
+
+            # Prepare transaction data for risk analysis
+            transaction_data = {
+                'transaction_id': f"TX-{str(uuid.uuid4())[:8].upper()}",
+                'amount': float(str(product_details['price']).replace('$', '')),
+                'timestamp': datetime.now().isoformat(),
+                'location': os.getenv('TRANSACTION_LOCATION', 'Unknown'),
+                'device_info': {
+                    'os': platform.system(),
+                    'browser': 'API Client',
+                    'is_new_device': True
+                },
+                'user_history': []  # In production, you'd fetch real user history
+            }
+
+            # Perform risk analysis
+            print("\n[Risk Analysis]")
+            risk_analysis = await risk_agent.analyze_transaction(transaction_data)
+
+            # NEW LOGIC: Respect demo status from risk_agent
+            if risk_analysis.get('status') == 'revoked':
+                error_msg = f"PayPal agent revoked due to high risk.\n{risk_analysis.get('message', '')}"
+                print(f"\n🚫 {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg
+                }
+            elif risk_analysis.get('status') == 'allowed':
+                print(f"\n[DEMO] {risk_analysis.get('message', 'High risk detected, but payment allowed for demonstration.')}")
+                # Only call with risk_rejected=False
+                print(f"[DEBUG] Calling process_payment with risk_rejected=False")
+                payment_result = await paypal_agent.process_payment(transaction_data, risk_rejected=False)
+                # If payment_result indicates revoked, block
+                if payment_result.get('status') == 'revoked':
+                    error_msg = f"PayPal agent revoked due to high risk.\n{payment_result.get('message', '')}"
+                    print(f"\n🚫 {error_msg}")
+                    return {
+                        "success": False,
+                        "error": error_msg
+                    }
+            elif risk_analysis['risk_level'] in ['high', 'critical']:
+                print("\n⚠️ High Risk Transaction Detected!")
+                print(f"Risk Level: {risk_analysis['risk_level']}")
+                print("\nRisk Factors:")
+                for factor, level in risk_analysis['risk_factors'].items():
+                    print(f"- {factor}: {level}")
+                print("\nRecommendations:")
+                for rec in risk_analysis['recommendations']:
+                    print(f"- {rec}")
+                # Automate the high-risk decision based on __default__ value
+                auto_choice = read_demo_tracker_main()
+                print(f"[DEBUG] Auto high-risk decision based on __default__: {'y' if auto_choice else 'n'}")
+                if auto_choice:
+                    print(f"[DEBUG] Calling process_payment with risk_rejected=False (auto accepted risk)")
+                    payment_result = await paypal_agent.process_payment(transaction_data, risk_rejected=False)
+                    if payment_result.get('status') == 'revoked':
+                        error_msg = f"PayPal agent revoked due to high risk.\n{payment_result.get('message', '')}"
+                        print(f"\n🚫 {error_msg}")
+                        return {
+                            "success": False,
+                            "error": error_msg
+                        }
+                else:
+                    print(f"[DEBUG] Calling process_payment with risk_rejected=True (auto rejected risk)")
+                    revoke_result = await paypal_agent.process_payment(transaction_data, risk_rejected=True)
+                    if revoke_result.get('revoked'):
+                        error_msg = f"PayPal agent revoked due to high risk.\n{revoke_result.get('error', '')}"
+                        print(f"\n🚫 {error_msg}")
+                        return {
+                            "success": False,
+                            "error": error_msg
+                        }
+                    else:
+                        error_msg = "Transaction blocked due to high risk. PayPal agent revoked."
+                        print(f"\n🚫 {error_msg}")
+                        return {
+                            "success": False,
+                            "error": error_msg
+                        }
+
             # Get available promotions and let user select one
             selected_promotion = await self.select_and_apply_promotion(product_details, customer_email)
-            
-            # Initialize PayPal agent
-            paypal_agent = self.agents.paypal_agent()
-            await paypal_agent.initialize()
+
+            # Monitor PayPal agent's activities
+            is_safe = await risk_agent.monitor_aztp_agent(
+                agent_connection=paypal_agent.aztp.connection,
+                action="create_payment",
+                details={
+                    "amount": float(str(product_details['price']).replace('$', '')),
+                    "payee_email": customer_email,
+                    "transaction_id": transaction_data['transaction_id']
+                }
+            )
+
+            if not is_safe:
+                error_msg = "Payment processing blocked due to suspicious activity"
+                print(f"\n❌ {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg
+                }
 
             # Get access token using the payment tool
             access_token = await paypal_agent.payment_tool.get_access_token()
@@ -491,9 +625,12 @@ Do not return any explanation or summary, only the JSON object.""",
                 }
 
         except Exception as e:
+            error_msg = str(e)
+            if "AZTP-ID-E-001" in error_msg:
+                error_msg = "Failed to verify identity for agent: PayPal Agent\nAZTP-ID-E-001 - Identity has been revoked"
             return {
                 "success": False,
-                "error": str(e)
+                "error": error_msg
             }
 
     async def select_and_apply_promotion(self, product_details: dict, customer_email: str) -> dict:
@@ -509,7 +646,7 @@ Do not return any explanation or summary, only the JSON object.""",
         """
         try:
             # Initialize Promotions agent
-            promotions_agent = self.agents.promotions_agent()
+            promotions_agent = await self.agents.promotions_agent()
             await promotions_agent.initialize()
 
             available_promotions = []
@@ -658,6 +795,8 @@ Do not return any explanation or summary, only the JSON object.""",
                 print("\nNo promotions available at this time.")
                 return None
 
+            return selected_promotion
+
         except Exception as e:
             print(f"\nError selecting promotion: {str(e)}")
             return None
@@ -674,6 +813,13 @@ Do not return any explanation or summary, only the JSON object.""",
             Dictionary containing analysis results
         """
         try:
+
+            shopper = ShopperAI("", {})  # Initialize with empty query
+
+            # Initialize Promotions agent
+            promotions_agent = await self.agents.promotions_agent()
+            await promotions_agent.initialize()
+
             # Load payment history from paymentdetail.json
             project_root = os.path.dirname(os.path.abspath(__file__))
             payment_json_path = os.path.join(
@@ -735,30 +881,10 @@ Do not return any explanation or summary, only the JSON object.""",
             # Sort history by timestamp
             user_payment_history.sort(key=lambda x: x.get('timestamp', ''))
 
-            # Format amounts to ensure they are floats
-            formatted_history = []
-            for record in user_payment_history:
-                amount = record.get('amount', 0)
-                if isinstance(amount, str):
-                    # Remove any currency symbols and commas, then convert to float
-                    amount = float(amount.replace('$', '').replace(',', ''))
-                elif isinstance(amount, (int, float)):
-                    amount = float(amount)
-                else:
-                    amount = 0.0  # Default to 0 if amount is invalid
-                
-                formatted_record = record.copy()
-                formatted_record['amount'] = amount
-                formatted_history.append(formatted_record)
-
-            # Initialize Promotions agent
-            promotions_agent = self.agents.promotions_agent()
-            await promotions_agent.initialize()
-
-            # Analyze shopping history with formatted amounts
+            # Analyze shopping history
             analysis_results = await promotions_agent.analyze_shopping_history(
                 user_id,
-                formatted_history
+                user_payment_history
             )
 
             # Add additional insights
@@ -792,7 +918,7 @@ Do not return any explanation or summary, only the JSON object.""",
         """
         try:
             # Initialize Promotions agent
-            promotions_agent = self.agents.promotions_agent()
+            promotions_agent = await self.agents.promotions_agent()
             await promotions_agent.initialize()
 
             # Create campaign
@@ -806,6 +932,87 @@ Do not return any explanation or summary, only the JSON object.""",
         except Exception as e:
             print(f"\nError creating promotion campaign: {str(e)}")
             return None
+
+    async def process_refund_request(self, order_details: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process a refund request for an order
+
+        Args:
+            order_details: Dictionary containing order information including transaction ID and refund reason
+
+        Returns:
+            Dictionary containing refund confirmation details
+        """
+        print("\n=== Processing Refund Request ===")
+        try:
+            # Initialize customer support agent
+            customer_support_agent = await self.agents.customer_support_agent()
+            await customer_support_agent.initialize()
+
+            # Process the refund
+            refund_confirmation = await customer_support_agent.process_refund(order_details)
+            print("✅ Refund processed successfully")
+
+            return refund_confirmation
+
+        except Exception as e:
+            error_msg = f"Failed to process refund: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise
+
+    async def get_faq_answer(self, query: str) -> Dict[str, Any]:
+        """
+        Get answer for a FAQ query
+
+        Args:
+            query: The customer's question
+
+        Returns:
+            Dictionary containing FAQ response
+        """
+        print("\n=== Processing FAQ Query ===")
+        try:
+            # Initialize customer support agent
+            customer_support_agent = await self.agents.customer_support_agent()
+            await customer_support_agent.initialize()
+
+            # Get FAQ response
+            faq_response = await customer_support_agent.get_faq_response(query)
+            print("✅ FAQ response retrieved successfully")
+
+            return faq_response
+
+        except Exception as e:
+            error_msg = f"Failed to get FAQ response: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise
+
+    async def create_support_ticket(self, issue_details: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a support ticket for customer issue
+
+        Args:
+            issue_details: Dictionary containing issue information
+
+        Returns:
+            Dictionary containing ticket details
+        """
+        print("\n=== Creating Support Ticket ===")
+        try:
+            # Initialize customer support agent
+            customer_support_agent = await self.agents.customer_support_agent()
+            await customer_support_agent.initialize()
+
+            # Create support ticket
+            ticket = await customer_support_agent.create_support_ticket(issue_details)
+            print("✅ Support ticket created successfully")
+
+            return ticket
+
+        except Exception as e:
+            error_msg = f"Failed to create support ticket: {str(e)}"
+            print(f"❌ {error_msg}")
+            raise
 
     async def get_available_promotions(self, product_details: dict, customer_email: str):
         """
@@ -823,7 +1030,7 @@ Do not return any explanation or summary, only the JSON object.""",
         """
         try:
             # Initialize Promotions agent
-            promotions_agent = self.agents.promotions_agent()
+            promotions_agent = await self.agents.promotions_agent()
             await promotions_agent.initialize()
 
             available_promotions = []
@@ -899,111 +1106,6 @@ Do not return any explanation or summary, only the JSON object.""",
                 'error': str(e)
             }
 
-    async def capture_payment(self, order_id: str):
-        """
-        Capture a PayPal payment for the given order ID.
-        """
-        try:
-            paypal_agent = self.agents.paypal_agent()
-            await paypal_agent.initialize()
-            # Capture the payment using the PayPal agent
-            capture_result = await paypal_agent.capture_payment(order_id)
-            # Optionally, extract approval_url if needed for UI
-            approval_url = None
-            if isinstance(capture_result, dict):
-                for link in capture_result.get('links', []):
-                    if link.get('rel') == 'approve':
-                        approval_url = link.get('href')
-                        break
-            return {
-                "capture_result": capture_result,
-                "approval_url": approval_url
-            }
-        except Exception as e:
-            print(f"Error in capture_payment: {e}")
-            return {"error": str(e)}
-
-    async def process_refund_request(self, order_details: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Process a refund request for an order
-
-        Args:
-            order_details: Dictionary containing order information including transaction ID and refund reason
-
-        Returns:
-            Dictionary containing refund confirmation details
-        """
-        print("\n=== Processing Refund Request ===")
-        try:
-            # Initialize customer support agent
-            customer_support_agent = self.agents.customer_support_agent()
-            await customer_support_agent.initialize()
-
-            # Process the refund
-            refund_confirmation = await customer_support_agent.process_refund(order_details)
-            print("✅ Refund processed successfully")
-
-            return refund_confirmation
-
-        except Exception as e:
-            error_msg = f"Failed to process refund: {str(e)}"
-            print(f"❌ {error_msg}")
-            raise
-
-    async def get_faq_answer(self, query: str) -> Dict[str, Any]:
-        """
-        Get answer for a FAQ query
-
-        Args:
-            query: The customer's question
-
-        Returns:
-            Dictionary containing FAQ response
-        """
-        print("\n=== Processing FAQ Query ===")
-        try:
-            # Initialize customer support agent
-            customer_support_agent = self.agents.customer_support_agent()
-            await customer_support_agent.initialize()
-
-            # Get FAQ response
-            faq_response = await customer_support_agent.get_faq_response(query)
-            print("✅ FAQ response retrieved successfully")
-
-            return faq_response
-
-        except Exception as e:
-            error_msg = f"Failed to get FAQ response: {str(e)}"
-            print(f"❌ {error_msg}")
-            raise
-
-    async def create_support_ticket(self, issue_details: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Create a support ticket for customer issue
-
-        Args:
-            issue_details: Dictionary containing issue information
-
-        Returns:
-            Dictionary containing ticket details
-        """
-        print("\n=== Creating Support Ticket ===")
-        try:
-            # Initialize customer support agent
-            customer_support_agent = self.agents.customer_support_agent()
-            await customer_support_agent.initialize()
-
-            # Create support ticket
-            ticket = await customer_support_agent.create_support_ticket(issue_details)
-            print("✅ Support ticket created successfully")
-
-            return ticket
-
-        except Exception as e:
-            error_msg = f"Failed to create support ticket: {str(e)}"
-            print(f"❌ {error_msg}")
-            raise
-
 
 def read_latest_payment_detail():
     project_root = os.path.dirname(os.path.abspath(__file__))
@@ -1026,6 +1128,48 @@ def read_latest_payment_detail():
             print(json.dumps(latest, indent=2))
     except Exception as e:
         print(f"Error reading paymentdetail.json: {e}")
+
+
+def read_demo_tracker_main():
+    tracker_path = os.path.join(os.path.dirname(
+        __file__), 'risk_demo_tracker.json')
+    if not os.path.exists(tracker_path):
+        return True  # Default to True if file missing
+    try:
+        with open(tracker_path, 'r') as f:
+            data = json.load(f)
+            return data.get('__default__', True)
+    except Exception:
+        return True
+
+
+def set_demo_tracker_default_false():
+    tracker_path = os.path.join(os.path.dirname(
+        __file__), 'risk_demo_tracker.json')
+    try:
+        if os.path.exists(tracker_path):
+            with open(tracker_path, 'r') as f:
+                data = json.load(f)
+        else:
+            data = {}
+        data['__default__'] = False
+        with open(tracker_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        print("[DEBUG] Set __default__ to false after successful payment capture.")
+    except Exception as e:
+        print(f"[DEBUG] Failed to update __default__ in tracker: {e}")
+
+
+def test_write_demo_tracker():
+    tracker_path = os.path.join(os.path.dirname(
+        __file__), 'risk_demo_tracker.json')
+    try:
+        data = {'__default__': True}
+        with open(tracker_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        print(f"[TEST] Successfully wrote to {tracker_path}: {data}")
+    except Exception as e:
+        print(f"[TEST] Failed to write to {tracker_path}: {e}")
 
 
 def main():
@@ -1147,110 +1291,13 @@ def main():
                             # Get FAQ query
                             query = input("\nWhat's your question? ")
 
-                            # Extract price from regex match
-                            price_match = re.search(r'(\$?\d+(?:\.\d{2})?)', query)
-                            max_price = float(price_match.group(1).replace(
-                                '$', '')) if price_match else None
-
-                            # Try to extract rating
-                            rating_match = re.search(
-                                r'rating.*?(\d+(?:\.\d)?)', query)
-                            min_rating = float(rating_match.group(
-                                1)) if rating_match else None
-
-                            # Extract the product query by removing criteria mentions
-                            product_query = query
-                            if max_price:
-                                product_query = re.sub(
-                                    r'\$?\d+(?:\.\d{2})?', '', product_query)
-                            if min_rating:
-                                product_query = re.sub(
-                                    r'rating.*?\d+(?:\.\d)?', '', product_query)
-
-                            # Clean up the query
-                            product_query = re.sub(
-                                r'\b(price|cost|under|above|rating|stars?)\b', '', product_query)
-                            product_query = ' '.join(product_query.split())
-
-                            # If criteria not found in query, ask user
-                            if max_price is None:
-                                while True:
-                                    try:
-                                        max_price_input = input(
-                                            "What's your maximum budget (in USD)? ")
-                                        max_price = float(max_price_input)
-                                        break
-                                    except ValueError:
-                                        print(
-                                            "Please enter a valid number.")
-
-                            if min_rating is None:
-                                while True:
-                                    try:
-                                        min_rating_input = input(
-                                            "What's your minimum rating requirement (0-5)? ")
-                                        min_rating = float(
-                                            min_rating_input)
-                                        if 0 <= min_rating <= 5:
-                                            break
-                                        else:
-                                            print(
-                                                "Rating must be between 0 and 5.")
-                                    except ValueError:
-                                        print(
-                                            "Please enter a valid number.")
-
-                            # Initialize ShopperAI with search criteria
-                            search_shopper = ShopperAI(
-                                product_query,
-                                {"max_price": max_price,
-                                    "min_rating": min_rating}
-                            )
-
-                            # Run research phase
-                            print("\nSearching for products...")
                             try:
-                                research_results = await search_shopper.run_research()
-
-                                # Extract and display products
-                                if isinstance(research_results, dict):
-                                    best = research_results.get(
-                                        "best_match")
-                                    if best:
-                                        print("\nBest Match:")
-                                        print(
-                                            f"Name: {best.get('name', best.get('title', ''))}")
-                                        print(
-                                            f"Price: {best.get('price', '')}")
-                                        print(
-                                            f"Rating: {best.get('rating', '')}")
-
-                                        # Comment out price comparison functionality for now
-                                        """
-                                        # Ask if user wants to compare prices
-                                        compare_prices = input(
-                                            "\nWould you like to compare prices for similar products? (y/n): ").lower()
-                                        if compare_prices == 'y':
-                                            price_results = await search_shopper.run_price_comparison([best])
-                                            if price_results and isinstance(price_results, dict):
-                                                print("\nPrice Comparison Results:")
-                                                print(json.dumps(price_results, indent=2))
-                                        """
-
-                                        print(
-                                            "\nYou can proceed with the purchase by selecting option 1 from the main menu.")
-
+                                faq_result = await shopper.get_faq_answer(query)
+                                print("\n[FAQ Response]")
+                                print(json.dumps(faq_result, indent=2))
                             except Exception as e:
                                 print(
-                                    f"\nError searching for products: {str(e)}")
-                                # Fallback to FAQ response
-                                try:
-                                    faq_result = await shopper.get_faq_answer(query)
-                                    print("\n[FAQ Response]")
-                                    print(json.dumps(faq_result, indent=2))
-                                except Exception as faq_error:
-                                    print(
-                                        f"\nError getting FAQ response: {str(faq_error)}")
+                                    f"\nError getting FAQ response: {str(e)}")
 
                         elif support_choice == "3":
                             # Get ticket details
@@ -1522,62 +1569,101 @@ async def search_and_buy_products():
             ))
 
         # Ask user to select a product for purchase
-        selected_product = await shopper.select_product(products)
-        if selected_product:
-            # Ask if user wants to proceed with payment
-            proceed_payment = input(
-                "\nWould you like to proceed with payment? (y/n): ").lower()
-            if proceed_payment == 'y':
-                # Get payment details
-                payment_details = await shopper.get_payment_details()
+        while True:
+            try:
+                selection = input(
+                    "\nEnter the number of the product you want to purchase (1-{}) or 0 to cancel: ".format(len(products)))
+                if selection == '0':
+                    break
 
-                # Process the order with payment
-                print("\nProcessing order with PayPal...")
-                try:
-                    # Prepare product details for payment
-                    product_details = {
-                        "name": selected_product.get('name', selected_product.get('title', 'Unknown Product')),
-                        "price": selected_product.get('price', '0.00'),
-                        "quantity": 1,
-                        "description": selected_product.get('description', ''),
-                        **payment_details
-                    }
+                idx = int(selection) - 1
+                if 0 <= idx < len(products):
+                    selected_product = products[idx]
 
-                    # Ensure price is a float
-                    price = product_details['price']
-                    if isinstance(price, str):
-                        # Remove any currency symbols and commas, then convert to float
-                        price = float(price.replace('$', '').replace(',', ''))
-                    elif isinstance(price, (int, float)):
-                        price = float(price)
-                    else:
-                        price = 0.0  # Default to 0 if price is invalid
-                    product_details['price'] = price
+                    # Ask if user wants to proceed with payment
+                    proceed_payment = input(
+                        "\nWould you like to proceed with payment? (y/n): ").lower()
+                    if proceed_payment == 'y':
+                        # Get merchant/business email
+                        payee_email = input(
+                            "\nPlease enter the merchant/business PayPal email address to receive payment: ")
 
-                    # Process the order with payment
-                    payment_result = await shopper.process_order_with_payment(product_details, payment_details["payee_email"])
+                        # Process order with payment
+                        print("\nProcessing order with PayPal...")
+                        try:
+                            # Prepare product details for payment
+                            product_details = {
+                                "name": selected_product.get('name', selected_product.get('title', 'Unknown Product')),
+                                "price": selected_product.get('price', '0.00'),
+                                "quantity": 1,
+                                "description": selected_product.get('description', ''),
+                                "payee_email": payee_email
+                            }
 
-                    # Confirm payment with user
-                    if await shopper.confirm_payment(payment_result):
-                        # Capture the payment
-                        capture_result = await shopper.capture_payment(payment_result["id"])
-                        if capture_result:
-                            if capture_result.get('status') == 'COMPLETED':
-                                print(
-                                    "\nPayment captured successfully!")
-                                print(
-                                    f"Transaction ID: {capture_result.get('id')}")
-                                print(
-                                    f"Status: {capture_result.get('status')}")
+                            # Process the order with payment
+                            payment_result = await shopper.process_order_with_payment(product_details, payee_email)
+
+                            # Only show real PayPal order ID and approval URL
+                            if isinstance(payment_result, dict):
+                                paypal_order_id = payment_result.get("id")
+
+                                # Get approval URL from links
+                                approval_url = None
+                                for link in payment_result.get('links', []):
+                                    if link.get('rel') == 'approve':
+                                        approval_url = link.get('href')
+                                        break
+
+                                if paypal_order_id:
+                                    print(f"\nOrder ID: {paypal_order_id}")
+                                if approval_url:
+                                    print(
+                                        f"\nPlease complete your payment at the following PayPal URL:\n{approval_url}")
+                                    print("\nInstructions:")
+                                    print(
+                                        "1. Open the above URL in your browser.")
+                                    print(
+                                        "2. Log in with your PayPal sandbox buyer account.")
+                                    print(
+                                        "3. Approve the payment to complete your order.")
+
+                                # Wait for user to complete payment
+                                input(
+                                    "\nPress Enter after completing the payment in your browser...")
+
+                                # Capture the payment
+                                if paypal_order_id:
+                                    try:
+                                        # Initialize a new PayPal agent for capture
+                                        paypal_agent = await shopper.agents.paypal_agent()
+                                        await paypal_agent.initialize()
+                                        capture_result = await paypal_agent.capture_payment(paypal_order_id)
+                                        if capture_result:
+                                            if capture_result.get('status') == 'COMPLETED':
+                                                print(
+                                                    "\nPayment captured successfully!")
+                                                print(
+                                                    f"Transaction ID: {capture_result.get('id')}")
+                                                print(
+                                                    f"Status: {capture_result.get('status')}")
+                                            else:
+                                                print(
+                                                    "\nPayment capture failed or is incomplete.")
+                                                print(
+                                                    f"Status: {capture_result.get('status')}")
+                                    except Exception as e:
+                                        print(
+                                            f"\nError capturing payment: {str(e)}")
                             else:
                                 print(
-                                    "\nPayment capture failed or is incomplete.")
-                                print(
-                                    f"Status: {capture_result.get('status')}")
-                    else:
-                        print(f"\nOrder processing cancelled.")
-                except Exception as e:
-                    print(f"\nError processing payment: {str(e)}")
+                                    f"\nOrder processing failed: {payment_result}")
+                        except Exception as e:
+                            print(f"\nError processing payment: {str(e)}")
+                    break
+                else:
+                    print("\nInvalid selection. Please try again.")
+            except ValueError:
+                print("\nPlease enter a valid number.")
 
     # After payment processing
     read_latest_payment_detail()
@@ -1585,4 +1671,5 @@ async def search_and_buy_products():
 
 
 if __name__ == "__main__":
+    # test_write_demo_tracker()
     main()

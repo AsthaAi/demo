@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, Modal, TextInput, Button, Alert } from 'flowbite-react';
 import { ShoppingBagIcon, SparklesIcon, PaperAirplaneIcon, MagnifyingGlassIcon, ArrowPathIcon, TagIcon } from '@heroicons/react/24/outline';
-import ChatMessage from '@/components/ChatMessage';
-import LoadingSkeleton from '@/components/LoadingSkeleton';
+import ChatMessage from '../components/ChatMessage';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import axios from 'axios';
-import SearchForm from '@/components/SearchForm';
-import SearchResults from '@/components/SearchResults';
+import SearchForm from '../components/SearchForm';
+import SearchResults from '../components/SearchResults';
 import Promotions from '../components/Promotions';
 import PaymentModal from '../components/PaymentModal';
 import Link from 'next/link';
@@ -638,11 +638,11 @@ export default function Home() {
                 key={index}
                 type={message.type}
                 content={message.content}
-                product={message.product as Product}
-                products={message.products as Product[]}
+                product={message.product}
+                products={message.products}
                 onBuyNow={handleBuyNow}
                 onComparePrices={handleComparePrices}
-                comparisonResults={message.comparisonResults as ComparisonResult}
+                comparisonResults={message.comparisonResults}
                 campaign={message.campaign}
                 historyResult={message.historyResult}
                 supportResult={message.supportResult}
@@ -713,43 +713,45 @@ export default function Home() {
           )}
 
           {/* Product Details */}
-          {selectedProduct && (
+          {false && selectedProduct && (
             <div className="mt-8">
               <h2 className="text-2xl font-bold mb-4">Product Details</h2>
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-semibold">{selectedProduct.name}</h3>
-                <p className="text-gray-600 mt-2">{selectedProduct.description}</p>
+                <h3 className="text-xl font-semibold">{selectedProduct?.name}</h3>
+                <p className="text-gray-600 mt-2">{selectedProduct?.description}</p>
                 <div className="mt-4">
                   <span className="text-2xl font-bold text-green-600">
-                    {selectedProduct.price}
+                    {selectedProduct?.price}
                   </span>
-                  {selectedProduct.rating && (
+                  {selectedProduct?.rating && (
                     <span className="ml-4 text-yellow-500">
-                      ★ {selectedProduct.rating}
+                      ★ {selectedProduct?.rating}
                     </span>
                   )}
                 </div>
                 
                 {/* Add Promotions component */}
-                <div className="mt-6">
-                  <Promotions
-                    productDetails={selectedProduct}
-                    customerEmail={customerEmail}
-                    onPromotionSelected={(updatedDetails: any) => {
-                      // Ensure price and rating are strings
-                      const updatedProduct: Product = {
-                        ...updatedDetails,
-                        price: typeof updatedDetails.price === 'number' 
-                          ? `$${updatedDetails.price.toFixed(2)}`
-                          : String(updatedDetails.price || '0'),
-                        rating: typeof updatedDetails.rating === 'number'
-                          ? String(updatedDetails.rating)
-                          : String(updatedDetails.rating || '0')
-                      };
-                      setSelectedProduct(updatedProduct);
-                    }}
-                  />
-                </div>
+                {selectedProduct && (
+                  <div className="mt-6">
+                    <Promotions
+                      productDetails={selectedProduct as Product}
+                      customerEmail={customerEmail}
+                      onPromotionSelected={(updatedDetails: Product) => {
+                        // Ensure price and rating are strings
+                        const updatedProduct: Product = {
+                          ...updatedDetails,
+                          price: typeof updatedDetails.price === 'number' 
+                            ? `$${(updatedDetails.price as number).toFixed(2)}`
+                            : String(updatedDetails.price || '0'),
+                          rating: typeof updatedDetails.rating === 'number'
+                            ? String(updatedDetails.rating)
+                            : String(updatedDetails.rating || '0')
+                        };
+                        setSelectedProduct(updatedProduct);
+                      }}
+                    />
+                  </div>
+                )}
 
                 <button
                   onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
