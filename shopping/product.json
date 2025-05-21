@@ -1,68 +1,73 @@
 {
   "raw_products": [
     {
-      "name": "Product A",
-      "price": 30.0,
-      "rating": 2.5
+      "name": "Classic Fidget Spinner",
+      "price": 4.99,
+      "rating": 4.5
     },
     {
-      "name": "Product B",
-      "price": 25.0,
-      "rating": 3.0
+      "name": "LED Light Fidget Spinner",
+      "price": 5.0,
+      "rating": 3.8
     },
     {
-      "name": "Product C",
-      "price": 32.0,
-      "rating": 2.0
-    },
-    {
-      "name": "Product D",
-      "price": 40.0,
+      "name": "Metal Fidget Spinner",
+      "price": 3.99,
       "rating": 4.0
     },
     {
-      "name": "Product E",
-      "price": 15.0,
-      "rating": 1.5
+      "name": "Plastic Fidget Spinner",
+      "price": 2.99,
+      "rating": 2.5
+    },
+    {
+      "name": "Wooden Fidget Spinner",
+      "price": 4.49,
+      "rating": 3.2
     }
   ],
   "filtered_products": [
     {
-      "name": "Product A",
-      "price": 30.0,
-      "rating": 2.5
+      "name": "Classic Fidget Spinner",
+      "price": 4.99,
+      "rating": 4.5
     },
     {
-      "name": "Product B",
-      "price": 25.0,
-      "rating": 3.0
+      "name": "LED Light Fidget Spinner",
+      "price": 5.0,
+      "rating": 3.8
     },
     {
-      "name": "Product C",
-      "price": 32.0,
-      "rating": 2.0
+      "name": "Metal Fidget Spinner",
+      "price": 3.99,
+      "rating": 4.0
+    },
+    {
+      "name": "Wooden Fidget Spinner",
+      "price": 4.49,
+      "rating": 3.2
     }
   ],
   "top_products": [
     {
-      "name": "Product B",
-      "price": 25.0,
-      "rating": 3.0
+      "name": "Classic Fidget Spinner",
+      "price": 4.99,
+      "rating": 4.5
     },
     {
-      "name": "Product A",
-      "price": 30.0,
-      "rating": 2.5
+      "name": "LED Light Fidget Spinner",
+      "price": 5.0,
+      "rating": 3.8
     },
     {
-      "name": "Product C",
-      "price": 32.0,
-      "rating": 2.0
+      "name": "Metal Fidget Spinner",
+      "price": 3.99,
+      "rating": 4.0
     }
   ],
   "best_match": {
-    "name": "Product B",
-    "price": 25.0,
-    "rating": 3.0
+    "name": "Classic Fidget Spinner",
+    "price": 4.99,
+    "rating": 4.5
   }
 }
