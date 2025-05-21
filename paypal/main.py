@@ -27,6 +27,28 @@ toolkit = PayPalToolkit(
 # Get PayPal tools by name
 paypal_tools = {tool.name: tool for tool in toolkit.get_tools()}
 
+# Menu for secure communication
+
+
+def secure_communicate_menu():
+    print("\nSecure Communication with PayPalAgent")
+    print("1. FakeAgent tries to communicate")
+    print("2. MarketAgent tries to communicate")
+    choice = input("Choose an option (1 or 2): ").strip()
+    if choice == "1":
+        # FakeAgent: No identity, should return Unauthorized
+        result = run_async(paypal_agent.secure_communicate(
+            fake_agent, data={}, action="payment_processing"))
+        print("FakeAgent result:", result)
+    elif choice == "2":
+        # MarketAgent: Different trust domain, should return Policy violation
+        run_async(market_agent.initialize())
+        result = run_async(paypal_agent.secure_communicate(
+            market_agent, data={}, action="payment_processing"))
+        print("MarketAgent result:", result)
+    else:
+        print("Invalid option.")
+
 
 def create_order_wrapper(input_str: str) -> str:
     """Create a PayPal order with the given details"""
@@ -148,3 +170,6 @@ crew = Crew(
 
 result = crew.kickoff()
 print("\nResult:", result)
+
+# Add secure communication test
+secure_communicate_menu()

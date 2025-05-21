@@ -28,10 +28,17 @@ ShopperAI is an intelligent shopping assistant that helps users find and analyze
    - See minimum purchase requirements
 
 4. **Customer Support**
+
    - Request refunds
    - Access FAQ help
    - Create support tickets
    - _Note: Tracking support tickets by ID is not yet available. Users receive a confirmation ID when creating a ticket._
+
+5. **FakeAgent and MarketAgent Communication**
+
+   - FakeAgent tries to communicate with PayPalAgent
+   - MarketAgent tries to communicate with PayPalAgent
+   - Exit
 
 ## Customer Support Options
 
@@ -277,6 +284,8 @@ Enter refund amount: 99.99
 - If a transaction is blocked, review the risk warning and try again or contact support.
 - For payment issues, check approval URLs and paymentdetail.json for error logs.
 - For support, ensure correct transaction/customer IDs and provide detailed issue descriptions.
+- If you see "Unauthorized access: No identity has been issued to this agent.", ensure the agent has a valid identity.
+- If you see "Policy violation: Trust domain mismatch.", check the agent's trust domain and policy configuration.
 
 ## Data Privacy & Compliance
 

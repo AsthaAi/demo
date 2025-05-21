@@ -156,3 +156,54 @@ class IAMUtils:
             print(f"├── Action: {action}")
             print(f"└── Error: {error_msg}")
             raise PolicyVerificationError(error_msg)
+
+    async def verify_agent_access_by_trustDomain(self, agent_id: str, policy_code: str, trust_domain: str) -> bool:
+        """
+        Verify if an agent's trust domain matches the required trust domain.
+
+        Args:
+            agent_id: The AZTP ID of the agent
+            policy_code: The policy code to check against
+            trust_domain: The required trust domain
+
+        Returns:
+            bool: True if trust domain matches, False otherwise
+        """
+        try:
+            print(f"\n🔒 Verifying trust domain for agent: {agent_id}")
+            print(f"├── Policy Code: {policy_code}")
+            print(f"└── Required Trust Domain: {trust_domain}")
+
+            identity_access_policy = await self.aztpClient.get_policy(agent_id)
+            policy_dict = None
+            if isinstance(identity_access_policy, list):
+                if not identity_access_policy:
+                    print("Policy list is empty.")
+                    return False
+                policy_dict = identity_access_policy[0]
+            elif isinstance(identity_access_policy, dict):
+                policy_dict = identity_access_policy
+            else:
+                print(identity_access_policy)
+                return False
+
+            # Extract trust_domain from policy Condition.StringEquals
+            policy_condition = policy_dict.get("Condition", {})
+            string_equals = policy_condition.get("StringEquals", {})
+            agent_trust_domain = string_equals.get("trust_domain")
+            trust_domain_matches = (agent_trust_domain == trust_domain)
+
+            print(f"\n✨ Trust Domain verification result:")
+            print(f"├── Agent ID: {agent_id}")
+            print(f"├── Policy Trust Domain: {agent_trust_domain}")
+            print(
+                f"└── Trust Domain Match: {'✅ Yes' if trust_domain_matches else '❌ No'}")
+
+            return trust_domain_matches
+        except Exception as e:
+            print(f"\n❌ Error verifying trust domain:")
+            print(f"├── Agent ID: {agent_id}")
+            print(f"├── Policy Code: {policy_code}")
+            print(f"├── Trust Domain: {trust_domain}")
+            print(f"└── Error: {str(e)}")
+            return False

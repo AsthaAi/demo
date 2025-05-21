@@ -21,6 +21,8 @@ import asyncio
 from datetime import datetime, timedelta
 import uuid
 import platform
+from agents.fake_agent import FakeAgent
+from agents.market_agent import MarketAgent
 
 load_dotenv()
 
@@ -955,11 +957,13 @@ def main():
         print("2. View your shopping history and personalized discounts")
         print("3. View active promotions")
         print("4. Customer Support")
-        print("5. Exit")
+        print("5. FakeAgent tries to communicate with PayPalAgent")
+        print("6. MarketAgent tries to communicate with PayPalAgent")
+        print("7. Exit")
 
         while True:
             try:
-                choice = input("\nPlease select an action (1-5): ")
+                choice = input("\nPlease select an action (1-7): ")
 
                 if choice == "1":
                     await search_and_buy_products()
@@ -1228,10 +1232,25 @@ def main():
                                         "\nPlease select a valid option (1-4) or ask a question.")
 
                 elif choice == "5":
+                    fake_agent = FakeAgent()
+                    paypal_agent = PayPalAgent()
+                    aztp_id = getattr(
+                        getattr(fake_agent, 'aztp', None), 'aztp_id', None)
+                    result = await paypal_agent.secure_communicate(aztp_id, data={}, action="payment_processing")
+                    print("FakeAgent result:", result)
+                elif choice == "6":
+                    market_agent = MarketAgent()
+                    paypal_agent = PayPalAgent()
+                    await market_agent.initialize()
+                    aztp_id = getattr(
+                        getattr(market_agent, 'aztp', None), 'aztp_id', None)
+                    result = await paypal_agent.secure_communicate(aztp_id, data={}, action="payment_processing")
+                    print("MarketAgent result:", result)
+                elif choice == "7":
                     print("\nThank you for using ShopperAI!")
                     break
                 else:
-                    print("\nInvalid choice. Please select 1-5.")
+                    print("\nInvalid choice. Please select 1-7.")
 
             except Exception as e:
                 print(f"\nError: {str(e)}")
