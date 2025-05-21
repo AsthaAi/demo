@@ -124,7 +124,7 @@ The RiskAgent ensures the security and integrity of transactions by analyzing an
 
 ---
 
-## FakeAgent
+## MaliciousAgent
 
 - Used to test IAM rejection for agents without identity.
 

@@ -106,7 +106,7 @@ This document outlines the plan for implementing new features in the ShopperAI s
   }
   ```
 
-#### FakeAgent
+#### MaliciousAgent
 
 - **Purpose**: Simulate an agent without a valid identity for security testing
 - **Responsibilities**:
@@ -260,7 +260,7 @@ PayPalAgent exposes a communication method that accepts an aztp_id and data from
 
 **Example Scenarios:**
 
-- If FakeAgent (no identity) tries to connect, the method returns "Unauthorized access."
+- If MaliciousAgent (no identity) tries to connect, the method returns "Unauthorized access."
 - If MarketAgent (wrong trust domain) tries to connect, the method returns "Policy violation."
 - If a valid agent with correct trust domain and permissions connects, the method prints "Connection successful."
 
@@ -288,10 +288,10 @@ PayPalAgent exposes a communication method that accepts an aztp_id and data from
 - Policy enforcement
 - Access control verification
 - **Edge case rejection tests:**
-  - FakeAgent unauthorized access attempt
+  - MaliciousAgent unauthorized access attempt
   - MarketAgent cross-trust domain policy violation
 - **PayPalAgent communication method tests:**
-  - Unauthorized access (FakeAgent)
+  - Unauthorized access (MaliciousAgent)
   - Policy violation (MarketAgent)
   - Successful connection (valid agent)
 

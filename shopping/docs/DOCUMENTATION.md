@@ -34,9 +34,9 @@ ShopperAI is an intelligent shopping assistant that helps users find and analyze
    - Create support tickets
    - _Note: Tracking support tickets by ID is not yet available. Users receive a confirmation ID when creating a ticket._
 
-5. **FakeAgent and MarketAgent Communication**
+5. **MaliciousAgent and MarketAgent Communication**
 
-   - FakeAgent tries to communicate with PayPalAgent
+   - MaliciousAgent tries to communicate with PayPalAgent
    - MarketAgent tries to communicate with PayPalAgent
    - Exit
 
@@ -285,7 +285,7 @@ Enter refund amount: 99.99
 - For payment issues, check approval URLs and paymentdetail.json for error logs.
 - For support, ensure correct transaction/customer IDs and provide detailed issue descriptions.
 - If you see "Unauthorized access: No identity has been issued to this agent.", ensure the agent has a valid identity.
-- If you see "Policy violation: Trust domain mismatch.", check the agent's trust domain and policy configuration.
+- If you see "This agent does not have access to the PayPal agent due to a failed trust domain verification—either because of misconfiguration or an untrusted domain. If you believe this is an error, please contact our support agent and create a ticket; we'll resolve it as soon as possible.", check the agent's trust domain and policy configuration.
 
 ## Data Privacy & Compliance
 

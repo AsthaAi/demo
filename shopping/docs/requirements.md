@@ -19,7 +19,7 @@
 4. New Scenarios: Agent Access Control Edge Cases
 
    a. Unauthorized Agent Attempt
-   A "FakeAgent" (lacking a valid identity) attempts to connect to the PayPalAgent.
+   A "MaliciousAgent" (lacking a valid identity) attempts to connect to the PayPalAgent.
    • Expected Outcome:
    PayPalAgent immediately rejects the connection, returning an "Unauthorized" error due to missing or invalid identity credentials.
 
@@ -48,6 +48,6 @@
 
    Example Scenarios:
 
-   - If FakeAgent (no identity) tries to connect, the method returns "Unauthorized access."
+   - If MaliciousAgent (no identity) tries to connect, the method returns "Unauthorized access."
    - If MarketAgent (wrong trust domain) tries to connect, the method returns "Policy violation."
    - If a valid agent with correct trust domain and permissions connects, the method prints "Connection successful."
