@@ -1,196 +1,133 @@
 {
   "raw_products": [
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 2499.99,
-      "rating": 4.5,
-      "features": {
-        "display": "1.4 inches",
-        "battery_life": "40 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate",
-          "Sleep tracking",
-          "Stress monitoring"
-        ]
-      },
-      "url": "https://example.com/product/1"
+      "title": "The Great Gatsby",
+      "price": 15.99,
+      "rating": 4.2
     },
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 1999.99,
-      "rating": 3.0,
-      "features": {
-        "display": "1.2 inches",
-        "battery_life": "36 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate",
-          "Sleep tracking"
-        ]
-      },
-      "url": "https://example.com/product/2"
+      "title": "1984",
+      "price": 18.0,
+      "rating": 4.5
     },
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 2200.0,
-      "rating": 4.8,
-      "features": {
-        "display": "1.5 inches",
-        "battery_life": "48 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate",
-          "Sleep tracking",
-          "ECG",
-          "Blood oxygen"
-        ]
-      },
-      "url": "https://example.com/product/3"
+      "title": "The Catcher in the Rye",
+      "price": 12.99,
+      "rating": 3.8
     },
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 2300.0,
-      "rating": 2.5,
-      "features": {
-        "display": "1.4 inches",
-        "battery_life": "45 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate"
-        ]
-      },
-      "url": "https://example.com/product/4"
+      "title": "Twilight",
+      "price": 20.0,
+      "rating": 2.5
+    },
+    {
+      "title": "Fifty Shades of Grey",
+      "price": 22.0,
+      "rating": 3.2
+    },
+    {
+      "title": "The Alchemist",
+      "price": 14.95,
+      "rating": 4.1
+    },
+    {
+      "title": "The Fault in Our Stars",
+      "price": 10.99,
+      "rating": 4.7
+    },
+    {
+      "title": "The Hunger Games",
+      "price": 19.99,
+      "rating": 4.0
+    },
+    {
+      "title": "War and Peace",
+      "price": 21.0,
+      "rating": 2.0
+    },
+    {
+      "title": "Pride and Prejudice",
+      "price": 16.99,
+      "rating": 3.0
     }
   ],
   "filtered_products": [
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 2499.99,
-      "rating": 4.5,
-      "features": {
-        "display": "1.4 inches",
-        "battery_life": "40 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate",
-          "Sleep tracking",
-          "Stress monitoring"
-        ]
-      },
-      "url": "https://example.com/product/1"
+      "title": "The Great Gatsby",
+      "price": 15.99,
+      "rating": 4.2
     },
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 1999.99,
-      "rating": 3.0,
-      "features": {
-        "display": "1.2 inches",
-        "battery_life": "36 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate",
-          "Sleep tracking"
-        ]
-      },
-      "url": "https://example.com/product/2"
+      "title": "1984",
+      "price": 18.0,
+      "rating": 4.5
     },
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 2200.0,
-      "rating": 4.8,
-      "features": {
-        "display": "1.5 inches",
-        "battery_life": "48 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate",
-          "Sleep tracking",
-          "ECG",
-          "Blood oxygen"
-        ]
-      },
-      "url": "https://example.com/product/3"
+      "title": "The Catcher in the Rye",
+      "price": 12.99,
+      "rating": 3.8
     },
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 2300.0,
-      "rating": 2.5,
-      "features": {
-        "display": "1.4 inches",
-        "battery_life": "45 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate"
-        ]
-      },
-      "url": "https://example.com/product/4"
+      "title": "Twilight",
+      "price": 20.0,
+      "rating": 2.5
+    },
+    {
+      "title": "Fifty Shades of Grey",
+      "price": 22.0,
+      "rating": 3.2
+    },
+    {
+      "title": "The Alchemist",
+      "price": 14.95,
+      "rating": 4.1
+    },
+    {
+      "title": "The Fault in Our Stars",
+      "price": 10.99,
+      "rating": 4.7
+    },
+    {
+      "title": "The Hunger Games",
+      "price": 19.99,
+      "rating": 4.0
+    },
+    {
+      "title": "War and Peace",
+      "price": 21.0,
+      "rating": 2.0
+    },
+    {
+      "title": "Pride and Prejudice",
+      "price": 16.99,
+      "rating": 3.0
     }
   ],
   "top_products": [
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 2200.0,
-      "rating": 4.8,
-      "features": {
-        "display": "1.5 inches",
-        "battery_life": "48 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate",
-          "Sleep tracking",
-          "ECG",
-          "Blood oxygen"
-        ]
-      },
-      "url": "https://example.com/product/3"
+      "title": "1984",
+      "price": 18.0,
+      "rating": 4.5
     },
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 2499.99,
-      "rating": 4.5,
-      "features": {
-        "display": "1.4 inches",
-        "battery_life": "40 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate",
-          "Sleep tracking",
-          "Stress monitoring"
-        ]
-      },
-      "url": "https://example.com/product/1"
+      "title": "The Fault in Our Stars",
+      "price": 10.99,
+      "rating": 4.7
     },
     {
-      "name": "Samsung Galaxy Watch FE",
-      "price": 2300.0,
-      "rating": 2.5,
-      "features": {
-        "display": "1.4 inches",
-        "battery_life": "45 hours",
-        "water_resistant": "Yes",
-        "health_tracking": [
-          "Heart rate"
-        ]
-      },
-      "url": "https://example.com/product/4"
+      "title": "The Hunger Games",
+      "price": 19.99,
+      "rating": 4.0
+    },
+    {
+      "title": "The Alchemist",
+      "price": 14.95,
+      "rating": 4.1
     }
   ],
   "best_match": {
-    "name": "Samsung Galaxy Watch FE",
-    "price": 2200.0,
-    "rating": 4.8,
-    "features": {
-      "display": "1.5 inches",
-      "battery_life": "48 hours",
-      "water_resistant": "Yes",
-      "health_tracking": [
-        "Heart rate",
-        "Sleep tracking",
-        "ECG",
-        "Blood oxygen"
-      ]
-    },
-    "url": "https://example.com/product/3"
+    "title": "The Fault in Our Stars",
+    "price": 10.99,
+    "rating": 4.7
   }
 }

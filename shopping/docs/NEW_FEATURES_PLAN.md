@@ -106,6 +106,50 @@ This document outlines the plan for implementing new features in the ShopperAI s
   }
   ```
 
+#### FakeAgent
+
+- **Purpose**: Simulate an agent without a valid identity for security testing
+- **Responsibilities**:
+  - Attempt unauthorized access to other agents (e.g., PayPalAgent)
+  - Test IAM rejection mechanisms
+- **Access Level**:
+  ```json
+  {
+    "Version": "2025-05-16",
+    "Statement": {
+      "Sid": "fake-agent-policy",
+      "Effect": "Deny",
+      "Action": ["*"],
+      "Condition": {
+        "Null": { "identity": true }
+      }
+    }
+  }
+  ```
+
+#### MarketAgent
+
+- **Purpose**: Represent an agent from a different trust domain
+- **Responsibilities**:
+  - Attempt cross-domain interactions (e.g., with PayPalAgent)
+  - Test policy enforcement for trust domains
+- **Access Level**:
+  ```json
+  {
+    "Version": "2025-05-16",
+    "Statement": {
+      "Sid": "market-agent-policy",
+      "Effect": "Allow",
+      "Action": ["market_operations"],
+      "Condition": {
+        "StringEquals": {
+          "trust_domain": "marketplace.com"
+        }
+      }
+    }
+  }
+  ```
+
 ### 2. IAM Implementation
 
 #### Access Control System
@@ -196,6 +240,30 @@ graph TD
     E --> F
 ```
 
+## PayPalAgent Secure Communication Method
+
+PayPalAgent exposes a communication method that accepts an aztp_id and data from another agent.
+
+**Process:**
+
+1. **Policy & Trust Domain Check:**
+   - The method checks:
+     • Whether the aztp_id is present (valid identity).
+     • Whether the requested action is allowed for the agent (using is_action_allowed).
+     • Whether the agent's trustDomain matches the policy requirements.
+   - If the aztp_id is missing, it returns an "Unauthorized access" error.
+   - If the aztp_id is present but fails policy or trust domain checks, it returns an error message indicating a policy violation.
+   - If all checks pass, it prints "Connection successful."
+2. **Error Handling:**
+   - Any unsuccessful policy or trust domain check results in a clear error message ("Policy violation").
+   - Only missing aztp_id results in "Unauthorized access."
+
+**Example Scenarios:**
+
+- If FakeAgent (no identity) tries to connect, the method returns "Unauthorized access."
+- If MarketAgent (wrong trust domain) tries to connect, the method returns "Policy violation."
+- If a valid agent with correct trust domain and permissions connects, the method prints "Connection successful."
+
 ## Security Considerations
 
 ### Access Control
@@ -219,6 +287,13 @@ graph TD
 - Individual agent functionality
 - Policy enforcement
 - Access control verification
+- **Edge case rejection tests:**
+  - FakeAgent unauthorized access attempt
+  - MarketAgent cross-trust domain policy violation
+- **PayPalAgent communication method tests:**
+  - Unauthorized access (FakeAgent)
+  - Policy violation (MarketAgent)
+  - Successful connection (valid agent)
 
 ### Integration Testing
 
@@ -226,6 +301,9 @@ graph TD
 - Workflow validation
 - Security measures
 - Performance metrics
+- **Edge case scenario validation:**
+  - Ensure PayPalAgent correctly rejects unauthorized and cross-trust domain requests
+  - Ensure PayPalAgent communication method enforces identity and policy checks
 
 ### End-to-End Testing
 

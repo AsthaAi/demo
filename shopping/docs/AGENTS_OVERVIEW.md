@@ -54,6 +54,7 @@ The PayPalAgent handles all payment-related operations, ensuring secure and smoo
 - Handles payment approval and capture.
 - Integrates with risk analysis to ensure transaction safety.
 - Logs payment details for history and auditing.
+- Enforces secure communication: Only agents with valid identity and correct trust domain can interact.
 
 **Typical Flow:**
 
@@ -123,6 +124,16 @@ The RiskAgent ensures the security and integrity of transactions by analyzing an
 
 ---
 
+## FakeAgent
+
+- Used to test IAM rejection for agents without identity.
+
+## MarketAgent
+
+- Used to test policy enforcement for agents from a different trust domain.
+
+---
+
 ## How Agents Work Together
 
 1. **User initiates a product search:**  
@@ -140,6 +151,8 @@ The RiskAgent ensures the security and integrity of transactions by analyzing an
 
 5. **After purchase:**  
    The CustomerSupportAgent is available for refunds, FAQs, and support tickets.
+
+- All agent-to-agent communication is subject to IAM and trust domain checks.
 
 ---
 

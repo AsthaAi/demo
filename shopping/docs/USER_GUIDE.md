@@ -25,7 +25,9 @@ You'll be presented with these options:
 2. **View your shopping history and personalized discounts**
 3. **View active promotions**
 4. **Customer Support**
-5. **Exit**
+5. FakeAgent tries to communicate with PayPalAgent
+6. MarketAgent tries to communicate with PayPalAgent
+7. Exit
 
 ---
 
@@ -114,3 +116,11 @@ A: ShopperAI checks for personalized and campaign promotions before you pay. If 
 
 - If you encounter errors, check your internet connection and ensure your environment variables (like PayPal and OpenAI API keys) are set.
 - For technical issues, use the Customer Support > Create Support Ticket option.
+
+### Agent Communication Security
+
+- Only agents with a valid, issued identity can communicate with PayPalAgent.
+- If an agent without identity (e.g., FakeAgent) tries to connect, you'll see:
+  "Unauthorized access: No identity has been issued to this agent."
+- If an agent from a different trust domain (e.g., MarketAgent) tries to connect, you'll see:
+  "Policy violation: Trust domain mismatch."

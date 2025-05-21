@@ -3,6 +3,7 @@ PayPal Agent for ShopperAI
 Handles PayPal payment processing and transaction management.
 """
 from typing import Dict, Any, Optional, List
+from urllib.parse import urlparse
 from crewai import Agent
 from aztp_client import Aztp
 from aztp_client.client import SecureConnection
@@ -646,3 +647,40 @@ We are pleased to inform you that your payment has been successfully captured. B
                 'error': error_msg,
                 'revoked': False
             }
+
+    async def secure_communicate(self, aztp_id: str, data: dict, action: str) -> str:
+        """
+        Securely communicate with PayPalAgent by checking aztp_id and policy using IAMUtils.
+
+        Args:
+            aztp_id: The AZTP identity of the calling agent
+            data: Data sent by the calling agent
+            action: The action the calling agent wants to perform
+
+        Returns:
+            str: Result message (success or error)
+        """
+        try:
+            if not aztp_id:
+                print(
+                    "[INFO] An agent without identity attempted to communicate with PayPalAgent.")
+                return "Unauthorized access: No identity has been issued to this agent."
+            print(
+                f"[INFO] Agent {aztp_id} is attempting to communicate with PayPalAgent.")
+            try:
+                parsed_url = urlparse(aztp_id)
+                domain = parsed_url.netloc
+                print(domain)
+                result = await self.iam_utils.verify_agent_access_by_trustDomain(
+                    agent_id=aztp_id,
+                    policy_code="policy:a07507f6fe70",
+                    trust_domain=domain
+                )
+                if not result:
+                    return "Policy violation: Trust domain mismatch."
+            except Exception as e:
+                return f"Policy violation: {str(e)}"
+            print("Connection successful.")
+            return "Connection successful."
+        except Exception as e:
+            return f"Unauthorized access: {str(e)}"
