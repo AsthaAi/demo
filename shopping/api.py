@@ -63,6 +63,10 @@ class SupportTicketRequest(BaseModel):
     priority: str
     description: str
 
+class AgentCommunicationRequest(BaseModel):
+    action: str = "payment_processing"
+    data: Dict[str, Any] = {}
+
 @app.post("/api/search")
 async def search_products(request: SearchRequest):
     try:
@@ -264,6 +268,24 @@ async def support_ticket(request: SupportTicketRequest):
         return {"success": True, "result": result}
     except Exception as e:
         return {"success": False, "result": f"Error: {str(e)}"}
+
+@app.post("/api/test-fake-agent")
+async def test_fake_agent():
+    try:
+        from main import test_fake_agent_communication
+        result = await test_fake_agent_communication()
+        return {"success": True, "result": result}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/test-market-agent")
+async def test_market_agent():
+    try:
+        from main import test_market_agent_communication
+        result = await test_market_agent_communication()
+        return {"success": True, "result": result}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

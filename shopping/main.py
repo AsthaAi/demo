@@ -1188,6 +1188,33 @@ def test_write_demo_tracker():
         print(f"[TEST] Failed to write to {tracker_path}: {e}")
 
 
+async def test_fake_agent_communication():
+    """Test communication between FakeAgent and PayPalAgent"""
+    try:
+        fake_agent = FakeAgent()
+        paypal_agent = PayPalAgent()
+        aztp_id = getattr(getattr(fake_agent, 'aztp', None), 'aztp_id', None)
+        result = await paypal_agent.secure_communicate(aztp_id, data={}, action="payment_processing")
+        print("FakeAgent result:", result)
+        return result
+    except Exception as e:
+        print(f"Error testing FakeAgent: {str(e)}")
+        raise
+
+async def test_market_agent_communication():
+    """Test communication between MarketAgent and PayPalAgent"""
+    try:
+        market_agent = MarketAgent()
+        paypal_agent = PayPalAgent()
+        await market_agent.initialize()
+        aztp_id = getattr(getattr(market_agent, 'aztp', None), 'aztp_id', None)
+        result = await paypal_agent.secure_communicate(aztp_id, data={}, action="payment_processing")
+        print("MarketAgent result:", result)
+        return result
+    except Exception as e:
+        print(f"Error testing MarketAgent: {str(e)}")
+        raise
+
 def main():
     """
     Main function to run the ShopperAI application
@@ -1474,20 +1501,9 @@ def main():
                                         "\nPlease select a valid option (1-4) or ask a question.")
 
                 elif choice == "5":
-                    fake_agent = FakeAgent()
-                    paypal_agent = PayPalAgent()
-                    aztp_id = getattr(
-                        getattr(fake_agent, 'aztp', None), 'aztp_id', None)
-                    result = await paypal_agent.secure_communicate(aztp_id, data={}, action="payment_processing")
-                    print("FakeAgent result:", result)
+                    await test_fake_agent_communication()
                 elif choice == "6":
-                    market_agent = MarketAgent()
-                    paypal_agent = PayPalAgent()
-                    await market_agent.initialize()
-                    aztp_id = getattr(
-                        getattr(market_agent, 'aztp', None), 'aztp_id', None)
-                    result = await paypal_agent.secure_communicate(aztp_id, data={}, action="payment_processing")
-                    print("MarketAgent result:", result)
+                    await test_market_agent_communication()
                 elif choice == "7":
                     print("\nThank you for using ShopperAI!")
                     break

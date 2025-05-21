@@ -105,6 +105,8 @@ const MENU_OPTIONS = [
   { key: 'history', label: 'View your shopping history and personalized discounts' },
   { key: 'promotions', label: 'View active promotions' },
   { key: 'support', label: 'Customer Support' },
+  { key: 'fake_agent', label: 'Fake Agent' },
+  { key: 'market_agent', label: 'Market Agent' },
   { key: 'exit', label: 'Exit' },
 ];
 
@@ -199,14 +201,26 @@ export default function Home() {
       setStep('support_menu');
       setMessages(prev => [
         ...prev,
-        { type: 'assistant', content: `Customer Support Options:\n${SUPPORT_OPTIONS.map((opt, i) => `${i + 1}. ${opt.label}`).join('\n')}` }
+        { type: 'assistant', content: 'Customer Support Options:\n' + SUPPORT_OPTIONS.map((opt, i) => `${i + 1}. ${opt.label}`).join('\n') }
       ]);
-    } else if (optionKey === 'exit') {
-      setStep('exit');
+    } else if (optionKey === 'fake_agent') {
       setMessages(prev => [
         ...prev,
-        { type: 'assistant', content: 'Thank you for using ShopperAI! Goodbye.' }
+        { type: 'assistant', content: 'Fake Agent communication...' }
       ]);
+      testAgent('fake');
+    } else if (optionKey === 'market_agent') {
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Market Agent communication...' }
+      ]);
+      testAgent('market');
+    } else if (optionKey === 'exit') {
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: 'Thank you for using ShopperAI!' }
+      ]);
+      setStep('exit');
     }
   };
 
@@ -244,6 +258,32 @@ export default function Home() {
       ]);
     }
     setStep('menu');
+  };
+
+  const testAgent = async (agentType: 'fake' | 'market') => {
+    setIsLoading(true);
+    try {
+      const response = await axios.post(`http://localhost:8000/api/test-${agentType}-agent`);
+      if (response.data.success) {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: `${agentType === 'fake' ? 'Fake' : 'Market'} Agent: ${JSON.stringify(response.data.result, null, 2)}` }
+        ]);
+      } else {
+        setMessages(prev => [
+          ...prev,
+          { type: 'assistant', content: `Error testing ${agentType} agent: ${response.data.error}` }
+        ]);
+      }
+    } catch (error) {
+      setMessages(prev => [
+        ...prev,
+        { type: 'assistant', content: `Error testing ${agentType} agent: ${error instanceof Error ? error.message : 'Unknown error'}` }
+      ]);
+    } finally {
+      setIsLoading(false);
+      setStep('menu');
+    }
   };
 
   const handleStepInput = async (e: React.FormEvent) => {
