@@ -9,7 +9,7 @@ asgiref==3.8.1
 asttokens==3.0.0
 attrs==25.3.0
 auth0-python==4.9.0
-aztp-client==1.0.23
+aztp-client==1.0.30
 backoff==2.2.1
 bcrypt==4.3.0
 beautifulsoup4==4.13.4
