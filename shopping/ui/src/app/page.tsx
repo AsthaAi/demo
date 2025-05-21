@@ -267,7 +267,7 @@ export default function Home() {
       if (response.data.success) {
         setMessages(prev => [
           ...prev,
-          { type: 'assistant', content: `${agentType === 'fake' ? 'Malicious' : 'Unauthorized Policy'} Agent: ${agentType === 'fake' ? JSON.stringify(response.data.result, null, 2) : "This agent does not have access to the PayPal agent due to a failed trust domain verification—either because of misconfiguration or an untrusted domain. If you believe this is an error, please contact our support team and create a ticket; we’ll resolve it as soon as possible."}` }
+          { type: 'assistant', content: `${agentType === 'fake' ? 'Malicious' : 'Unauthorized Policy'} Agent: ${agentType === 'fake' ? JSON.stringify(response.data.result, null, 2) : "This agent does not have access to the PayPal agent due to a failed trust domain verification—either because of misconfiguration or an untrusted domain. If you believe this is an error, please contact our support team and create a ticket; we'll resolve it as soon as possible."}` }
         ]);
       } else {
         setMessages(prev => [
@@ -669,7 +669,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 min-h-[600px] flex flex-col">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto mb-4 space-y-4">
@@ -694,12 +694,12 @@ export default function Home() {
 
           {/* Step-based Input */}
           {step === 'menu' && (
-            <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {MENU_OPTIONS.map((opt, i) => (
                 <Button
                   key={opt.key}
                   onClick={() => handleMenuSelect(opt.key)}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  className="w-full !bg-neutral-200 hover:!bg-neutral-300 !text-black"
                 >
                   {i + 1}. {opt.label}
                 </Button>
