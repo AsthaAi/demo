@@ -32,14 +32,14 @@ paypal_tools = {tool.name: tool for tool in toolkit.get_tools()}
 
 def secure_communicate_menu():
     print("\nSecure Communication with PayPalAgent")
-    print("1. FakeAgent tries to communicate")
+    print("1. MaliciousAgent tries to communicate")
     print("2. MarketAgent tries to communicate")
     choice = input("Choose an option (1 or 2): ").strip()
     if choice == "1":
-        # FakeAgent: No identity, should return Unauthorized
+        # MaliciousAgent: No identity, should return Unauthorized
         result = run_async(paypal_agent.secure_communicate(
-            fake_agent, data={}, action="payment_processing"))
-        print("FakeAgent result:", result)
+            malicious_agent, data={}, action="payment_processing"))
+        print("MaliciousAgent result:", result)
     elif choice == "2":
         # MarketAgent: Different trust domain, should return Policy violation
         run_async(market_agent.initialize())

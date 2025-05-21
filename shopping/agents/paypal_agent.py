@@ -678,7 +678,7 @@ We are pleased to inform you that your payment has been successfully captured. B
                     action="paypal_operations"
                 )
                 if not result:
-                    return "Policy violation: Trust domain mismatch."
+                    return "This agent does not have access to the PayPal agent due to a failed trust domain verification—either because of misconfiguration or an untrusted domain. If you believe this is an error, please contact our support agent and create a ticket; we'll resolve it as soon as possible."
             except Exception as e:
                 return f"Policy violation: {str(e)}"
             print("Connection successful.")

@@ -21,7 +21,7 @@ import asyncio
 from datetime import datetime, timedelta
 import uuid
 import platform
-from agents.fake_agent import FakeAgent
+from agents.malicious_agent import MaliciousAgent
 from agents.market_agent import MarketAgent
 
 load_dotenv()
@@ -957,7 +957,7 @@ def main():
         print("2. View your shopping history and personalized discounts")
         print("3. View active promotions")
         print("4. Customer Support")
-        print("5. FakeAgent tries to communicate with PayPalAgent")
+        print("5. MaliciousAgent tries to communicate with PayPalAgent")
         print("6. MarketAgent tries to communicate with PayPalAgent")
         print("7. Exit")
 
@@ -1232,12 +1232,12 @@ def main():
                                         "\nPlease select a valid option (1-4) or ask a question.")
 
                 elif choice == "5":
-                    fake_agent = FakeAgent()
+                    malicious_agent = MaliciousAgent()
                     paypal_agent = PayPalAgent()
                     aztp_id = getattr(
-                        getattr(fake_agent, 'aztp', None), 'aztp_id', None)
+                        getattr(malicious_agent, 'aztp', None), 'aztp_id', None)
                     result = await paypal_agent.secure_communicate(aztp_id, data={}, action="payment_processing")
-                    print("FakeAgent result:", result)
+                    print("MaliciousAgent result:", result)
                 elif choice == "6":
                     market_agent = MarketAgent()
                     paypal_agent = PayPalAgent()
