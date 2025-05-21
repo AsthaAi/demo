@@ -674,7 +674,8 @@ We are pleased to inform you that your payment has been successfully captured. B
                 result = await self.iam_utils.verify_agent_access_by_trustDomain(
                     agent_id=aztp_id,
                     policy_code="policy:a07507f6fe70",
-                    trust_domain=domain
+                    trust_domain=domain,
+                    action="paypal_operations"
                 )
                 if not result:
                     return "Policy violation: Trust domain mismatch."
