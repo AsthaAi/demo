@@ -1,133 +1,68 @@
 {
   "raw_products": [
     {
-      "title": "The Great Gatsby",
-      "price": 15.99,
-      "rating": 4.2
-    },
-    {
-      "title": "1984",
-      "price": 18.0,
-      "rating": 4.5
-    },
-    {
-      "title": "The Catcher in the Rye",
-      "price": 12.99,
-      "rating": 3.8
-    },
-    {
-      "title": "Twilight",
-      "price": 20.0,
+      "name": "Product A",
+      "price": 30.0,
       "rating": 2.5
     },
     {
-      "title": "Fifty Shades of Grey",
-      "price": 22.0,
-      "rating": 3.2
+      "name": "Product B",
+      "price": 25.0,
+      "rating": 3.0
     },
     {
-      "title": "The Alchemist",
-      "price": 14.95,
-      "rating": 4.1
-    },
-    {
-      "title": "The Fault in Our Stars",
-      "price": 10.99,
-      "rating": 4.7
-    },
-    {
-      "title": "The Hunger Games",
-      "price": 19.99,
-      "rating": 4.0
-    },
-    {
-      "title": "War and Peace",
-      "price": 21.0,
+      "name": "Product C",
+      "price": 32.0,
       "rating": 2.0
     },
     {
-      "title": "Pride and Prejudice",
-      "price": 16.99,
-      "rating": 3.0
+      "name": "Product D",
+      "price": 40.0,
+      "rating": 4.0
+    },
+    {
+      "name": "Product E",
+      "price": 15.0,
+      "rating": 1.5
     }
   ],
   "filtered_products": [
     {
-      "title": "The Great Gatsby",
-      "price": 15.99,
-      "rating": 4.2
-    },
-    {
-      "title": "1984",
-      "price": 18.0,
-      "rating": 4.5
-    },
-    {
-      "title": "The Catcher in the Rye",
-      "price": 12.99,
-      "rating": 3.8
-    },
-    {
-      "title": "Twilight",
-      "price": 20.0,
+      "name": "Product A",
+      "price": 30.0,
       "rating": 2.5
     },
     {
-      "title": "Fifty Shades of Grey",
-      "price": 22.0,
-      "rating": 3.2
-    },
-    {
-      "title": "The Alchemist",
-      "price": 14.95,
-      "rating": 4.1
-    },
-    {
-      "title": "The Fault in Our Stars",
-      "price": 10.99,
-      "rating": 4.7
-    },
-    {
-      "title": "The Hunger Games",
-      "price": 19.99,
-      "rating": 4.0
-    },
-    {
-      "title": "War and Peace",
-      "price": 21.0,
-      "rating": 2.0
-    },
-    {
-      "title": "Pride and Prejudice",
-      "price": 16.99,
+      "name": "Product B",
+      "price": 25.0,
       "rating": 3.0
+    },
+    {
+      "name": "Product C",
+      "price": 32.0,
+      "rating": 2.0
     }
   ],
   "top_products": [
     {
-      "title": "1984",
-      "price": 18.0,
-      "rating": 4.5
+      "name": "Product B",
+      "price": 25.0,
+      "rating": 3.0
     },
     {
-      "title": "The Fault in Our Stars",
-      "price": 10.99,
-      "rating": 4.7
+      "name": "Product A",
+      "price": 30.0,
+      "rating": 2.5
     },
     {
-      "title": "The Hunger Games",
-      "price": 19.99,
-      "rating": 4.0
-    },
-    {
-      "title": "The Alchemist",
-      "price": 14.95,
-      "rating": 4.1
+      "name": "Product C",
+      "price": 32.0,
+      "rating": 2.0
     }
   ],
   "best_match": {
-    "title": "The Fault in Our Stars",
-    "price": 10.99,
-    "rating": 4.7
+    "name": "Product B",
+    "price": 25.0,
+    "rating": 3.0
   }
 }
