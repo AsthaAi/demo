@@ -101,12 +101,12 @@ const SUPPORT_OPTIONS = [
 ];
 
 const MENU_OPTIONS = [
-  { key: 'search', label: 'Search and buy products' },
-  { key: 'history', label: 'View your shopping history and personalized discounts' },
-  { key: 'promotions', label: 'View active promotions' },
-  { key: 'support', label: 'Customer Support' },
-  { key: 'fake_agent', label: 'Fake Agent' },
-  { key: 'market_agent', label: 'Market Agent' },
+  { key: 'search', label: 'Research Agent: Search and buy products' },
+  { key: 'history', label: 'History Agent: View your shopping history and personalized discounts' },
+  { key: 'promotions', label: 'Promotions Agent: View active promotions' },
+  { key: 'support', label: 'Customer Support Agent' },
+  { key: 'fake_agent', label: 'Malicious Agent' },
+  { key: 'market_agent', label: 'Agent with Unauthorized Policy' },
   { key: 'exit', label: 'Exit' },
 ];
 
@@ -206,13 +206,13 @@ export default function Home() {
     } else if (optionKey === 'fake_agent') {
       setMessages(prev => [
         ...prev,
-        { type: 'assistant', content: 'Fake Agent communication...' }
+        { type: 'assistant', content: 'Malicious Agent communication...' }
       ]);
       testAgent('fake');
     } else if (optionKey === 'market_agent') {
       setMessages(prev => [
         ...prev,
-        { type: 'assistant', content: 'Market Agent communication...' }
+        { type: 'assistant', content: 'Agent with Unauthorized Policy communication...' }
       ]);
       testAgent('market');
     } else if (optionKey === 'exit') {
@@ -267,7 +267,7 @@ export default function Home() {
       if (response.data.success) {
         setMessages(prev => [
           ...prev,
-          { type: 'assistant', content: `${agentType === 'fake' ? 'Fake' : 'Market'} Agent: ${JSON.stringify(response.data.result, null, 2)}` }
+          { type: 'assistant', content: `${agentType === 'fake' ? 'Malicious' : 'Unauthorized Policy'} Agent: ${agentType === 'fake' ? JSON.stringify(response.data.result, null, 2) : "This agent does not have access to the PayPal agent due to a failed trust domain verification—either because of misconfiguration or an untrusted domain. If you believe this is an error, please contact our support team and create a ticket; we’ll resolve it as soon as possible."}` }
         ]);
       } else {
         setMessages(prev => [
