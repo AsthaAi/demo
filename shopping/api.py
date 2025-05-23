@@ -32,7 +32,9 @@ class PromotionRequest(BaseModel):
     customer_email: str
 
 class CapturePaymentRequest(BaseModel):
-    order_id: str
+    order_id: Optional[str] = None
+    transaction_id: str
+    status: str
 
 class PriceComparisonRequest(BaseModel):
     products: List[Dict[str, Any]]
@@ -200,15 +202,21 @@ async def get_promotions(request: PromotionRequest):
 
 @app.post("/api/capture-payment")
 async def capture_payment(request: CapturePaymentRequest):
-    # Skipping real capture for now
-    # try:
-    #     shopper = ShopperAI("", {"max_price": 1000, "min_rating": 0})
-    #     result = await shopper.capture_payment(request.order_id)
-    #     return {"success": True, "result": result}
-    # except Exception as e:
-    #     print(f"Error capturing payment: {str(e)}")
-    #     raise HTTPException(status_code=500, detail=f"Error capturing payment: {str(e)}")
-    return {"success": True, "result": {"approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=DUMMY"}}
+    try:
+        shopper = ShopperAI("", {})
+        result = await shopper.handle_payment_callback(
+            order_id=request.order_id,
+            transaction_id=request.transaction_id,
+            status=request.status
+        )
+        return result
+    except Exception as e:
+        print(f"Error capturing payment: {str(e)}")
+        return {
+            "success": False,
+            "status": "error",
+            "error": str(e)
+        }
 
 @app.post("/api/create-promotion-campaign")
 async def create_promotion_campaign(campaign_data: CampaignData):

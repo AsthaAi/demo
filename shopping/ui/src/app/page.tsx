@@ -11,6 +11,8 @@ import SearchResults from '../components/SearchResults';
 import Promotions from '../components/Promotions';
 import PaymentModal from '../components/PaymentModal';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import PaymentStatusModal from '../components/PaymentStatusModal';
 
 interface Product {
   name: string;
@@ -154,6 +156,13 @@ export default function Home() {
   const [refundDetails, setRefundDetails] = useState({ tid: '', reason: '', amount: '' });
   const [faqQuestion, setFaqQuestion] = useState('');
   const [ticketDetails, setTicketDetails] = useState({ cid: '', type: '', priority: '', desc: '' });
+  const searchParams = useSearchParams();
+  const [showPaymentStatus, setShowPaymentStatus] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<{
+    orderId: string;
+    transactionId: string;
+    status: 'success' | 'cancel';
+  } | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -175,6 +184,20 @@ export default function Home() {
       ]);
     }
   }, []);
+
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const transactionId = searchParams.get('transaction_id');
+
+    if (status && transactionId) {
+      setPaymentDetails({
+        orderId: localStorage.getItem('orderId') || '',
+        transactionId,
+        status: status as 'success' | 'cancel'
+      });
+      setShowPaymentStatus(true);
+    }
+  }, [searchParams]);
 
   const handleMenuSelect = (optionKey: string) => {
     setPendingAction(optionKey);
@@ -614,7 +637,10 @@ export default function Home() {
   };
 
   const handleOrderComplete = (orderData: any) => {
+    console.log('Order complete:', orderData);
     if (orderData.success && orderData.approval_url) {
+      // set the order id
+      localStorage.setItem('orderId', orderData.order_data.id || '');
       // Redirect to PayPal approval URL
       window.location.href = orderData.approval_url;
     }
@@ -649,6 +675,14 @@ export default function Home() {
     } finally {
       setIsComparing(false);
     }
+  };
+
+  const handleClosePaymentStatus = () => {
+    setShowPaymentStatus(false);
+    setPaymentDetails(null);
+    localStorage.removeItem('orderId');
+    // Remove URL parameters without refreshing the page
+    window.history.replaceState({}, '', '/');
   };
 
   return (
@@ -817,6 +851,16 @@ export default function Home() {
           onClose={() => setShowPaymentModal(false)}
           product={selectedProduct}
           onOrderComplete={handleOrderComplete}
+        />
+      )}
+
+      {paymentDetails && (
+        <PaymentStatusModal
+          show={showPaymentStatus}
+          onClose={handleClosePaymentStatus}
+          orderId={paymentDetails.orderId}
+          transactionId={paymentDetails.transactionId}
+          status={paymentDetails.status}
         />
       )}
     </div>

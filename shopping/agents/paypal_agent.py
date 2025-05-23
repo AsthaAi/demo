@@ -260,7 +260,7 @@ class PayPalAgent(Agent):
         with open(payment_json_path, 'w') as f:
             json.dump(existing, f, indent=2)
 
-    async def create_payment_order(self, amount, currency="USD", description="", payee_email=None):
+    async def create_payment_order(self, amount, currency="USD", description="", payee_email=None, return_url=None, cancel_url=None):
         """Create a PayPal payment order"""
         if not self.is_initialized:
             await self.initialize()
@@ -272,7 +272,9 @@ class PayPalAgent(Agent):
                 amount=amount,
                 currency=currency,
                 description=description,
-                payee_email=payee_email
+                payee_email=payee_email,
+                return_url=return_url,
+                cancel_url=cancel_url
             )
 
             # Log the order creation

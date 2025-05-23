@@ -1,73 +1,83 @@
 {
   "raw_products": [
     {
-      "name": "Classic Fidget Spinner",
-      "price": 4.99,
-      "rating": 4.5
-    },
-    {
-      "name": "LED Light Fidget Spinner",
-      "price": 5.0,
-      "rating": 3.8
+      "name": "Colorful LED Fidget Spinner",
+      "price": 5.99,
+      "rating": 3.5
     },
     {
       "name": "Metal Fidget Spinner",
-      "price": 3.99,
+      "price": 7.0,
       "rating": 4.0
     },
     {
-      "name": "Plastic Fidget Spinner",
-      "price": 2.99,
+      "name": "Basic Plastic Fidget Spinner",
+      "price": 2.5,
       "rating": 2.5
     },
     {
+      "name": "Glow in the Dark Fidget Spinner",
+      "price": 3.99,
+      "rating": 3.0
+    },
+    {
       "name": "Wooden Fidget Spinner",
-      "price": 4.49,
-      "rating": 3.2
+      "price": 6.0,
+      "rating": 1.5
+    },
+    {
+      "name": "Mini Fidget Spinner",
+      "price": 4.99,
+      "rating": 2.0
     }
   ],
   "filtered_products": [
     {
-      "name": "Classic Fidget Spinner",
-      "price": 4.99,
-      "rating": 4.5
+      "name": "Colorful LED Fidget Spinner",
+      "price": 5.99,
+      "rating": 3.5
     },
     {
-      "name": "LED Light Fidget Spinner",
-      "price": 5.0,
-      "rating": 3.8
+      "name": "Basic Plastic Fidget Spinner",
+      "price": 2.5,
+      "rating": 2.5
     },
     {
-      "name": "Metal Fidget Spinner",
+      "name": "Glow in the Dark Fidget Spinner",
       "price": 3.99,
-      "rating": 4.0
+      "rating": 3.0
     },
     {
-      "name": "Wooden Fidget Spinner",
-      "price": 4.49,
-      "rating": 3.2
+      "name": "Mini Fidget Spinner",
+      "price": 4.99,
+      "rating": 2.0
     }
   ],
   "top_products": [
     {
-      "name": "Classic Fidget Spinner",
-      "price": 4.99,
-      "rating": 4.5
+      "name": "Colorful LED Fidget Spinner",
+      "price": 5.99,
+      "rating": 3.5
     },
     {
-      "name": "LED Light Fidget Spinner",
-      "price": 5.0,
-      "rating": 3.8
+      "name": "Basic Plastic Fidget Spinner",
+      "price": 2.5,
+      "rating": 2.5
     },
     {
-      "name": "Metal Fidget Spinner",
+      "name": "Glow in the Dark Fidget Spinner",
       "price": 3.99,
-      "rating": 4.0
+      "rating": 3.0
+    },
+    {
+      "name": "Mini Fidget Spinner",
+      "price": 4.99,
+      "rating": 2.0
     }
   ],
   "best_match": {
-    "name": "Classic Fidget Spinner",
-    "price": 4.99,
-    "rating": 4.5
+    "name": "Colorful LED Fidget Spinner",
+    "price": 5.99,
+    "rating": 3.5
   }
 }

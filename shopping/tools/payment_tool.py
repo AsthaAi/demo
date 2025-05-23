@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional
 from utils.iam_utils import IAMUtils
 from utils.exceptions import PolicyVerificationError
 import json
+from urllib.parse import quote
 
 # Load environment variables
 load_dotenv()
@@ -131,7 +132,7 @@ class PayPalPaymentTool(BaseModel):
             print(f"[PayPalPaymentTool] Error getting access token: {str(e)}")
             raise
 
-    async def create_order(self, access_token, amount, currency="USD", description="Test Product", payee_email=None):
+    async def create_order(self, access_token, amount, currency="USD", description="Test Product", payee_email=None, return_url=None, cancel_url=None):
         try:
             # Verify access before proceeding
             await self.iam_utils.verify_access_or_raise(
@@ -183,12 +184,19 @@ class PayPalPaymentTool(BaseModel):
                 print(
                     f"[PayPalPaymentTool] Setting up payment to merchant: {payee_email}")
 
+            # Set default URLs if not provided
+            if not return_url:
+                return_url = "https://example.com/success"
+            if not cancel_url:
+                cancel_url = "https://example.com/cancel"
+
+            # Create the order first to get the PayPal order ID
             order_data = {
                 "intent": "CAPTURE",
                 "purchase_units": [purchase_unit],
                 "application_context": {
-                    "return_url": "https://example.com/success",
-                    "cancel_url": "https://example.com/cancel",
+                    "return_url": return_url,
+                    "cancel_url": cancel_url,
                     "shipping_preference": "NO_SHIPPING",
                     "user_action": "PAY_NOW"
                 }
@@ -200,9 +208,21 @@ class PayPalPaymentTool(BaseModel):
             response.raise_for_status()
             order_response = response.json()
 
-            # Log the order creation
-            print(
-                f"[PayPalPaymentTool] Created order with ID: {order_response.get('id')}")
+            # Get the PayPal order ID from the response
+            paypal_order_id = order_response.get('id')
+            print(f"[PayPalPaymentTool] Created order with ID: {paypal_order_id}")
+
+            # Update the return URL with the PayPal order ID
+            if '?' in return_url:
+                return_url = f"{return_url}&transaction_id={paypal_order_id}"
+            else:
+                return_url = f"{return_url}?transaction_id={paypal_order_id}"
+
+            # Create a new order with the updated return URL
+            order_data["application_context"]["return_url"] = return_url
+            response = requests.post(url, headers=headers, json=order_data)
+            response.raise_for_status()
+            order_response = response.json()
 
             # Extract and add the approval URL to the response
             for link in order_response.get('links', []):
@@ -278,4 +298,34 @@ class PayPalPaymentTool(BaseModel):
             return capture_response
         except Exception as e:
             print(f"[PayPalPaymentTool] Error capturing payment: {str(e)}")
+            raise
+
+    async def get_order_by_transaction_id(self, access_token, transaction_id):
+        """Get order details using transaction ID"""
+        try:
+            # Verify access before proceeding
+            await self.iam_utils.verify_access_or_raise(
+                agent_id=self.aztp_id,
+                action="get_order_status",
+                policy_code="policy:3ee68df2c5e7",
+                operation_name="Get PayPal Order by Transaction ID"
+            )
+
+            # In PayPal sandbox, we can use the transaction_id directly as the order_id
+            # since it's the same value in the sandbox environment
+            url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{transaction_id}"
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            order_details = response.json()
+            
+            print(f"[PayPalPaymentTool] Retrieved order details for transaction {transaction_id}")
+            return order_details
+            
+        except Exception as e:
+            print(f"[PayPalPaymentTool] Error getting order by transaction ID: {str(e)}")
             raise
