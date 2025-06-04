@@ -1,8 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/learn/basics/create-nextjs-app).
 
-## Getting Started
+## ShopperAI - AI-Powered Shopping Assistant
 
-First, run the development server:
+A modern shopping interface with secure authentication powered by AZTP and Google OAuth.
+
+### Features
+
+- 🔐 Secure authentication with Google OAuth via AZTP
+- 🛍️ AI-powered product search and recommendations
+- 💳 Integrated payment processing
+- 📊 Shopping history and analytics
+- 🎯 Personalized promotions
+- 🤖 Multiple AI agents for different shopping tasks
+
+### Authentication Setup
+
+This application uses AZTP (AI Agent Transport Protocol) for secure authentication. You'll need to:
+
+1. **Get AZTP API Key**: Obtain your AZTP API key from your AZTP dashboard
+2. **Configure Environment**: Create a `.env.local` file in the root of the `ui` directory with:
+   ```
+   NEXT_PUBLIC_AZTP_API_KEY=your_actual_aztp_api_key_here
+   ```
+3. **AZTP Agent ID**: The app is configured to use the agent ID: `aztp://aiagentscommunity.ai/workload/production/node/research-agent`
+
+### Getting Started
+
+First, install the dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
@@ -16,20 +46,46 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Authentication Flow
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Login**: Users click "Continue with Google" to initiate OAuth flow
+2. **AZTP Integration**: The app uses aztp-client to handle secure authentication
+3. **Token Validation**: Tokens are validated using AZTP's validation endpoint
+4. **Protected Routes**: All shopping features require authentication
+5. **Logout**: Users can securely logout, clearing all session data
 
-## Learn More
+### Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── auth/
+│   │   └── callback/          # OAuth callback handler
+│   ├── layout.tsx             # Root layout with AuthProvider
+│   └── page.tsx              # Main page with auth routing
+├── components/
+│   ├── LoginButton.tsx        # Google OAuth login component
+│   ├── Header.tsx            # App header with user info
+│   └── [other components]     # Shopping interface components
+└── context/
+    └── AuthContext.tsx        # Authentication state management
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Environment Variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Required environment variables:
 
-## Deploy on Vercel
+- `NEXT_PUBLIC_AZTP_API_KEY`: Your AZTP API key for authentication
+
+### Learn More
+
+To learn more about the technologies used:
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [AZTP Documentation](https://aztp.ai/docs)
+- [React Authentication Patterns](https://reactjs.org/docs/context.html)
+
+### Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 

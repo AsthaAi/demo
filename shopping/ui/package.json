@@ -10,9 +10,13 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.1.1",
-    "axios": "^1.6.7",
+    "@types/js-cookie": "^3.0.6",
+    "axios": "^1.9.0",
+    "aztp-client": "^1.0.29",
+    "dotenv": "^16.5.0",
     "flowbite": "^1.8.1",
     "flowbite-react": "^0.7.2",
+    "js-cookie": "^3.0.5",
     "next": "14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -20,13 +24,19 @@
     "typeit-react": "^2.7.7"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^20.17.57",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
     "eslint": "^8",
     "eslint-config-next": "14.1.0",
+    "events": "^3.3.0",
     "postcss": "^8",
-    "typescript": "^5"
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
+    "typescript": "^5",
+    "util": "^0.12.5"
   }
 }
