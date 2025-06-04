@@ -1,6 +1,8 @@
 import { StarIcon, ShoppingCartIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/solid';
 import { Button } from 'flowbite-react';
 import TypeIt from 'typeit-react';
+import { UserAuth } from './UserAuth';
+import React, { useState } from 'react';
 
 interface Product {
   name: string;
@@ -52,7 +54,7 @@ interface HistoryResult {
 }
 
 interface ChatMessageProps {
-  type: 'user' | 'assistant';
+  type: 'user' | 'assistant' | 'login_prompt';
   content: string;
   product?: Product;
   products?: Product[];
@@ -76,6 +78,7 @@ export default function ChatMessage({
   historyResult,
   supportResult
 }: ChatMessageProps) {
+  const [showButtons, setShowButtons] = useState(false);
   if (type === 'assistant' && campaign) {
     return (
       <div className="flex justify-start mb-4">
@@ -216,6 +219,32 @@ export default function ChatMessage({
         <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-white shadow-md border border-yellow-200">
           <h3 className="text-lg font-bold text-yellow-700 mb-2">Support Response</h3>
           <pre className="text-xs text-gray-800 whitespace-pre-wrap">{typeof supportResult === 'string' ? supportResult : JSON.stringify(supportResult, null, 2)}</pre>
+        </div>
+      </div>
+    );
+  }
+  if (type === 'login_prompt') {
+    return (
+      <div className="flex justify-start mb-4">
+        <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-white shadow-md border border-blue-200 flex flex-col items-start gap-3">
+          <span className="text-gray-800">
+            <TypeIt
+              options={{
+                speed: 35,
+                waitUntilVisible: true,
+                cursor: false,
+                lifeLike: true,
+                afterComplete: () => setShowButtons(true),
+              }}
+            >
+              You need to login to perform this action. You can log in using the <b>Google</b> or <b>Github</b> button at the top right of the page, or use the button below:
+            </TypeIt>
+          </span>
+          {showButtons && (
+            <div>
+              <UserAuth />
+            </div>
+          )}
         </div>
       </div>
     );

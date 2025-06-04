@@ -13,6 +13,7 @@ import PaymentModal from '../components/PaymentModal';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import PaymentStatusModal from '../components/PaymentStatusModal';
+import { UserAuth } from '../components/UserAuth';
 
 interface Product {
   name: string;
@@ -40,7 +41,7 @@ interface Promotion {
 }
 
 interface Message {
-  type: 'user' | 'assistant';
+  type: 'user' | 'assistant' | 'login_prompt';
   content: string;
   product?: Product;
   comparisonResults?: ComparisonResult;
@@ -109,7 +110,7 @@ const MENU_OPTIONS = [
   { key: 'support', label: 'Customer Support Agent' },
   { key: 'fake_agent', label: 'Malicious Agent' },
   { key: 'market_agent', label: 'Agent with Unauthorized Policy' },
-  { key: 'exit', label: 'Exit' },
+  // { key: 'exit', label: 'Exit' },
 ];
 
 function calculatePromotionSummary(product: Product, promotion: Promotion): PromotionSummary | null {
@@ -163,6 +164,7 @@ export default function Home() {
     transactionId: string;
     status: 'success' | 'cancel';
   } | null>(null);
+  const [showLoginAlert, setShowLoginAlert] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -199,7 +201,45 @@ export default function Home() {
     }
   }, [searchParams]);
 
-  const handleMenuSelect = (optionKey: string) => {
+  const checkUserLogin = async () => {
+    try {
+      const response = await fetch('/api/auth/user');
+      if (!response.ok) {
+        setMessages(prev => [
+          ...prev,
+          {
+            type: 'login_prompt',
+            content: ''
+          }
+        ]);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error checking user login:', error);
+      setMessages(prev => [
+        ...prev,
+        {
+          type: 'login_prompt',
+          content: ''
+        }
+      ]);
+      return false;
+    }
+  };
+
+  const handleMenuSelect = async (optionKey: string) => {
+    if (optionKey === 'exit') {
+      setMessages([{ type: 'assistant', content: 'Thank you for using ShopperAI. Goodbye!' }]);
+      setStep('menu');
+      return;
+    }
+
+    const isLoggedIn = await checkUserLogin();
+    if (!isLoggedIn) {
+      return;
+    }
+
     setPendingAction(optionKey);
     if (optionKey === 'search') {
       setStep('search_product');
@@ -238,12 +278,6 @@ export default function Home() {
         { type: 'assistant', content: 'Agent with Unauthorized Policy communication...' }
       ]);
       testAgent('market');
-    } else if (optionKey === 'exit') {
-      setMessages(prev => [
-        ...prev,
-        { type: 'assistant', content: 'Thank you for using ShopperAI!' }
-      ]);
-      setStep('exit');
     }
   };
 
@@ -632,6 +666,9 @@ export default function Home() {
   };
 
   const handleBuyNow = (product: Product) => {
+    if (!checkUserLogin()) {
+      return;
+    }
     setSelectedProduct(product);
     setShowPaymentModal(true);
   };
@@ -647,6 +684,9 @@ export default function Home() {
   };
 
   const handleComparePrices = async (products: Product[]) => {
+    if (!checkUserLogin()) {
+      return;
+    }
     if (products.length < 2) {
       alert('Need at least 2 products to compare prices');
       return;
@@ -686,7 +726,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col">
       {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -695,16 +735,13 @@ export default function Home() {
               <ShoppingBagIcon className="h-8 w-8 text-blue-600" />
               <h1 className="text-2xl font-bold text-gray-900">ShopperAI</h1>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-700">
-              <SparklesIcon className="h-5 w-5 text-yellow-400" />
-              <span>Powered by <Link href="https://astha.ai" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">astha.ai</Link></span>
-            </div>
+            <UserAuth />
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 min-h-[600px] flex flex-col">
+      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-6 min-h-[600px] flex flex-col h-[78vh]">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto mb-4 space-y-4">
             {messages.map((message, index) => (
@@ -726,9 +763,9 @@ export default function Home() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Step-based Input */}
+          {/* Action Buttons (Menu) */}
           {step === 'menu' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
               {MENU_OPTIONS.map((opt, i) => (
                 <Button
                   key={opt.key}
@@ -740,6 +777,8 @@ export default function Home() {
               ))}
             </div>
           )}
+
+          {/* Step-based Input (always at the bottom except on exit) */}
           {step !== 'exit' && (
             <form onSubmit={handleStepInput} className="flex gap-2 mt-2">
               <TextInput
@@ -785,64 +824,26 @@ export default function Home() {
               </Button>
             </form>
           )}
-
-          {/* Product Details */}
-          {false && selectedProduct && (
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold mb-4">Product Details</h2>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-semibold">{selectedProduct?.name}</h3>
-                <p className="text-gray-600 mt-2">{selectedProduct?.description}</p>
-                <div className="mt-4">
-                  <span className="text-2xl font-bold text-green-600">
-                    {selectedProduct?.price}
-                  </span>
-                  {selectedProduct?.rating && (
-                    <span className="ml-4 text-yellow-500">
-                      ★ {selectedProduct?.rating}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Add Promotions component */}
-                {selectedProduct && (
-                  <div className="mt-6">
-                    <Promotions
-                      productDetails={selectedProduct as Product}
-                      customerEmail={customerEmail}
-                      onPromotionSelected={(updatedDetails: Product) => {
-                        // Ensure price and rating are strings
-                        const updatedProduct: Product = {
-                          ...updatedDetails,
-                          price: typeof updatedDetails.price === 'number' 
-                            ? `$${(updatedDetails.price as number).toFixed(2)}`
-                            : String(updatedDetails.price || '0'),
-                          rating: typeof updatedDetails.rating === 'number'
-                            ? String(updatedDetails.rating)
-                            : String(updatedDetails.rating || '0')
-                        };
-                        setSelectedProduct(updatedProduct);
-                      }}
-                    />
-                  </div>
-                )}
-
-                <button
-                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.preventDefault();
-                    if (selectedProduct) {
-                      handleBuyNow(selectedProduct);
-                    }
-                  }}
-                  className="mt-6 w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                >
-                  Buy Now
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-white/90 backdrop-blur-sm border-t border-gray-200 py-4 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
+            <SparklesIcon className="h-5 w-5 text-yellow-400" />
+            <span>Powered by</span>
+            <Link 
+              href="https://astha.ai" 
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200" 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              astha.ai
+            </Link>
+          </div>
+        </div>
+      </footer>
 
       {/* Payment Modal */}
       {selectedProduct && (

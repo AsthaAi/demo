@@ -1,83 +1,92 @@
 {
   "raw_products": [
     {
-      "name": "Colorful LED Fidget Spinner",
-      "price": 5.99,
-      "rating": 3.5
+      "name": "Premium Fidget Spinner",
+      "price": 20.0,
+      "rating": 4.5,
+      "description": "High-quality materials, smooth spinning action, ideal for stress relief."
     },
     {
-      "name": "Metal Fidget Spinner",
-      "price": 7.0,
-      "rating": 4.0
+      "name": "LED Glow Fidget Spinner",
+      "price": 15.0,
+      "rating": 4.3,
+      "description": "Bright LED lights, great for kids and adults, fun to use."
     },
     {
-      "name": "Basic Plastic Fidget Spinner",
-      "price": 2.5,
-      "rating": 2.5
+      "name": "Metallic Fidget Spinner",
+      "price": 30.0,
+      "rating": 4.8,
+      "description": "Durable metallic design, very smooth and long-lasting spin."
     },
     {
-      "name": "Glow in the Dark Fidget Spinner",
-      "price": 3.99,
-      "rating": 3.0
+      "name": "Luxury Fidget Spinner",
+      "price": 1500.0,
+      "rating": 4.9,
+      "description": "Gold plated, premium feel, collector's item."
     },
     {
-      "name": "Wooden Fidget Spinner",
-      "price": 6.0,
-      "rating": 1.5
-    },
-    {
-      "name": "Mini Fidget Spinner",
-      "price": 4.99,
-      "rating": 2.0
+      "name": "Customizable Fidget Spinner",
+      "price": 100.0,
+      "rating": 4.0,
+      "description": "Personalize your spinner with colors and designs."
     }
   ],
   "filtered_products": [
     {
-      "name": "Colorful LED Fidget Spinner",
-      "price": 5.99,
-      "rating": 3.5
+      "name": "Premium Fidget Spinner",
+      "price": 20.0,
+      "rating": 4.5,
+      "description": "High-quality materials, smooth spinning action, ideal for stress relief."
     },
     {
-      "name": "Basic Plastic Fidget Spinner",
-      "price": 2.5,
-      "rating": 2.5
+      "name": "LED Glow Fidget Spinner",
+      "price": 15.0,
+      "rating": 4.3,
+      "description": "Bright LED lights, great for kids and adults, fun to use."
     },
     {
-      "name": "Glow in the Dark Fidget Spinner",
-      "price": 3.99,
-      "rating": 3.0
+      "name": "Metallic Fidget Spinner",
+      "price": 30.0,
+      "rating": 4.8,
+      "description": "Durable metallic design, very smooth and long-lasting spin."
     },
     {
-      "name": "Mini Fidget Spinner",
-      "price": 4.99,
-      "rating": 2.0
+      "name": "Luxury Fidget Spinner",
+      "price": 1500.0,
+      "rating": 4.9,
+      "description": "Gold plated, premium feel, collector's item."
+    },
+    {
+      "name": "Customizable Fidget Spinner",
+      "price": 100.0,
+      "rating": 4.0,
+      "description": "Personalize your spinner with colors and designs."
     }
   ],
   "top_products": [
     {
-      "name": "Colorful LED Fidget Spinner",
-      "price": 5.99,
-      "rating": 3.5
+      "name": "Luxury Fidget Spinner",
+      "price": 1500.0,
+      "rating": 4.9,
+      "description": "Gold plated, premium feel, collector's item."
     },
     {
-      "name": "Basic Plastic Fidget Spinner",
-      "price": 2.5,
-      "rating": 2.5
+      "name": "Metallic Fidget Spinner",
+      "price": 30.0,
+      "rating": 4.8,
+      "description": "Durable metallic design, very smooth and long-lasting spin."
     },
     {
-      "name": "Glow in the Dark Fidget Spinner",
-      "price": 3.99,
-      "rating": 3.0
-    },
-    {
-      "name": "Mini Fidget Spinner",
-      "price": 4.99,
-      "rating": 2.0
+      "name": "Premium Fidget Spinner",
+      "price": 20.0,
+      "rating": 4.5,
+      "description": "High-quality materials, smooth spinning action, ideal for stress relief."
     }
   ],
   "best_match": {
-    "name": "Colorful LED Fidget Spinner",
-    "price": 5.99,
-    "rating": 3.5
+    "name": "Luxury Fidget Spinner",
+    "price": 1500.0,
+    "rating": 4.9,
+    "description": "Gold plated, premium feel, collector's item."
   }
 }

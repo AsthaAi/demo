@@ -3417,5 +3417,141 @@
     "error": "Order status is COMPLETED, not APPROVED",
     "status": "COMPLETED",
     "paypal_order_id": "5R322155AP7530412"
+  },
+  {
+    "action": "create_order",
+    "paypal_order_id": "8T218672904747451",
+    "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=8T218672904747451",
+    "raw_response": {
+      "id": "8T218672904747451",
+      "status": "CREATED",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/8T218672904747451",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=8T218672904747451",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/8T218672904747451",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/8T218672904747451/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ],
+      "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=8T218672904747451"
+    }
+  },
+  {
+    "action": "capture_payment",
+    "capture_result": {
+      "id": "8T218672904747451",
+      "status": "COMPLETED",
+      "payment_source": {
+        "paypal": {
+          "email_address": "saazan@personal.com",
+          "account_id": "58CYKFDAKTTJA",
+          "account_status": "VERIFIED",
+          "name": {
+            "given_name": "John",
+            "surname": "Doe"
+          },
+          "address": {
+            "country_code": "US"
+          }
+        }
+      },
+      "purchase_units": [
+        {
+          "reference_id": "ORDER_1749059475_3ddb845d",
+          "payments": {
+            "captures": [
+              {
+                "id": "8BB542158Y174983T",
+                "status": "COMPLETED",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "1275.00"
+                },
+                "final_capture": true,
+                "seller_protection": {
+                  "status": "ELIGIBLE",
+                  "dispute_categories": [
+                    "ITEM_NOT_RECEIVED",
+                    "UNAUTHORIZED_TRANSACTION"
+                  ]
+                },
+                "seller_receivable_breakdown": {
+                  "gross_amount": {
+                    "currency_code": "USD",
+                    "value": "1275.00"
+                  },
+                  "paypal_fee": {
+                    "currency_code": "USD",
+                    "value": "44.99"
+                  },
+                  "net_amount": {
+                    "currency_code": "USD",
+                    "value": "1230.01"
+                  }
+                },
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/8BB542158Y174983T",
+                    "rel": "self",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/8BB542158Y174983T/refund",
+                    "rel": "refund",
+                    "method": "POST"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/8T218672904747451",
+                    "rel": "up",
+                    "method": "GET"
+                  }
+                ],
+                "create_time": "2025-06-04T17:52:10Z",
+                "update_time": "2025-06-04T17:52:10Z"
+              }
+            ]
+          }
+        }
+      ],
+      "payer": {
+        "name": {
+          "given_name": "John",
+          "surname": "Doe"
+        },
+        "email_address": "saazan@personal.com",
+        "payer_id": "58CYKFDAKTTJA",
+        "address": {
+          "country_code": "US"
+        }
+      },
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/8T218672904747451",
+          "rel": "self",
+          "method": "GET"
+        }
+      ]
+    },
+    "paypal_order_id": "8T218672904747451"
+  },
+  {
+    "action": "capture_payment_error",
+    "error": "Order status is COMPLETED, not APPROVED",
+    "status": "COMPLETED",
+    "paypal_order_id": "8T218672904747451"
   }
 ]
